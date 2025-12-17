@@ -1,0 +1,9 @@
+# SSL Certificates Directory
+# 
+# Generate local development certificates using mkcert:
+#   mkcert -install
+#   mkcert localhost 127.0.0.1 ::1
+#
+# Or use the provided docker-compose.ssl.yml which handles this automatically.
+#
+# NEVER commit real certificates to version control!

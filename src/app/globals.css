@@ -1,0 +1,69 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: #222;
+  --background: #ffffff;
+  --accent: #ff3a3a;
+}
+
+.dark {
+  --foreground: #ffffff;
+  --background: #111;
+  --accent: #ff2727;
+}
+
+@layer base {
+  body {
+    @apply text-mono-800 bg-white dark:text-mono-100 dark:bg-mono-900;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-medium text-mono-900 dark:text-mono-100;
+  }
+
+  a {
+    @apply text-accent hover:text-accent-light transition-colors duration-200;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded font-medium;
+  }
+
+  .btn-primary {
+    @apply bg-accent text-white hover:bg-accent-light;
+  }
+
+  .btn-outline {
+    @apply border border-mono-300 dark:border-mono-700 hover:border-accent hover:text-accent;
+  }
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+}
+
+/* Buttons */
+.btn,
+.btn-sm {
+  @apply font-medium inline-flex items-center justify-center border border-transparent rounded leading-snug transition duration-150 ease-in-out;
+}
+
+.btn {
+  @apply px-8 py-3 shadow-lg;
+}
+
+.btn-sm {
+  @apply px-4 py-2 shadow;
+}

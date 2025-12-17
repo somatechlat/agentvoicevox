@@ -1,0 +1,11 @@
+# Data Directory
+#
+# This directory contains runtime data volumes for Docker services:
+# - postgres/  - PostgreSQL database files
+# - redis/     - Redis persistence
+# - kokoro/    - Kokoro TTS model cache
+# - whisper/   - Whisper STT model cache
+# - tts-cache/ - Generated TTS audio cache
+#
+# These directories are created automatically by Docker Compose.
+# Do NOT commit any data files to version control.

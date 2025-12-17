@@ -1,0 +1,92 @@
+# =============================================================================
+# AgentVoiceBox Engine - Docker Build Ignore
+# =============================================================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# Documentation (not needed in container)
+*.md
+docs/
+ARCHITECTURE.md
+ROADMAP.md
+
+# IDE / Editor
+.vscode/
+.idea/
+*.sublime-*
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+*.egg-info/
+.eggs/
+.venv/
+venv/
+
+# Environment files (inject at runtime)
+.env
+.env.*
+!.env.example
+settings.*.env
+!settings.example.env
+
+# Test files
+tests/
+*_test.py
+test_*.py
+conftest.py
+pytest.ini
+
+# Build artifacts
+build/
+dist/
+*.egg
+
+# Logs
+*.log
+logs/
+
+# Local overrides
+docker-compose.override.yml
+docker-compose.local.yml
+docker-compose.test.yml
+*.local
+
+# Specs and planning docs
+.kiro/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large files / models (mount as volume)
+*.onnx
+*.pt
+*.pth
+*.bin
+*.safetensors
+data/
+cache/
+
+# Portal frontend (built separately)
+portal-frontend/node_modules/
+portal-frontend/.next/
+portal-frontend/test-results/
+
+# Keycloak/Lago configs (mounted at runtime)
+# keycloak/
+# lago/
+
+# Observability configs (mounted at runtime)
+# observability/

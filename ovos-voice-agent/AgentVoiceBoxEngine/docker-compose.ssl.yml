@@ -1,0 +1,104 @@
+# =============================================================================
+# AGENTVOICEBOX - SSL Overlay with Nginx Reverse Proxy (Production-Level)
+# =============================================================================
+# Usage: docker compose -p agentvoicebox -f docker-compose.yml -f docker-compose.ssl.yml up -d
+#
+# ⚠️  CRITICAL: PORT POLICY - DO NOT VIOLATE ⚠️
+# ═══════════════════════════════════════════════════════════════════════════
+# ALL external ports MUST be in the range 25000-25099.
+# DO NOT use ports outside this range (no 80, 443, 3000, 8080, 8443, etc.)
+# This policy prevents conflicts with other services on the host machine.
+# Any AI agent or developer modifying this file MUST follow this rule.
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# SSL Port Allocation (within 25000 range):
+#   25080 - Portal Frontend (HTTPS) - Main entry point
+#   25443 - Keycloak (HTTPS) - Auth server
+#
+# Access URLs:
+#   Portal:   https://localhost:25080
+#   Keycloak: https://localhost:25443
+#   API:      https://localhost:25080/api/
+#   Gateway:  https://localhost:25080/ws/
+#
+# Prerequisites:
+#   1. Install mkcert: brew install mkcert
+#   2. Install CA: mkcert -install
+#   3. Generate certs: cd certs && mkcert localhost 127.0.0.1 ::1
+# =============================================================================
+
+services:
+  # Override portal-frontend to use HTTPS URLs
+  portal-frontend:
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: https://localhost:25080/api
+        NEXT_PUBLIC_KEYCLOAK_URL: https://localhost:25443
+        NEXT_PUBLIC_KEYCLOAK_REALM: agentvoicebox
+        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: agentvoicebox-portal
+    environment:
+      - NEXT_PUBLIC_API_URL=https://localhost:25080/api
+      - NEXT_PUBLIC_KEYCLOAK_URL=https://localhost:25443
+    # Remove direct port exposure - nginx handles it
+    ports: !reset []
+
+  # Override portal-api - remove direct port exposure
+  portal-api:
+    ports: !reset []
+
+  # Override gateway - remove direct port exposure  
+  gateway:
+    ports: !reset []
+
+  # Override keycloak for HTTPS proxy mode
+  keycloak:
+    environment:
+      KC_PROXY: edge
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: "25443"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+    # Remove direct port exposure - nginx handles it
+    ports: !reset []
+
+  # Nginx SSL Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: agentvoicebox_nginx
+    hostname: nginx
+    ports:
+      - "25080:25080"
+      - "25443:25443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      portal-frontend:
+        condition: service_started
+      portal-api:
+        condition: service_started
+      gateway:
+        condition: service_started
+      keycloak:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "--no-check-certificate", "https://localhost:25080/nginx-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    restart: unless-stopped
+    networks:
+      - agentvoicebox-net
