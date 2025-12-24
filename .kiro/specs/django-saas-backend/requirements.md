@@ -13,13 +13,21 @@
 
 This document specifies the requirements for implementing a production-grade Django SaaS backend for the AgentVoiceBox platform. The system provides multi-tenant voice agent infrastructure with real-time communication, fine-grained authorization, and enterprise-grade observability.
 
+**CRITICAL CONSTRAINT: Django-Only Architecture**
+- ALL backend code SHALL be implemented within the Django framework
+- ALL REST APIs SHALL use Django Ninja (no Flask, FastAPI, or standalone Python)
+- ALL WebSocket handlers SHALL use Django Channels
+- ALL background workers SHALL be Django management commands
+- ALL database access SHALL use Django ORM
+- NO standalone Python scripts or non-Django frameworks are permitted
+
 ## Glossary
 
 - **Tenant**: An organization using the platform with isolated data and configuration
 - **ASGI**: Asynchronous Server Gateway Interface for async Django
 - **SpiceDB**: Google Zanzibar-inspired authorization system for fine-grained permissions
 - **Django_Ninja**: Fast Django REST framework with automatic OpenAPI documentation
-- **Celery**: Distributed task queue for background job processing
+- **Temporal**: Durable workflow orchestration for background job processing
 - **Keycloak**: Open-source identity and access management solution
 - **JWT**: JSON Web Token for stateless authentication
 - **WebSocket**: Full-duplex communication protocol for real-time features
@@ -37,11 +45,13 @@ This document specifies the requirements for implementing a production-grade Dja
 1. THE Django_Project SHALL use Django 5.1+ with ASGI support via Uvicorn
 2. THE Django_Project SHALL implement split settings for base, development, staging, production, and testing environments
 3. THE Django_Project SHALL use environment variables for all sensitive configuration via pydantic-settings
-4. THE Django_Project SHALL organize code into separate Django apps: core, tenants, users, projects, api_keys, sessions, billing, voice, themes, audit, notifications
+4. THE Django_Project SHALL organize code into separate Django apps: core, tenants, users, projects, api_keys, sessions, billing, voice, themes, audit, notifications, workflows
 5. THE Django_Project SHALL use PostgreSQL 16+ as the primary database with connection pooling
-6. THE Django_Project SHALL use Redis 7+ for caching, sessions, and Celery broker
+6. THE Django_Project SHALL use Redis 7+ for caching, sessions, and Temporal visibility
 7. WHEN the application starts THEN the Django_Project SHALL validate all required environment variables
 8. THE Django_Project SHALL include health check endpoints at `/health/` for liveness and readiness probes
+9. ALL Python code SHALL be organized within Django apps (no standalone scripts)
+10. THE Django_Project SHALL use Django Ninja exclusively for REST API endpoints
 
 ---
 
@@ -172,7 +182,7 @@ This document specifies the requirements for implementing a production-grade Dja
 3. THE Session_Service SHALL create sessions with configuration for voice, model, and turn detection
 4. THE Session_Service SHALL track metrics: duration_seconds, input_tokens, output_tokens, audio_duration_seconds
 5. THE SessionEvent_Model SHALL store transcript, response, tool_call, tool_result, error, and system events
-6. THE SessionConsumer SHALL forward audio chunks to STT worker via Celery
+6. THE SessionConsumer SHALL forward audio chunks to STT worker via Temporal workflow
 7. THE SessionConsumer SHALL receive transcription results and broadcast to client
 8. THE SessionConsumer SHALL trigger LLM response generation on user input
 9. THE SessionConsumer SHALL stream TTS audio back to client
@@ -180,22 +190,26 @@ This document specifies the requirements for implementing a production-grade Dja
 
 ---
 
-### Requirement 9: Background Task Processing
+### Requirement 9: Workflow Orchestration (Temporal)
 
-**User Story:** As a platform operator, I want reliable background task processing, so that long-running operations don't block API requests.
+**User Story:** As a platform operator, I want enterprise-grade workflow orchestration with durable execution, so that long-running operations are reliable and observable.
 
 #### Acceptance Criteria
 
-1. THE Celery_App SHALL use Redis as message broker with separate queues: default, stt, tts, llm, billing, notifications, scheduled
-2. THE Celery_App SHALL use Django database as result backend
-3. THE TenantAwareTask SHALL maintain tenant context during task execution
-4. THE RetryableTask SHALL implement automatic retry with exponential backoff
-5. THE Celery_Beat SHALL schedule periodic tasks: cleanup_expired_sessions (hourly), sync_billing_usage (15min), aggregate_metrics (5min)
-6. THE STT_Worker SHALL process audio chunks and publish transcription results
-7. THE TTS_Worker SHALL generate audio from text and stream results
-8. THE LLM_Worker SHALL generate responses and stream tokens
-9. WHEN a task fails THEN the System SHALL log the error and retry up to 3 times
-10. THE Task_Routing SHALL direct tasks to appropriate queues based on task name
+1. THE Temporal_Server SHALL provide durable workflow execution with automatic state persistence
+2. THE Temporal_Client SHALL connect to Temporal server with namespace isolation per environment
+3. THE TenantAwareWorkflow SHALL maintain tenant context throughout workflow execution via workflow context
+4. THE Workflow_Definitions SHALL implement automatic retry with configurable backoff policies
+5. THE Scheduled_Workflows SHALL execute periodic tasks: cleanup_expired_sessions (hourly), sync_billing_usage (15min), aggregate_metrics (5min)
+6. THE STT_Activity SHALL process audio chunks and return transcription results with timeout handling
+7. THE TTS_Activity SHALL generate audio from text with streaming support via signals
+8. THE LLM_Activity SHALL generate responses with token streaming via workflow signals
+9. WHEN an activity fails THEN the Temporal_Worker SHALL retry according to retry policy (max 3 attempts, exponential backoff)
+10. THE Task_Queue_Routing SHALL direct workflows to appropriate task queues: default, voice-processing, billing, notifications
+11. THE Workflow_Visibility SHALL expose workflow status, history, and metrics via Temporal Web UI
+12. THE Workflow_Versioning SHALL support workflow code updates without breaking running workflows
+13. THE Temporal_Worker SHALL be implemented as a Django management command (`python manage.py run_temporal_worker`)
+14. ALL workflow and activity code SHALL reside within the Django `apps/workflows/` app
 
 ---
 
@@ -229,7 +243,7 @@ This document specifies the requirements for implementing a production-grade Dja
 5. THE Prometheus_Metrics SHALL track: http_requests_total, http_request_duration_seconds, websocket_connections, websocket_messages_total
 6. THE Prometheus_Metrics SHALL track business metrics: tenants_total, sessions_total, session_duration_seconds, active_sessions
 7. THE Prometheus_Metrics SHALL track worker metrics: stt_requests_total, tts_requests_total, llm_requests_total, llm_tokens_total
-8. THE Prometheus_Metrics SHALL track infrastructure metrics: db_query_duration_seconds, cache_hits_total, celery_tasks_total
+8. THE Prometheus_Metrics SHALL track infrastructure metrics: db_query_duration_seconds, cache_hits_total, temporal_workflows_total
 9. THE Metrics_Endpoint SHALL expose Prometheus metrics at `/metrics`
 
 ---
@@ -287,7 +301,26 @@ This document specifies the requirements for implementing a production-grade Dja
 
 ---
 
-### Requirement 15: Billing Integration
+### Requirement 15: Secrets Management (HashiCorp Vault)
+
+**User Story:** As a security officer, I want centralized secrets management with dynamic credentials, so that sensitive data is protected and auditable.
+
+#### Acceptance Criteria
+
+1. THE Vault_Client SHALL connect to HashiCorp Vault server with AppRole authentication
+2. THE Vault_Client SHALL retrieve database credentials dynamically with automatic rotation
+3. THE Vault_Client SHALL retrieve API keys and tokens from KV secrets engine v2
+4. THE Vault_Client SHALL cache secrets with configurable TTL and automatic refresh
+5. THE Vault_Policies SHALL define access policies per service: backend, temporal-worker, keycloak
+6. THE Vault_Transit SHALL encrypt sensitive tenant data (API keys, webhook secrets) before storage
+7. WHEN a secret lease expires THEN the Vault_Client SHALL automatically renew or fetch new credentials
+8. THE Vault_Audit SHALL log all secret access for compliance
+9. THE Vault_PKI SHALL issue TLS certificates for internal service communication
+10. THE System SHALL fail fast if Vault is unavailable during startup
+
+---
+
+### Requirement 16: Billing Integration
 
 **User Story:** As a platform operator, I want usage-based billing integration, so that I can charge tenants based on their usage.
 
@@ -296,14 +329,14 @@ This document specifies the requirements for implementing a production-grade Dja
 1. THE Lago_Client SHALL sync tenants as customers with external_id, name, and metadata
 2. THE Lago_Client SHALL assign subscriptions based on tenant tier
 3. THE Billing_Service SHALL track usage events: sessions, api_calls, audio_minutes, tokens
-4. THE Billing_Sync_Task SHALL sync usage to Lago every 15 minutes
+4. THE Billing_Sync_Workflow SHALL sync usage to Lago every 15 minutes via Temporal scheduled workflow
 5. THE Lago_Webhooks SHALL handle subscription and invoice events
 6. THE Billing_API SHALL return current usage, projected costs, and invoice history
 7. WHEN a tenant exceeds their plan limits THEN the System SHALL emit billing.alert event
 
 ---
 
-### Requirement 16: Deployment
+### Requirement 17: Deployment
 
 **User Story:** As a DevOps engineer, I want containerized deployment with horizontal scaling, so that I can deploy and scale the platform reliably.
 
@@ -312,7 +345,7 @@ This document specifies the requirements for implementing a production-grade Dja
 1. THE Dockerfile SHALL build a production-ready image with Python 3.12
 2. THE Dockerfile SHALL run as non-root user for security
 3. THE Dockerfile SHALL include health check for container orchestration
-4. THE Docker_Compose SHALL define services: backend, celery-worker, celery-beat, postgres, redis, keycloak, spicedb
+4. THE Docker_Compose SHALL define services: backend, temporal-server, temporal-worker, postgres, redis, keycloak, spicedb, vault
 5. THE Kubernetes_Deployment SHALL support horizontal pod autoscaling based on CPU and memory
 6. THE Kubernetes_Deployment SHALL include liveness and readiness probes
 7. THE Gunicorn_Config SHALL use Uvicorn workers for ASGI support
