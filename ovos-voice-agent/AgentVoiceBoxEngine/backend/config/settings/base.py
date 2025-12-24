@@ -264,6 +264,7 @@ VAULT = {
     "ROLE_ID": env.vault_role_id,
     "SECRET_ID": env.vault_secret_id,
     "MOUNT_POINT": env.vault_mount_point,
+    "FAIL_FAST": env.vault_fail_fast,
 }
 
 # ==========================================================================

@@ -98,15 +98,15 @@ This implementation plan converts the Django SaaS Backend design into actionable
 
 ---
 
-- [ ] 4. Keycloak Authentication
-  - [ ] 4.1 Create User model with Django ORM
+- [x] 4. Keycloak Authentication
+  - [x] 4.1 Create User model with Django ORM
     - Extend `AbstractBaseUser` and `PermissionsMixin`
     - Add fields: keycloak_id, email, first_name, last_name, tenant FK, is_active, preferences JSONField
     - Create custom user manager
     - Create Django migrations
     - _Requirements: 3.8_
 
-  - [ ] 4.2 Implement KeycloakMiddleware
+  - [x] 4.2 Implement KeycloakMiddleware
     - Validate JWT tokens from Authorization header
     - Extract user_id (sub), tenant_id, roles from JWT claims
     - Fetch and cache Keycloak public key for verification
@@ -115,7 +115,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Return 401 with "invalid_token" for malformed tokens
     - _Requirements: 3.1, 3.2, 3.3, 3.5, 3.6, 3.7_
 
-  - [ ] 4.3 Implement API key authentication
+  - [x] 4.3 Implement API key authentication
     - Support X-API-Key header as alternative to JWT
     - Validate API key and set user/tenant context
     - _Requirements: 3.9_
@@ -130,15 +130,15 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Test valid keys authenticate, expired returns 401 "api_key_expired", revoked returns 401 "api_key_revoked"
     - **Validates: Requirements 3.9, 7.9, 7.10**
 
-- [ ] 5. Checkpoint - Authentication
+- [-] 5. Checkpoint - Authentication
   - Ensure JWT authentication works end-to-end
   - Verify tenant context is set correctly
   - Ask the user if questions arise
 
 ---
 
-- [ ] 6. SpiceDB Authorization
-  - [ ] 6.1 Create SpiceDB client integration
+- [x] 6. SpiceDB Authorization
+  - [x] 6.1 Create SpiceDB client integration
     - Implement gRPC client connection with configurable endpoint and token
     - Implement `check_permission(resource_type, resource_id, relation, subject_type, subject_id)`
     - Implement `write_relationship()` for creating permissions
@@ -146,14 +146,14 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Implement `lookup_subjects()` for finding subjects with relation
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-  - [ ] 6.2 Create SpiceDB schema
+  - [x] 6.2 Create SpiceDB schema
     - Define tenant relations: sysadmin, admin, developer, operator, viewer, billing
     - Define computed permissions: manage, administrate, develop, operate, view, billing_access
     - Define resource types: tenant, project, api_key, session, voice_config, theme, persona
     - Create schema.zed file
     - _Requirements: 4.6, 4.7, 4.8_
 
-  - [ ] 6.3 Implement permission decorators
+  - [x] 6.3 Implement permission decorators
     - Create `@require_permission` decorator for SpiceDB checks
     - Create `@require_role` decorator for JWT role checks
     - Return 403 with "permission_denied" on failure
@@ -167,26 +167,26 @@ This implementation plan converts the Django SaaS Backend design into actionable
 
 ---
 
-- [ ] 7. Django Ninja API Layer
-  - [ ] 7.1 Configure Django Ninja API
+- [x] 7. Django Ninja API Layer
+  - [x] 7.1 Configure Django Ninja API
     - Mount NinjaAPI at `/api/v2/`
     - Configure OpenAPI documentation at `/api/v2/docs`
     - Set up Pydantic schemas for request/response validation
     - _Requirements: 5.1, 5.2_
 
-  - [ ] 7.2 Create API routers
+  - [x] 7.2 Create API routers
     - Create routers: tenants, users, projects, api_keys, sessions, billing, voice, themes, audit, notifications
     - Create admin routers at `/api/v2/admin/*` restricted to SYSADMIN
     - _Requirements: 5.3, 5.4_
 
-  - [ ] 7.3 Implement error handling and pagination
+  - [x] 7.3 Implement error handling and pagination
     - Create consistent error response format with error code, message, details
     - Implement PageNumberPagination with configurable page size
     - Implement filtering and sorting via Query parameters
     - Return 400 with field-level errors on validation failure
     - _Requirements: 5.5, 5.6, 5.7, 5.8_
 
-  - [ ] 7.4 Create service and repository layers
+  - [x] 7.4 Create service and repository layers
     - Create service classes for business logic (separate from API endpoints)
     - Create repository classes for Django ORM queries with QuerySet optimization
     - _Requirements: 5.9, 5.10_
@@ -196,15 +196,15 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Test invalid requests return 400 with field-level error details
     - **Validates: Requirements 5.2, 5.8**
 
-- [ ] 8. Checkpoint - API Layer
+- [-] 8. Checkpoint - API Layer
   - Ensure all API endpoints respond correctly
   - Verify OpenAPI documentation is generated
   - Ask the user if questions arise
 
 ---
 
-- [ ] 9. API Key Management
-  - [ ] 9.1 Create APIKey model with Django ORM
+- [x] 9. API Key Management
+  - [x] 9.1 Create APIKey model with Django ORM
     - Extend TenantScopedModel
     - Add fields: name, description, key_prefix, key_hash, scopes ArrayField, rate_limit_tier
     - Add fields: expires_at, revoked_at, last_used_at, last_used_ip, usage_count, created_by FK
@@ -213,7 +213,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Create Django migrations
     - _Requirements: 7.1, 7.5, 7.6_
 
-  - [ ] 9.2 Implement APIKeyService
+  - [x] 9.2 Implement APIKeyService
     - Generate secure random keys with format `avb_{random_32_bytes}`
     - Hash keys using SHA-256 before storage
     - Return full key only once at creation
@@ -222,7 +222,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Implement key rotation with optional grace period
     - _Requirements: 7.2, 7.3, 7.4, 7.7, 7.8, 7.11_
 
-  - [ ] 9.3 Create API key endpoints
+  - [x] 9.3 Create API key endpoints
     - POST `/api/v2/api-keys/` - Create new key
     - GET `/api/v2/api-keys/` - List keys (without full key)
     - DELETE `/api/v2/api-keys/{id}/` - Revoke key
@@ -236,27 +236,27 @@ This implementation plan converts the Django SaaS Backend design into actionable
 
 ---
 
-- [ ] 10. Django Channels WebSocket
-  - [ ] 10.1 Configure WebSocket routing
+- [x] 10. Django Channels WebSocket
+  - [x] 10.1 Configure WebSocket routing
     - Create `realtime/routing.py` with URL patterns
     - Configure channel middleware for authentication
     - Set up Redis channel layer
     - _Requirements: 6.1, 6.11_
 
-  - [ ] 10.2 Implement BaseConsumer
+  - [x] 10.2 Implement BaseConsumer
     - Create `AsyncJsonWebsocketConsumer` base class
     - Validate authentication and tenant before accepting connections
     - Handle ping/pong heartbeat messages
     - Close with code 4001 on auth failure
     - _Requirements: 6.2, 6.3, 6.4, 6.5, 6.10_
 
-  - [ ] 10.3 Implement EventConsumer
+  - [x] 10.3 Implement EventConsumer
     - Stream tenant-wide notifications at `/ws/v2/events`
     - Stream user-specific notifications
     - Join appropriate channel groups on connect
     - _Requirements: 6.6_
 
-  - [ ] 10.4 Implement SessionConsumer
+  - [x] 10.4 Implement SessionConsumer
     - Handle voice session communication at `/ws/v2/sessions/{session_id}`
     - Forward audio chunks to Temporal STT workflow
     - Receive transcription results and broadcast to client
@@ -264,7 +264,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Stream TTS audio back to client
     - _Requirements: 6.7, 8.6, 8.7, 8.8, 8.9_
 
-  - [ ] 10.5 Implement TranscriptionConsumer and TTSConsumer
+  - [x] 10.5 Implement TranscriptionConsumer and TTSConsumer
     - Stream STT results at `/ws/v2/stt/transcription`
     - Stream TTS audio at `/ws/v2/tts/stream`
     - _Requirements: 6.8, 6.9_
@@ -275,15 +275,15 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Test unauthenticated connections close with code 4001
     - **Validates: Requirements 6.3, 6.10**
 
-- [ ] 11. Checkpoint - WebSocket Layer
+- [-] 11. Checkpoint - WebSocket Layer
   - Ensure WebSocket connections authenticate correctly
   - Verify event streaming works
   - Ask the user if questions arise
 
 ---
 
-- [ ] 12. Voice Session Management
-  - [ ] 12.1 Create Session and SessionEvent models with Django ORM
+- [x] 12. Voice Session Management
+  - [x] 12.1 Create Session and SessionEvent models with Django ORM
     - Create `Session` model extending TenantScopedModel
     - Add fields: project FK, api_key FK, status, config JSONField
     - Add metrics: duration_seconds, input_tokens, output_tokens, audio_duration_seconds
@@ -293,13 +293,13 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Create Django migrations
     - _Requirements: 8.1, 8.2, 8.5_
 
-  - [ ] 12.2 Implement SessionService
+  - [x] 12.2 Implement SessionService
     - Create sessions with voice, model, turn detection configuration
     - Track session metrics
     - Implement auto-termination for sessions exceeding 24 hours
     - _Requirements: 8.3, 8.4, 8.10_
 
-  - [ ] 12.3 Create session endpoints
+  - [x] 12.3 Create session endpoints
     - POST `/api/v2/sessions/` - Create session
     - GET `/api/v2/sessions/{id}/` - Get session details
     - POST `/api/v2/sessions/{id}/terminate/` - Terminate session
@@ -313,33 +313,33 @@ This implementation plan converts the Django SaaS Backend design into actionable
 
 ---
 
-- [ ] 13. Temporal Workflow Orchestration
-  - [ ] 13.1 Configure Temporal client
+- [x] 13. Temporal Workflow Orchestration
+  - [x] 13.1 Configure Temporal client
     - Create `config/temporal.py` with client configuration
     - Connect to Temporal server with namespace isolation
     - Create Django management command for running workers
     - _Requirements: 9.1, 9.2_
 
-  - [ ] 13.2 Implement TenantAwareWorkflow base
+  - [x] 13.2 Implement TenantAwareWorkflow base
     - Maintain tenant context throughout workflow execution
     - Pass tenant_id as workflow input
     - _Requirements: 9.3_
 
-  - [ ] 13.3 Create voice processing workflows
+  - [x] 13.3 Create voice processing workflows
     - Implement STT workflow with activities for audio processing
     - Implement TTS workflow with activities for synthesis
     - Implement LLM workflow with activities for response generation
     - Configure retry policies (max 3 attempts, exponential backoff)
     - _Requirements: 9.6, 9.7, 9.8, 9.4, 9.9_
 
-  - [ ] 13.4 Create scheduled workflows
+  - [x] 13.4 Create scheduled workflows
     - Implement cleanup_expired_sessions (hourly)
     - Implement sync_billing_usage (15 minutes)
     - Implement aggregate_metrics (5 minutes)
     - Configure Temporal schedules
     - _Requirements: 9.5_
 
-  - [ ] 13.5 Configure task queue routing
+  - [x] 13.5 Configure task queue routing
     - Set up queues: default, voice-processing, billing, notifications
     - Route workflows to appropriate queues
     - _Requirements: 9.10_
@@ -349,21 +349,21 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Test failed activities retry up to 3 times with exponential backoff
     - **Validates: Requirements 9.9**
 
-- [ ] 14. Checkpoint - Workflow Orchestration
+- [-] 14. Checkpoint - Workflow Orchestration
   - Ensure Temporal workflows execute correctly
   - Verify scheduled workflows run on time
   - Ask the user if questions arise
 
 ---
 
-- [ ] 15. Caching and Rate Limiting
-  - [ ] 15.1 Implement CacheService
+- [x] 15. Caching and Rate Limiting
+  - [x] 15.1 Implement CacheService
     - Use Redis with tenant-prefixed keys for isolation
     - Implement get, set, delete, get_or_set operations
     - Create `@cached` decorator with configurable TTL
     - _Requirements: 10.1, 10.2, 10.3_
 
-  - [ ] 15.2 Implement RateLimitMiddleware
+  - [x] 15.2 Implement RateLimitMiddleware
     - Implement token bucket rate limiting
     - Apply limits per IP (unauthenticated), user (authenticated), or API key
     - Return rate limit headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
@@ -383,18 +383,18 @@ This implementation plan converts the Django SaaS Backend design into actionable
 
 ---
 
-- [ ] 16. Logging and Observability
-  - [ ] 16.1 Configure structlog
+- [x] 16. Logging and Observability
+  - [x] 16.1 Configure structlog
     - Set up structured JSON logging for production
     - Bind user_id and tenant_id to log context
     - _Requirements: 11.1, 11.4_
 
-  - [ ] 16.2 Implement RequestLoggingMiddleware
+  - [x] 16.2 Implement RequestLoggingMiddleware
     - Log all requests with: request_id, method, path, status_code, duration_ms, client_ip
     - Generate unique request_id and return in X-Request-ID header
     - _Requirements: 11.2, 11.3_
 
-  - [ ] 16.3 Configure Prometheus metrics
+  - [x] 16.3 Configure Prometheus metrics
     - Track HTTP metrics: http_requests_total, http_request_duration_seconds
     - Track WebSocket metrics: websocket_connections, websocket_messages_total
     - Track business metrics: tenants_total, sessions_total, session_duration_seconds, active_sessions
@@ -410,8 +410,8 @@ This implementation plan converts the Django SaaS Backend design into actionable
 
 ---
 
-- [ ] 17. Audit Logging
-  - [ ] 17.1 Create AuditLog model with Django ORM
+- [x] 17. Audit Logging
+  - [x] 17.1 Create AuditLog model with Django ORM
     - Add fields: timestamp, actor_id, actor_email, actor_type, tenant FK, ip_address
     - Add fields: action, resource_type, resource_id, description, old_values JSONField, new_values JSONField
     - Define action choices: create, update, delete, login, logout, api_call, permission_change, settings_change, billing_event
@@ -421,12 +421,12 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Create Django migrations
     - _Requirements: 12.1, 12.2, 12.5_
 
-  - [ ] 17.2 Implement AuditMiddleware
+  - [x] 17.2 Implement AuditMiddleware
     - Automatically log all write operations (POST, PUT, PATCH, DELETE)
     - Create `AuditLog.log()` class method for manual logging
     - _Requirements: 12.3, 12.4_
 
-  - [ ] 17.3 Create audit API endpoints
+  - [x] 17.3 Create audit API endpoints
     - GET `/api/v2/audit/` - List audit logs with filtering
     - Support filtering by tenant, actor, action, resource_type, date range
     - Support CSV export
@@ -441,8 +441,8 @@ This implementation plan converts the Django SaaS Backend design into actionable
 
 ---
 
-- [ ] 18. Exception Handling
-  - [ ] 18.1 Create exception hierarchy
+- [x] 18. Exception Handling
+  - [x] 18.1 Create exception hierarchy
     - Create `APIException` base class with status_code, error_code, default_message
     - Create validation errors: ValidationError (400)
     - Create auth errors: AuthenticationError (401), TokenExpiredError (401), PermissionDeniedError (403)
@@ -450,7 +450,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Create other errors: NotFoundError (404), ConflictError (409), RateLimitError (429)
     - _Requirements: 13.2, 13.3, 13.4, 13.5_
 
-  - [ ] 18.2 Implement ExceptionMiddleware
+  - [x] 18.2 Implement ExceptionMiddleware
     - Catch all exceptions and return JSON responses
     - Return generic error without stack trace in production
     - Include stack trace in development
@@ -462,15 +462,15 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Test production mode returns generic error without stack traces
     - **Validates: Requirements 13.6**
 
-- [ ] 19. Checkpoint - Observability
+- [-] 19. Checkpoint - Observability
   - Ensure logging, metrics, and audit work correctly
   - Verify exception handling returns proper responses
   - Ask the user if questions arise
 
 ---
 
-- [ ] 20. Security Middleware
-  - [ ] 20.1 Configure SecurityMiddleware
+- [x] 20. Security Middleware
+  - [x] 20.1 Configure SecurityMiddleware
     - Enforce HTTPS redirect in production
     - Set HSTS header with 1 year max-age
     - Set Content-Security-Policy header
@@ -480,7 +480,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Set Permissions-Policy restricting sensitive APIs
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7_
 
-  - [ ] 20.2 Configure CORS and session security
+  - [x] 20.2 Configure CORS and session security
     - Configure CORS to allow only configured origins with credentials
     - Set session cookies: secure, httpOnly, sameSite=Lax
     - Enable CSRF protection for state-changing operations
@@ -488,15 +488,15 @@ This implementation plan converts the Django SaaS Backend design into actionable
 
 ---
 
-- [ ] 21. HashiCorp Vault Integration
-  - [ ] 21.1 Create Vault client
+- [x] 21. HashiCorp Vault Integration
+  - [x] 21.1 Create Vault client
     - Connect to Vault server with AppRole authentication
     - Retrieve database credentials dynamically
     - Retrieve API keys and tokens from KV secrets engine v2
     - Cache secrets with configurable TTL and automatic refresh
     - _Requirements: 15.1, 15.2, 15.3, 15.4_
 
-  - [ ] 21.2 Configure Vault policies and encryption
+  - [x] 21.2 Configure Vault policies and encryption
     - Define access policies per service: backend, temporal-worker, keycloak
     - Use Transit engine to encrypt sensitive tenant data (API keys, webhook secrets)
     - Configure PKI for internal TLS certificates
@@ -506,20 +506,20 @@ This implementation plan converts the Django SaaS Backend design into actionable
 
 ---
 
-- [ ] 22. Billing Integration
-  - [ ] 22.1 Create Lago client
+- [x] 22. Billing Integration
+  - [x] 22.1 Create Lago client
     - Sync tenants as customers with external_id, name, metadata
     - Assign subscriptions based on tenant tier
     - _Requirements: 16.1, 16.2_
 
-  - [ ] 22.2 Implement BillingService
+  - [x] 22.2 Implement BillingService
     - Track usage events: sessions, api_calls, audio_minutes, tokens
     - Create Temporal workflow for billing sync (every 15 minutes)
     - Handle Lago webhooks for subscription and invoice events
     - Emit billing.alert event when tenant exceeds limits
     - _Requirements: 16.3, 16.4, 16.5, 16.7_
 
-  - [ ] 22.3 Create billing API endpoints
+  - [x] 22.3 Create billing API endpoints
     - GET `/api/v2/billing/usage/` - Current usage
     - GET `/api/v2/billing/projected/` - Projected costs
     - GET `/api/v2/billing/invoices/` - Invoice history
@@ -528,14 +528,14 @@ This implementation plan converts the Django SaaS Backend design into actionable
 ---
 
 - [ ] 23. Docker and Deployment
-  - [ ] 23.1 Create Dockerfile
+  - [x] 23.1 Create Dockerfile
     - Multi-stage build with Python 3.12
     - Run as non-root user
     - Include health check
     - Configure Gunicorn with Uvicorn workers
     - _Requirements: 17.1, 17.2, 17.3, 17.7_
 
-  - [ ] 23.2 Create Docker Compose configuration
+  - [x] 23.2 Create Docker Compose configuration
     - Define services: backend, temporal, temporal-ui, temporal-worker, vault, postgres, redis, keycloak, spicedb, nginx, prometheus, grafana
     - Configure memory limits and reservations (15GB total)
     - Configure persistent volumes for all stateful services
@@ -543,13 +543,13 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Configure production-tuned PostgreSQL settings
     - _Requirements: 17.4_
 
-  - [ ] 23.3 Create Kubernetes manifests
+  - [x] 23.3 Create Kubernetes manifests
     - Create Deployment with liveness and readiness probes
     - Create HorizontalPodAutoscaler based on CPU and memory
     - Configure graceful shutdown with connection draining
     - _Requirements: 17.5, 17.6, 17.8_
 
-  - [ ] 23.4 Create configuration files
+  - [x] 23.4 Create configuration files
     - Create `.env.example` with all required environment variables
     - Create Temporal dynamic config
     - Create Vault policies

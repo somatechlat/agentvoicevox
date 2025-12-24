@@ -315,3 +315,62 @@ class UserService:
         Count active users in a tenant.
         """
         return User.objects.filter(tenant=tenant, is_active=True).count()
+
+    @staticmethod
+    @transaction.atomic
+    def sync_from_jwt(jwt_data: Dict[str, Any]) -> Optional[User]:
+        """
+        Sync user from JWT claims.
+
+        Creates or updates user based on Keycloak JWT data.
+
+        Args:
+            jwt_data: Dictionary with user_id, tenant_id, email, first_name, last_name, roles
+
+        Returns:
+            User instance or None if tenant not found
+        """
+        keycloak_id = jwt_data.get("user_id")
+        tenant_id = jwt_data.get("tenant_id")
+        email = jwt_data.get("email")
+
+        if not keycloak_id or not email:
+            return None
+
+        # Get tenant
+        if tenant_id:
+            try:
+                tenant = Tenant.objects.get(id=tenant_id)
+            except Tenant.DoesNotExist:
+                return None
+        else:
+            return None
+
+        # Determine role from JWT roles
+        jwt_roles = jwt_data.get("roles", [])
+        role = "viewer"  # Default role
+        if "sysadmin" in jwt_roles:
+            role = "sysadmin"
+        elif "admin" in jwt_roles:
+            role = "admin"
+        elif "developer" in jwt_roles:
+            role = "developer"
+        elif "operator" in jwt_roles:
+            role = "operator"
+        elif "billing" in jwt_roles:
+            role = "billing"
+
+        user, created = UserService.create_or_update_from_keycloak(
+            keycloak_id=keycloak_id,
+            email=email,
+            tenant=tenant,
+            first_name=jwt_data.get("first_name", ""),
+            last_name=jwt_data.get("last_name", ""),
+            role=role,
+        )
+
+        # Update last login
+        if not created:
+            user.update_last_login()
+
+        return user

@@ -1,0 +1,222 @@
+# ==========================================================================
+# Prometheus Alert Rules for AgentVoiceBox Backend
+# ==========================================================================
+
+groups:
+  - name: backend
+    rules:
+      # ==========================================================================
+      # API Health
+      # ==========================================================================
+      - alert: BackendDown
+        expr: up{job="avb-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend service is down"
+          description: "Backend service {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="avb-backend", status=~"5.."}[5m])) 
+          / sum(rate(http_requests_total{job="avb-backend"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% for the last 5 minutes."
+
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="avb-backend"}[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile latency is above 2 seconds."
+
+      # ==========================================================================
+      # Resource Usage
+      # ==========================================================================
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes{job="avb-backend"} 
+          / 1024 / 1024 / 1024 > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Backend memory usage is above 90%."
+
+      - alert: HighCPUUsage
+        expr: |
+          rate(process_cpu_seconds_total{job="avb-backend"}[5m]) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "Backend CPU usage is above 90%."
+
+      # ==========================================================================
+      # Database
+      # ==========================================================================
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          db_pool_connections_used{job="avb-backend"} 
+          / db_pool_connections_max{job="avb-backend"} > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Database connection pool is above 90% utilization."
+
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket{job="avb-backend"}[5m])) by (le)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries"
+          description: "95th percentile database query time is above 1 second."
+
+      # ==========================================================================
+      # WebSocket
+      # ==========================================================================
+      - alert: HighWebSocketConnections
+        expr: websocket_connections{job="avb-backend"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High WebSocket connection count"
+          description: "WebSocket connections exceed 1000."
+
+      # ==========================================================================
+      # Rate Limiting
+      # ==========================================================================
+      - alert: HighRateLimitHits
+        expr: |
+          sum(rate(rate_limit_exceeded_total{job="avb-backend"}[5m])) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate limit hits"
+          description: "Rate limiting is being triggered frequently."
+
+      # ==========================================================================
+      # Business Metrics
+      # ==========================================================================
+      - alert: NoActiveSessions
+        expr: active_sessions{job="avb-backend"} == 0
+        for: 30m
+        labels:
+          severity: info
+        annotations:
+          summary: "No active voice sessions"
+          description: "No voice sessions have been active for 30 minutes."
+
+      - alert: SessionErrorRate
+        expr: |
+          sum(rate(sessions_total{job="avb-backend", status="error"}[5m])) 
+          / sum(rate(sessions_total{job="avb-backend"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High session error rate"
+          description: "Session error rate is above 10%."
+
+  - name: temporal
+    rules:
+      - alert: TemporalDown
+        expr: up{job="temporal"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Temporal server is down"
+          description: "Temporal server has been down for more than 1 minute."
+
+      - alert: TemporalWorkerDown
+        expr: up{job="avb-temporal-worker"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Temporal worker is down"
+          description: "Temporal worker has been down for more than 1 minute."
+
+      - alert: WorkflowFailureRate
+        expr: |
+          sum(rate(temporal_workflows_total{status="failed"}[5m])) 
+          / sum(rate(temporal_workflows_total[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High workflow failure rate"
+          description: "Workflow failure rate is above 10%."
+
+  - name: infrastructure
+    rules:
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been down for more than 1 minute."
+
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL has been down for more than 1 minute."
+
+      - alert: VaultDown
+        expr: up{job="vault"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Vault is down"
+          description: "HashiCorp Vault has been down for more than 1 minute."
+
+      - alert: VaultSealed
+        expr: vault_core_unsealed == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Vault is sealed"
+          description: "HashiCorp Vault is sealed and cannot serve requests."
+
+      - alert: KeycloakDown
+        expr: up{job="keycloak"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Keycloak is down"
+          description: "Keycloak has been down for more than 1 minute."
+
+      - alert: SpiceDBDown
+        expr: up{job="spicedb"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SpiceDB is down"
+          description: "SpiceDB has been down for more than 1 minute."

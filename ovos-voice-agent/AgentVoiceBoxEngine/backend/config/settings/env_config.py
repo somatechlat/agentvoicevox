@@ -136,6 +136,10 @@ class Settings(BaseSettings):
         default="secret",
         description="Vault KV mount point",
     )
+    vault_fail_fast: bool = Field(
+        default=True,
+        description="Fail startup if Vault is unavailable",
+    )
 
     # ==========================================================================
     # LAGO BILLING

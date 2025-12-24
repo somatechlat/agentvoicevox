@@ -1,11 +1,9 @@
 """
-Audit log models.
+Audit log models for tracking all system changes.
 
-Immutable audit logs for tracking all administrative actions.
-Logs cannot be updated or deleted once created.
+Audit logs are immutable - they cannot be updated or deleted.
 """
-from typing import Any, Dict, Optional
-from uuid import UUID
+import uuid
 
 from django.db import models
 from django.utils import timezone
@@ -14,70 +12,36 @@ from apps.tenants.models import Tenant
 
 
 class AuditLogManager(models.Manager):
-    """Manager for AuditLog with convenience methods."""
+    """Manager for AuditLog model."""
 
-    def log(
-        self,
-        tenant: Optional[Tenant],
-        action: str,
-        resource_type: str,
-        resource_id: Optional[str] = None,
-        actor_id: Optional[str] = None,
-        actor_email: Optional[str] = None,
-        actor_type: str = "user",
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        description: str = "",
-        old_values: Optional[Dict[str, Any]] = None,
-        new_values: Optional[Dict[str, Any]] = None,
-    ) -> "AuditLog":
-        """
-        Create an audit log entry.
+    def for_tenant(self, tenant: Tenant):
+        """Get logs for a specific tenant."""
+        return self.filter(tenant=tenant)
 
-        Args:
-            tenant: Tenant the action was performed in
-            action: Action type (create, update, delete, etc.)
-            resource_type: Type of resource affected
-            resource_id: ID of the resource affected
-            actor_id: ID of the actor (user or API key)
-            actor_email: Email of the actor
-            actor_type: Type of actor (user, api_key, system)
-            ip_address: IP address of the request
-            user_agent: User agent of the request
-            description: Human-readable description
-            old_values: Previous values (for updates)
-            new_values: New values (for creates/updates)
+    def for_resource(self, resource_type: str, resource_id: str):
+        """Get logs for a specific resource."""
+        return self.filter(resource_type=resource_type, resource_id=resource_id)
 
-        Returns:
-            Created AuditLog instance
-        """
-        return self.create(
-            tenant=tenant,
-            action=action,
-            resource_type=resource_type,
-            resource_id=resource_id,
-            actor_id=actor_id,
-            actor_email=actor_email,
-            actor_type=actor_type,
-            ip_address=ip_address,
-            user_agent=user_agent,
-            description=description,
-            old_values=old_values or {},
-            new_values=new_values or {},
-        )
+    def for_actor(self, actor_id: str):
+        """Get logs for a specific actor."""
+        return self.filter(actor_id=actor_id)
+
+    def recent(self, days: int = 30):
+        """Get recent logs."""
+        cutoff = timezone.now() - timezone.timedelta(days=days)
+        return self.filter(created_at__gte=cutoff)
 
 
 class AuditLog(models.Model):
     """
-    Immutable audit log model.
+    Immutable audit log entry.
 
-    Records all administrative actions for compliance and debugging.
-    Logs cannot be updated or deleted once created.
+    Records all significant actions in the system.
+    Cannot be updated or deleted after creation.
     """
 
     class Action(models.TextChoices):
-        """Audit log action types."""
-
+        """Audit action types."""
         CREATE = "create", "Create"
         UPDATE = "update", "Update"
         DELETE = "delete", "Delete"
@@ -87,94 +51,110 @@ class AuditLog(models.Model):
         PERMISSION_CHANGE = "permission_change", "Permission Change"
         SETTINGS_CHANGE = "settings_change", "Settings Change"
         BILLING_EVENT = "billing_event", "Billing Event"
+        SESSION_START = "session_start", "Session Start"
+        SESSION_END = "session_end", "Session End"
         KEY_CREATED = "key_created", "API Key Created"
-        KEY_ROTATED = "key_rotated", "API Key Rotated"
         KEY_REVOKED = "key_revoked", "API Key Revoked"
+        KEY_ROTATED = "key_rotated", "API Key Rotated"
 
     class ActorType(models.TextChoices):
         """Actor types."""
-
         USER = "user", "User"
         API_KEY = "api_key", "API Key"
         SYSTEM = "system", "System"
 
-    # Primary key (auto-increment for performance)
-    id = models.BigAutoField(primary_key=True)
-
-    # Tenant association (nullable for system-level events)
-    tenant = models.ForeignKey(
-        Tenant,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="audit_logs",
-        help_text="Tenant this action was performed in",
-    )
-
-    # Actor information
-    actor_id = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="ID of the actor (user ID or API key ID)",
-    )
-    actor_email = models.EmailField(
-        blank=True,
-        help_text="Email of the actor",
-    )
-    actor_type = models.CharField(
-        max_length=20,
-        choices=ActorType.choices,
-        default=ActorType.USER,
-        help_text="Type of actor",
-    )
-
-    # Request context
-    ip_address = models.GenericIPAddressField(
-        null=True,
-        blank=True,
-        help_text="IP address of the request",
-    )
-    user_agent = models.TextField(
-        blank=True,
-        help_text="User agent of the request",
-    )
-
-    # Action details
-    action = models.CharField(
-        max_length=50,
-        choices=Action.choices,
-        help_text="Type of action performed",
-    )
-    resource_type = models.CharField(
-        max_length=64,
-        help_text="Type of resource affected",
-    )
-    resource_id = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text="ID of the resource affected",
-    )
-    description = models.TextField(
-        blank=True,
-        help_text="Human-readable description of the action",
-    )
-
-    # Change tracking
-    old_values = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Previous values before the change",
-    )
-    new_values = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="New values after the change",
+    # Primary key
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
 
     # Timestamp (immutable)
     created_at = models.DateTimeField(
         default=timezone.now,
         editable=False,
-        help_text="When the action was performed",
+        help_text="When the action occurred",
+    )
+
+    # Actor information
+    actor_id = models.CharField(
+        max_length=255,
+        help_text="ID of the actor (user ID, API key ID, or 'system')",
+    )
+    actor_email = models.EmailField(
+        blank=True,
+        help_text="Email of the actor (if user)",
+    )
+    actor_type = models.CharField(
+        max_length=20,
+        choices=ActorType.choices,
+        help_text="Type of actor",
+    )
+
+    # Tenant (nullable for system-level actions)
+    tenant = models.ForeignKey(
+        Tenant,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="audit_logs",
+        help_text="Tenant context",
+    )
+
+    # Request information
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        help_text="Client IP address",
+    )
+    user_agent = models.TextField(
+        blank=True,
+        help_text="Client user agent",
+    )
+    request_id = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Request ID for correlation",
+    )
+
+    # Action details
+    action = models.CharField(
+        max_length=50,
+        choices=Action.choices,
+        help_text="Action performed",
+    )
+    resource_type = models.CharField(
+        max_length=100,
+        help_text="Type of resource affected",
+    )
+    resource_id = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="ID of resource affected",
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Human-readable description",
+    )
+
+    # Change tracking
+    old_values = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Previous values (for updates)",
+    )
+    new_values = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="New values (for creates/updates)",
+    )
+
+    # Additional metadata
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Additional context",
     )
 
     # Manager
@@ -184,30 +164,188 @@ class AuditLog(models.Model):
         db_table = "audit_logs"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["tenant", "action"]),
-            models.Index(fields=["tenant", "created_at"]),
             models.Index(fields=["actor_id"]),
-            models.Index(fields=["resource_type", "resource_id"]),
+            models.Index(fields=["actor_type"]),
+            models.Index(fields=["action"]),
+            models.Index(fields=["resource_type"]),
+            models.Index(fields=["resource_id"]),
             models.Index(fields=["created_at"]),
+            models.Index(fields=["tenant", "created_at"]),
+            models.Index(fields=["tenant", "action"]),
         ]
 
     def __str__(self) -> str:
-        return f"{self.action} {self.resource_type} by {self.actor_email or self.actor_id}"
+        return f"{self.action} {self.resource_type} by {self.actor_type}:{self.actor_id}"
 
     def save(self, *args, **kwargs):
         """
         Override save to enforce immutability.
 
-        Audit logs can only be created, not updated.
+        Only allows creation, not updates.
         """
-        if self.pk is not None:
-            raise ValueError("Audit logs cannot be updated")
+        if self.pk and AuditLog.objects.filter(pk=self.pk).exists():
+            raise ValueError("Audit logs cannot be modified after creation")
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         """
         Override delete to prevent deletion.
 
-        Audit logs cannot be deleted.
+        Audit logs are immutable and cannot be deleted.
         """
         raise ValueError("Audit logs cannot be deleted")
+
+    @classmethod
+    def log(
+        cls,
+        action: str,
+        resource_type: str,
+        actor_id: str,
+        actor_type: str,
+        tenant: Tenant = None,
+        resource_id: str = "",
+        actor_email: str = "",
+        ip_address: str = None,
+        user_agent: str = "",
+        request_id: str = "",
+        description: str = "",
+        old_values: dict = None,
+        new_values: dict = None,
+        metadata: dict = None,
+    ) -> "AuditLog":
+        """
+        Create an audit log entry.
+
+        This is the primary method for creating audit logs.
+        """
+        return cls.objects.create(
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            actor_id=actor_id,
+            actor_email=actor_email,
+            actor_type=actor_type,
+            tenant=tenant,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            request_id=request_id,
+            description=description,
+            old_values=old_values or {},
+            new_values=new_values or {},
+            metadata=metadata or {},
+        )
+
+    @classmethod
+    def log_user_action(
+        cls,
+        user,
+        action: str,
+        resource_type: str,
+        resource_id: str = "",
+        description: str = "",
+        old_values: dict = None,
+        new_values: dict = None,
+        request=None,
+    ) -> "AuditLog":
+        """
+        Log an action performed by a user.
+
+        Convenience method that extracts user and request info.
+        """
+        ip_address = None
+        user_agent = ""
+        request_id = ""
+
+        if request:
+            ip_address = request.META.get("REMOTE_ADDR")
+            user_agent = request.META.get("HTTP_USER_AGENT", "")
+            request_id = getattr(request, "request_id", "")
+
+        return cls.log(
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            actor_id=str(user.id),
+            actor_email=user.email,
+            actor_type=cls.ActorType.USER,
+            tenant=user.tenant,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            request_id=request_id,
+            description=description,
+            old_values=old_values,
+            new_values=new_values,
+        )
+
+    @classmethod
+    def log_api_key_action(
+        cls,
+        api_key,
+        action: str,
+        resource_type: str,
+        resource_id: str = "",
+        description: str = "",
+        old_values: dict = None,
+        new_values: dict = None,
+        request=None,
+    ) -> "AuditLog":
+        """
+        Log an action performed via API key.
+
+        Convenience method for API key authenticated requests.
+        """
+        ip_address = None
+        user_agent = ""
+        request_id = ""
+
+        if request:
+            ip_address = request.META.get("REMOTE_ADDR")
+            user_agent = request.META.get("HTTP_USER_AGENT", "")
+            request_id = getattr(request, "request_id", "")
+
+        return cls.log(
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            actor_id=str(api_key.id),
+            actor_email="",
+            actor_type=cls.ActorType.API_KEY,
+            tenant=api_key.tenant,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            request_id=request_id,
+            description=description,
+            old_values=old_values,
+            new_values=new_values,
+        )
+
+    @classmethod
+    def log_system_action(
+        cls,
+        action: str,
+        resource_type: str,
+        resource_id: str = "",
+        description: str = "",
+        tenant: Tenant = None,
+        old_values: dict = None,
+        new_values: dict = None,
+        metadata: dict = None,
+    ) -> "AuditLog":
+        """
+        Log a system-initiated action.
+
+        For automated processes, scheduled tasks, etc.
+        """
+        return cls.log(
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            actor_id="system",
+            actor_email="",
+            actor_type=cls.ActorType.SYSTEM,
+            tenant=tenant,
+            description=description,
+            old_values=old_values,
+            new_values=new_values,
+            metadata=metadata,
+        )

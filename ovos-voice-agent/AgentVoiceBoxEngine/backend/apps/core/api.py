@@ -54,20 +54,21 @@ def handle_validation_error(request, exc: NinjaValidationError):
 # ==========================================================================
 # REGISTER ROUTERS
 # ==========================================================================
-# Import and register routers after api is created to avoid circular imports
 def register_routers():
     """Register all API routers."""
-    from apps.tenants.api import router as tenants_router
-    from apps.users.api import router as users_router
-    from apps.projects.api import router as projects_router
     from apps.api_keys.api import router as api_keys_router
-    from apps.sessions.api import router as sessions_router
-    from apps.billing.api import router as billing_router
-    from apps.voice.api import router as voice_router
-    from apps.themes.api import router as themes_router
     from apps.audit.api import router as audit_router
+    from apps.billing.api import router as billing_router
     from apps.notifications.api import router as notifications_router
-    
+    from apps.projects.api import router as projects_router
+    from apps.sessions.api import router as sessions_router
+    from apps.tenants.api import router as tenants_router
+    from apps.tenants.api_admin import router as admin_tenants_router
+    from apps.themes.api import router as themes_router
+    from apps.users.api import router as users_router
+    from apps.users.api_admin import router as admin_users_router
+    from apps.voice.api import router as voice_router
+
     # Public routers
     api.add_router("/tenants", tenants_router, tags=["Tenants"])
     api.add_router("/users", users_router, tags=["Users"])
@@ -79,11 +80,8 @@ def register_routers():
     api.add_router("/themes", themes_router, tags=["Themes"])
     api.add_router("/audit", audit_router, tags=["Audit"])
     api.add_router("/notifications", notifications_router, tags=["Notifications"])
-    
+
     # Admin routers (SYSADMIN only)
-    from apps.tenants.api_admin import router as admin_tenants_router
-    from apps.users.api_admin import router as admin_users_router
-    
     api.add_router("/admin/tenants", admin_tenants_router, tags=["Admin - Tenants"])
     api.add_router("/admin/users", admin_users_router, tags=["Admin - Users"])
 
