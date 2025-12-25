@@ -1,10 +1,12 @@
 "use client";
 
-import { Bell, Search, Menu, X } from "lucide-react";
+/**
+ * Header Component - Clean, minimal design
+ */
+
+import { Bell, Search, Menu, X, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
-import { Badge } from "@/components/ui/badge";
 
 interface HeaderProps {
   title: string;
@@ -16,83 +18,71 @@ interface HeaderProps {
 export function Header({ title, description, onMenuClick, isMobileMenuOpen }: HeaderProps) {
   const { user } = useAuth();
 
-  // Format current date in Verve style
-  const today = new Date();
-  const dateString = today.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center gap-4 px-4 md:px-6">
+    <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 md:px-6">
+      {/* Left side - Mobile menu + Title */}
+      <div className="flex items-center gap-4">
         {/* Mobile menu button */}
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden"
+          className="md:hidden h-8 w-8"
           onClick={onMenuClick}
           aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={isMobileMenuOpen}
         >
           {isMobileMenuOpen ? (
-            <X className="h-5 w-5" aria-hidden="true" />
+            <X className="h-4 w-4" />
           ) : (
-            <Menu className="h-5 w-5" aria-hidden="true" />
+            <Menu className="h-4 w-4" />
           )}
         </Button>
 
-        {/* Page title and date */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold truncate">{title}</h1>
-            {/* Verve-style date display */}
-            <span className="hidden text-sm text-muted-foreground lg:block">
-              {dateString}
-            </span>
-          </div>
+        {/* Page title */}
+        <div>
+          <h1 className="text-base font-semibold text-foreground">{title}</h1>
           {description && (
-            <p className="text-sm text-muted-foreground truncate">{description}</p>
+            <p className="text-xs text-muted-foreground">{description}</p>
           )}
         </div>
+      </div>
 
-        {/* Search - hidden on mobile */}
-        <div className="hidden w-64 lg:block">
+      {/* Right side - Actions */}
+      <div className="flex items-center gap-2">
+        {/* Search - Desktop only */}
+        <div className="hidden lg:block">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
-            <Input
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
               type="search"
               placeholder="Search..."
-              className="pl-9 h-9 rounded-full bg-muted/50 border-0 focus-visible:ring-1"
-              aria-label="Search"
+              className="h-9 w-64 pl-9 pr-4 text-sm bg-muted border-0 rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground bg-background px-1.5 py-0.5 rounded border border-border">
+              ⌘K
+            </kbd>
           </div>
         </div>
 
-        {/* Notifications */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="relative"
-          aria-label="View notifications"
-        >
-          <Bell className="h-5 w-5" aria-hidden="true" />
-          {/* Notification badge - show when there are unread notifications */}
-          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-primary" />
-          <span className="sr-only">Notifications (1 unread)</span>
+        {/* Help */}
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+          <HelpCircle className="h-4 w-4" />
         </Button>
 
-        {/* User info - hidden on mobile */}
-        <div className="hidden items-center gap-2 md:flex">
-          {user?.tenantId && (
-            <Badge variant="secondary" className="rounded-full px-3">
-              {user.tenantId.slice(0, 8)}...
-            </Badge>
-          )}
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
+        {/* Notifications */}
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground relative">
+          <Bell className="h-4 w-4" />
+          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-destructive" />
+        </Button>
+
+        {/* User Avatar - Desktop only */}
+        <div className="hidden md:flex items-center gap-2 pl-2 border-l border-border ml-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
             {user?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
+          </div>
+          <div className="hidden xl:block">
+            <p className="text-sm font-medium text-foreground">
+              {user?.username || user?.email?.split("@")[0] || "User"}
+            </p>
           </div>
         </div>
       </div>

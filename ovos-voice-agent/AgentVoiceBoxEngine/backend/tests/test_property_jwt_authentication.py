@@ -27,42 +27,43 @@ from hypothesis import strategies as st
 # ==========================================================================
 
 # RSA key pair for testing (DO NOT USE IN PRODUCTION)
+# Generated using cryptography library
 TEST_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
-MIIEowIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF8PbnGy0AHB7MmM2rMHRqWdSpYfE
-9HhSBqsHIBdqaJBmkHaJ5sM0h3d3EAi0fZlHLKgZKnPtBgkXwmHLWUVOHEDP4Cek
-sIhFjzCnPyQ9Y8P9IQMV5raAzF7xqtc6mnLWnMyBrMTiB8OockFN1Gp5LTcHM1Kn
-nFtNLfXkkDvmhMQN0BPnMxrPwEx2MbLCkJRzF1M5xKLYpFlZjPsLmsTrWU3Ah6F2
-L5EZFZS6sSgLkkyNSyYQ5xwG5xfnhLMY1FC/1bLrwPM2pTBWN1y5j5Kx5lKrdsNS
-nnQfOkgqfDoxHE/0Amxkkr5Bqjm2v8SFEHlpGwIDAQABAoIBAFHMmvPKL9JtCe6z
-xU7Kk1VYT0WPgUeqRnVdlnkv0EYP0r6k8h8fTsNAoMr1H7D9ohWLeJ5L8onLLV8N
-zsBPQ3L5FvJlybCfCLja2dOANsT0Dj+xLd/rPQeRcO2MKVwK5CtjfLnAtgFXkOXv
-UcrznTJTjFmC71Iq3XFQG/I5d0LjWLfsq2F3S98l/phLB7nZxVMVzfGLhCPGqsVs
-z5CI3S/qZmH5hJpnKiPBfnpMFqgXXKlUqHPVTLXsLys5pWNfzsBDaiP00kwHq0+t
-VHbKT5K3j7vYJrYfmpkHBzlpMhPPklL/yfAUWLWgVBOm5yRfiJMwUa6wkGwsLPF5
-PNhBqYECgYEA7Hl+FhvBfv8VqNpglOOqG1P1nuHHDhvLkuE8Ii5eqWqYTYfYdHVr
-g8h3DqGmYqjJ4JzRYfYkN5S3L/hRPRRM5VzPknqFrDeNtjwTTfDVfeem4F9hhfGs
-WO1z7dXD5mTUkJwGb3sHIbNhKfaP2p5d7f7AxFv0aMoLw0I7B2nnxasCgYEA4wOv
-sHOKZNPiGD1l/S1PB8LFTKGqVc8yFn3qTAOw0xP5dLX/V7B5Z5Hj8XnPZAKVcYwR
-LhS7OYSQ5L7vphKxqDOyZSlKaMLS3vzVOYFU+lDve9I7A8sHSz3GnQpXwHpYcnBN
-kT3PNhJVdJJZ3qB8ONNZ5PbNfG7yrthKkHFMU4ECgYBqBpLAnp5v/hFqYk0DCXMR
-Fz8S5KJaOmPvD3HcxqChRRP7hie2F6bpR9DBfaOkHQqLzTMQ7vNFvGbYdRqP0i8D
-TiHBmMDg5LMKW6R7F8woSKPvM5xyMGItSx/cPyLIQ9EZmGHY3vCnw8ePqwXmQGdN
-1HqS9EAbSjZgDLTBe/DLqwKBgETqMc1n7Wz9Baq3aLz/5vz5VqLwKI8qP5LKCwGV
-c5Tb+Kn6thG7fMmUYrUq0/f/dguOv0cPWnaYf0hGwlPVSiRfPqpXpmbkb9SUNLmD
-Q7gfqHmMfBQv4icEyxZrHHxgO3TEk2ECvj6ziU+aNGrPmPxJRsH0OfbDoqf9xkP9
-xYABAoGBANu0I09UrZ4MYvyX0lqCe9LhMGBP+qYBVNL1PvHkTYf5hXmVqrpgkzLP
-dOFsjEcDUnPi7WKv4eDEswTSzPajigHYBfVTmwPfg9I3qdqprxhMk9hVyKFM8s/Y
-JCcJPmTrXf0e9F7LBjPKSfq5xHqgYqPVrFqMvKB5b0pkFQPf7FQo
+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
 -----END RSA PRIVATE KEY-----"""
 
 TEST_PUBLIC_KEY = """-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Z3VS5JJcds3xfn/ygWy
-F8PbnGy0AHB7MmM2rMHRqWdSpYfE9HhSBqsHIBdqaJBmkHaJ5sM0h3d3EAi0fZlH
-LKgZKnPtBgkXwmHLWUVOHEDP4CeksIhFjzCnPyQ9Y8P9IQMV5raAzF7xqtc6mnLW
-nMyBrMTiB8OockFN1Gp5LTcHM1KnnFtNLfXkkDvmhMQN0BPnMxrPwEx2MbLCkJRz
-F1M5xKLYpFlZjPsLmsTrWU3Ah6F2L5EZFZS6sSgLkkyNSyYQ5xwG5xfnhLMY1FC/
-1bLrwPM2pTBWN1y5j5Kx5lKrdsNSnnQfOkgqfDoxHE/0Amxkkr5Bqjm2v8SFEHlp
-GwIDAQAB
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnpCzm98SYj70wCwfamHM
+KL2G+BqTD6rC/Es5MCjggIFOgcP5aOpC/l2batzNgPAluUs35fKM2fn3BNl1+h8e
+NvDWO95F4JCahzHAFawp0fkCIVxlaGNBvWHS4rhOIEufKRo55LTPFF2aSlN41Bsx
+dz5pBOWibNonHziiRsazldgHoJi+ru4mAvg1iCUhZoso1UT62XLVLmHCb7pmVm8r
+nhyXCQTDAZJgTnxF+0zmI5CXFqdmkQwlHcOMQyWXR0zZe7ipK4u2DCGr5CzzBLjm
+JBf7259X8iiGd1aEbNutty5fXFqZCNXqTxfX78U1w7mRFvrwphkCNOGz59lWBzlg
+awIDAQAB
 -----END PUBLIC KEY-----"""
 
 
@@ -135,14 +136,29 @@ class TestJWTAuthenticationValidation:
 
     @pytest.fixture(autouse=True)
     def setup_keycloak_mock(self, monkeypatch):
-        """Mock Keycloak public key retrieval."""
+        """Mock Keycloak public key retrieval and audience validation."""
         from apps.core.middleware import authentication
+        from django.conf import settings
 
         # Mock the public key retrieval to return our test key
         monkeypatch.setattr(
             authentication.KeycloakAuthenticationMiddleware,
             "_get_keycloak_public_key",
             lambda self: TEST_PUBLIC_KEY,
+        )
+
+        # Ensure Keycloak config has correct audience for test tokens
+        monkeypatch.setattr(
+            settings,
+            "KEYCLOAK",
+            {
+                "URL": "http://localhost:8080",
+                "REALM": "agentvoicebox",
+                "CLIENT_ID": "agentvoicebox-backend",
+                "CLIENT_SECRET": "test",
+                "ALGORITHMS": ["RS256"],
+                "AUDIENCE": "agentvoicebox",
+            },
         )
 
     @pytest.mark.property
@@ -377,13 +393,28 @@ class TestJWTClaimsExtraction:
 
     @pytest.fixture(autouse=True)
     def setup_keycloak_mock(self, monkeypatch):
-        """Mock Keycloak public key retrieval."""
+        """Mock Keycloak public key retrieval and audience validation."""
         from apps.core.middleware import authentication
+        from django.conf import settings
 
         monkeypatch.setattr(
             authentication.KeycloakAuthenticationMiddleware,
             "_get_keycloak_public_key",
             lambda self: TEST_PUBLIC_KEY,
+        )
+
+        # Ensure Keycloak config has correct audience for test tokens
+        monkeypatch.setattr(
+            settings,
+            "KEYCLOAK",
+            {
+                "URL": "http://localhost:8080",
+                "REALM": "agentvoicebox",
+                "CLIENT_ID": "agentvoicebox-backend",
+                "CLIENT_SECRET": "test",
+                "ALGORITHMS": ["RS256"],
+                "AUDIENCE": "agentvoicebox",
+            },
         )
 
     @pytest.mark.property

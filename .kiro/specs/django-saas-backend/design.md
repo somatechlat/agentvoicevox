@@ -774,6 +774,496 @@ class AuditLog(models.Model):
 ```
 
 
+### 4.7 Granular Permission Models
+
+```python
+class PlatformRole(models.TextChoices):
+    """8 platform roles with hierarchical inheritance."""
+    SAAS_ADMIN = "saas_admin", "SaaS Administrator"
+    TENANT_ADMIN = "tenant_admin", "Tenant Administrator"
+    AGENT_ADMIN = "agent_admin", "Agent Administrator"
+    SUPERVISOR = "supervisor", "Supervisor"
+    OPERATOR = "operator", "Operator"
+    AGENT_USER = "agent_user", "Agent User"
+    VIEWER = "viewer", "Viewer"
+    BILLING_ADMIN = "billing_admin", "Billing Administrator"
+
+
+class PermissionMatrix(models.Model):
+    """
+    Platform-level permission matrix mapping roles to resource:action tuples.
+    Defines the default permissions for each role.
+    """
+    role = models.CharField(max_length=30, choices=PlatformRole.choices)
+    resource = models.CharField(max_length=50)  # e.g., "agents", "sessions", "billing"
+    action = models.CharField(max_length=30)    # e.g., "create", "read", "delete"
+    allowed = models.BooleanField(default=False)
+    conditions = models.JSONField(default=dict, blank=True)  # Optional contextual conditions
+    
+    class Meta:
+        db_table = "permission_matrix"
+        unique_together = ["role", "resource", "action"]
+        indexes = [
+            models.Index(fields=["role"]),
+            models.Index(fields=["resource", "action"]),
+        ]
+    
+    def __str__(self):
+        status = "✓" if self.allowed else "✗"
+        return f"{self.role}: {self.resource}:{self.action} [{status}]"
+
+
+class TenantPermissionOverride(TenantScopedModel):
+    """
+    Tenant-level permission overrides.
+    Allows tenant admins to customize permissions within their tenant.
+    """
+    role = models.CharField(max_length=30, choices=PlatformRole.choices)
+    resource = models.CharField(max_length=50)
+    action = models.CharField(max_length=30)
+    allowed = models.BooleanField()
+    conditions = models.JSONField(default=dict, blank=True)
+    
+    created_by = models.ForeignKey(
+        "users.User", 
+        on_delete=models.SET_NULL, 
+        null=True,
+        related_name="permission_overrides_created"
+    )
+    
+    class Meta:
+        db_table = "tenant_permission_overrides"
+        unique_together = ["tenant", "role", "resource", "action"]
+        indexes = [
+            models.Index(fields=["tenant", "role"]),
+        ]
+
+
+class UserRoleAssignment(TenantScopedModel):
+    """
+    User role assignments within a tenant.
+    Supports multiple roles per user.
+    """
+    user = models.ForeignKey(
+        "users.User",
+        on_delete=models.CASCADE,
+        related_name="role_assignments"
+    )
+    role = models.CharField(max_length=30, choices=PlatformRole.choices)
+    assigned_by = models.ForeignKey(
+        "users.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="role_assignments_made"
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = "user_role_assignments"
+        unique_together = ["tenant", "user", "role"]
+        indexes = [
+            models.Index(fields=["user", "role"]),
+            models.Index(fields=["tenant", "role"]),
+        ]
+```
+
+### 4.8 Permission Matrix Definition
+
+The following table defines the 65+ granular resource:action permission tuples mapped to the 8 platform roles:
+
+| Resource | Action | saas_admin | tenant_admin | agent_admin | supervisor | operator | agent_user | viewer | billing_admin |
+|----------|--------|------------|--------------|-------------|------------|----------|------------|--------|---------------|
+| **tenants** | read | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **tenants** | update | ✓ | ✓ | - | - | - | - | - | - |
+| **tenants** | delete | ✓ | - | - | - | - | - | - | - |
+| **tenants** | manage_users | ✓ | ✓ | - | - | - | - | - | - |
+| **tenants** | manage_settings | ✓ | ✓ | - | - | - | - | - | - |
+| **tenants** | view_audit | ✓ | ✓ | - | - | - | - | - | - |
+| **users** | create | ✓ | ✓ | - | - | - | - | - | - |
+| **users** | read | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - |
+| **users** | update | ✓ | ✓ | - | - | - | - | - | - |
+| **users** | delete | ✓ | ✓ | - | - | - | - | - | - |
+| **users** | assign_roles | ✓ | ✓ | - | - | - | - | - | - |
+| **agents** | create | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **agents** | read | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | - |
+| **agents** | update | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **agents** | delete | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **agents** | deploy | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **agents** | configure | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **personas** | create | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **personas** | read | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | - |
+| **personas** | update | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **personas** | delete | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **personas** | assign | ✓ | ✓ | ✓ | ✓ | - | - | - | - |
+| **sessions** | create | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | - | - |
+| **sessions** | read | ✓ | ✓ | ✓ | ✓ | ✓ | own | ✓ | - |
+| **sessions** | update | ✓ | ✓ | ✓ | ✓ | ✓ | - | - | - |
+| **sessions** | terminate | ✓ | ✓ | ✓ | ✓ | ✓ | own | - | - |
+| **sessions** | monitor | ✓ | ✓ | ✓ | ✓ | - | - | ✓ | - |
+| **sessions** | takeover | ✓ | ✓ | - | ✓ | - | - | - | - |
+| **conversations** | read | ✓ | ✓ | ✓ | ✓ | ✓ | own | ✓ | - |
+| **conversations** | export | ✓ | ✓ | ✓ | ✓ | - | - | - | - |
+| **conversations** | delete | ✓ | ✓ | - | - | - | - | - | - |
+| **conversations** | annotate | ✓ | ✓ | ✓ | ✓ | ✓ | - | - | - |
+| **api_keys** | create | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **api_keys** | read | ✓ | ✓ | ✓ | ✓ | - | - | ✓ | - |
+| **api_keys** | revoke | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **api_keys** | rotate | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **projects** | create | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **projects** | read | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | - |
+| **projects** | update | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **projects** | delete | ✓ | ✓ | - | - | - | - | - | - |
+| **projects** | manage_members | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **voice** | configure | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **voice** | read | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | - |
+| **voice** | test | ✓ | ✓ | ✓ | ✓ | - | - | - | - |
+| **voice** | deploy | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **themes** | create | ✓ | ✓ | - | - | - | - | - | - |
+| **themes** | read | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | - |
+| **themes** | update | ✓ | ✓ | - | - | - | - | - | - |
+| **themes** | delete | ✓ | ✓ | - | - | - | - | - | - |
+| **themes** | apply | ✓ | ✓ | - | - | - | - | - | - |
+| **billing** | read | ✓ | ✓ | - | - | - | - | - | ✓ |
+| **billing** | manage | ✓ | - | - | - | - | - | - | ✓ |
+| **billing** | export | ✓ | ✓ | - | - | - | - | - | ✓ |
+| **billing** | configure_plans | ✓ | - | - | - | - | - | - | - |
+| **analytics** | read | ✓ | ✓ | ✓ | ✓ | - | - | ✓ | ✓ |
+| **analytics** | export | ✓ | ✓ | - | ✓ | - | - | - | ✓ |
+| **analytics** | configure | ✓ | ✓ | - | - | - | - | - | - |
+| **audit** | read | ✓ | ✓ | - | - | - | - | - | - |
+| **audit** | export | ✓ | ✓ | - | - | - | - | - | - |
+| **notifications** | read | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **notifications** | configure | ✓ | ✓ | - | - | - | - | - | - |
+| **notifications** | send | ✓ | ✓ | ✓ | ✓ | - | - | - | - |
+| **workflows** | create | ✓ | ✓ | ✓ | - | - | - | - | - |
+| **workflows** | read | ✓ | ✓ | ✓ | ✓ | ✓ | - | ✓ | - |
+| **workflows** | execute | ✓ | ✓ | ✓ | ✓ | ✓ | - | - | - |
+| **workflows** | cancel | ✓ | ✓ | ✓ | ✓ | - | - | - | - |
+| **admin** | platform_settings | ✓ | - | - | - | - | - | - | - |
+| **admin** | tenant_management | ✓ | - | - | - | - | - | - | - |
+| **admin** | user_impersonation | ✓ | - | - | - | - | - | - | - |
+| **admin** | system_health | ✓ | - | - | - | - | - | - | - |
+
+*Note: "own" indicates the user can only access their own resources.*
+
+### 4.9 Granular Permission Service
+
+```python
+class GranularPermissionService:
+    """
+    Service for checking granular resource:action permissions.
+    Implements hierarchical permission resolution with tenant overrides.
+    """
+    
+    @staticmethod
+    def check_permission(
+        user: "User",
+        resource: str,
+        action: str,
+        resource_id: Optional[str] = None,
+    ) -> bool:
+        """
+        Check if user has permission for resource:action.
+        
+        Resolution order:
+        1. Check tenant-level overrides
+        2. Fall back to platform-level defaults
+        3. Optionally check SpiceDB for relationship-based access
+        """
+        from apps.core.middleware.tenant import get_current_tenant
+        
+        tenant = get_current_tenant()
+        if not tenant:
+            return False
+        
+        # Get user's roles
+        user_roles = GranularPermissionService.get_user_roles(user)
+        
+        for role in user_roles:
+            # Check tenant override first
+            override = TenantPermissionOverride.objects.filter(
+                tenant=tenant,
+                role=role,
+                resource=resource,
+                action=action,
+            ).first()
+            
+            if override is not None:
+                if override.allowed:
+                    return GranularPermissionService._check_conditions(
+                        override.conditions, user, resource_id
+                    )
+                continue  # Explicitly denied, check next role
+            
+            # Fall back to platform default
+            platform_perm = PermissionMatrix.objects.filter(
+                role=role,
+                resource=resource,
+                action=action,
+            ).first()
+            
+            if platform_perm and platform_perm.allowed:
+                return GranularPermissionService._check_conditions(
+                    platform_perm.conditions, user, resource_id
+                )
+        
+        return False
+    
+    @staticmethod
+    def get_user_roles(user: "User") -> List[str]:
+        """Get all roles assigned to a user."""
+        from apps.core.middleware.tenant import get_current_tenant
+        
+        tenant = get_current_tenant()
+        if not tenant:
+            return []
+        
+        # Get roles from UserRoleAssignment
+        assignments = UserRoleAssignment.objects.filter(
+            tenant=tenant,
+            user=user,
+            expires_at__isnull=True,  # Not expired
+        ).values_list("role", flat=True)
+        
+        roles = list(assignments)
+        
+        # Add primary role from user model if exists
+        if hasattr(user, "role") and user.role:
+            if user.role not in roles:
+                roles.append(user.role)
+        
+        return roles
+    
+    @staticmethod
+    def get_effective_permissions(user: "User") -> List[str]:
+        """Get all effective permissions for a user as resource:action strings."""
+        from apps.core.middleware.tenant import get_current_tenant
+        
+        tenant = get_current_tenant()
+        if not tenant:
+            return []
+        
+        user_roles = GranularPermissionService.get_user_roles(user)
+        permissions = set()
+        
+        for role in user_roles:
+            # Get platform permissions
+            platform_perms = PermissionMatrix.objects.filter(
+                role=role,
+                allowed=True,
+            ).values_list("resource", "action")
+            
+            for resource, action in platform_perms:
+                perm_key = f"{resource}:{action}"
+                
+                # Check if overridden at tenant level
+                override = TenantPermissionOverride.objects.filter(
+                    tenant=tenant,
+                    role=role,
+                    resource=resource,
+                    action=action,
+                ).first()
+                
+                if override is None or override.allowed:
+                    permissions.add(perm_key)
+        
+        return sorted(permissions)
+    
+    @staticmethod
+    def _check_conditions(
+        conditions: Dict,
+        user: "User",
+        resource_id: Optional[str],
+    ) -> bool:
+        """Check contextual conditions for permission."""
+        if not conditions:
+            return True
+        
+        # Handle "own" condition - user can only access their own resources
+        if conditions.get("own_only"):
+            if resource_id and str(user.id) != resource_id:
+                return False
+        
+        return True
+```
+
+### 4.10 AuthBearer Class for Django Ninja
+
+```python
+from ninja.security import HttpBearer
+from typing import Optional, Any
+
+class AuthBearer(HttpBearer):
+    """
+    JWT/API Key authentication for Django Ninja endpoints.
+    Validates tokens and attaches user context to request.auth.
+    """
+    
+    def authenticate(self, request, token: str) -> Optional[Any]:
+        """
+        Authenticate request using JWT token or API key.
+        
+        Returns user context dict on success, None on failure.
+        """
+        # Try JWT authentication
+        if self._is_jwt_token(token):
+            return self._validate_jwt(request, token)
+        
+        # Try API key authentication
+        return self._validate_api_key(request, token)
+    
+    def _is_jwt_token(self, token: str) -> bool:
+        """Check if token looks like a JWT."""
+        return token.count(".") == 2
+    
+    def _validate_jwt(self, request, token: str) -> Optional[Dict[str, Any]]:
+        """Validate JWT token and return user context."""
+        import jwt
+        from django.conf import settings
+        from django.core.cache import cache
+        
+        try:
+            # Get cached public key
+            public_key = self._get_keycloak_public_key()
+            
+            # Decode and validate
+            claims = jwt.decode(
+                token,
+                public_key,
+                algorithms=settings.KEYCLOAK["ALGORITHMS"],
+                audience=settings.KEYCLOAK["AUDIENCE"],
+                options={"verify_exp": True},
+            )
+            
+            # Build user context
+            return {
+                "user_id": claims.get("sub"),
+                "tenant_id": claims.get("tenant_id"),
+                "email": claims.get("email"),
+                "roles": claims.get("realm_access", {}).get("roles", []),
+                "auth_type": "jwt",
+                "claims": claims,
+            }
+        
+        except jwt.ExpiredSignatureError:
+            return None
+        except jwt.InvalidTokenError:
+            return None
+    
+    def _validate_api_key(self, request, token: str) -> Optional[Dict[str, Any]]:
+        """Validate API key and return user context."""
+        from apps.api_keys.services import APIKeyService
+        
+        try:
+            key_data = APIKeyService.validate_key(
+                token,
+                ip_address=self._get_client_ip(request),
+            )
+            return {
+                "user_id": key_data.get("user_id"),
+                "tenant_id": key_data.get("tenant_id"),
+                "api_key_id": key_data.get("api_key_id"),
+                "scopes": key_data.get("scopes", []),
+                "auth_type": "api_key",
+            }
+        except Exception:
+            return None
+    
+    def _get_keycloak_public_key(self) -> str:
+        """Fetch and cache Keycloak public key."""
+        import requests
+        from django.conf import settings
+        from django.core.cache import cache
+        
+        cache_key = "keycloak_public_key"
+        public_key = cache.get(cache_key)
+        
+        if not public_key:
+            url = f"{settings.KEYCLOAK['URL']}/realms/{settings.KEYCLOAK['REALM']}"
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            
+            realm_info = response.json()
+            public_key_raw = realm_info["public_key"]
+            public_key = f"-----BEGIN PUBLIC KEY-----\n{public_key_raw}\n-----END PUBLIC KEY-----"
+            
+            cache.set(cache_key, public_key, timeout=3600)
+        
+        return public_key
+    
+    def _get_client_ip(self, request) -> str:
+        """Extract client IP from request."""
+        x_forwarded_for = request.headers.get("X-Forwarded-For")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0].strip()
+        return request.META.get("REMOTE_ADDR", "unknown")
+```
+
+### 4.11 @require_permission Decorator (Enhanced)
+
+```python
+from functools import wraps
+from typing import Callable, Optional
+from django.http import JsonResponse
+
+def require_permission(permission: str, resource_id_param: Optional[str] = None):
+    """
+    Decorator to require granular resource:action permission.
+    
+    Args:
+        permission: Permission string in format "resource:action"
+        resource_id_param: Optional parameter name containing resource ID
+    
+    Usage:
+        @require_permission("agents:create")
+        def create_agent(request):
+            ...
+        
+        @require_permission("sessions:read", resource_id_param="session_id")
+        def get_session(request, session_id: UUID):
+            ...
+    """
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(request, *args, **kwargs):
+            from apps.core.exceptions import PermissionDeniedError
+            
+            # Get user from request
+            user = getattr(request, "user", None)
+            if not user or not user.is_authenticated:
+                raise PermissionDeniedError("Authentication required")
+            
+            # Parse permission string
+            parts = permission.split(":")
+            if len(parts) != 2:
+                raise ValueError(f"Invalid permission format: {permission}")
+            
+            resource, action = parts
+            
+            # Get resource ID if specified
+            resource_id = None
+            if resource_id_param and resource_id_param in kwargs:
+                resource_id = str(kwargs[resource_id_param])
+            
+            # Check permission
+            if not GranularPermissionService.check_permission(
+                user=user,
+                resource=resource,
+                action=action,
+                resource_id=resource_id,
+            ):
+                raise PermissionDeniedError(
+                    f"Permission '{permission}' denied",
+                    details={"required_permission": permission}
+                )
+            
+            return func(request, *args, **kwargs)
+        
+        return wrapper
+    return decorator
+```
+
 ---
 
 ## 5. Correctness Properties
@@ -828,6 +1318,22 @@ class AuditLog(models.Model):
 *For any* permission check via SpiceDB, the check_permission result SHALL accurately reflect the permission state, and denied permissions SHALL return 403 with "permission_denied".
 
 **Validates: Requirements 4.2, 4.11**
+
+### Property 8A: Granular Permission Matrix Enforcement
+
+*For any* request to a protected endpoint, the @require_permission("resource:action") decorator SHALL:
+1. Extract user roles from JWT claims or user model
+2. Check tenant-level overrides first, then platform defaults
+3. Return 403 with "permission_denied" if no matching permission found
+4. Allow access only if at least one role grants the permission
+
+**Validates: Requirements 4A.3, 4A.4**
+
+### Property 8B: Hierarchical Permission Resolution
+
+*For any* permission check, tenant-level overrides SHALL take precedence over platform-level defaults. The effective permission SHALL be the merged result of platform defaults with tenant overrides applied.
+
+**Validates: Requirements 4A.5**
 
 ### Property 9: Pydantic Schema Validation
 

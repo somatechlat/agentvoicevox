@@ -25,7 +25,6 @@ This document specifies the requirements for implementing a production-grade Dja
 
 - **Tenant**: An organization using the platform with isolated data and configuration
 - **ASGI**: Asynchronous Server Gateway Interface for async Django
-- **SpiceDB**: Google Zanzibar-inspired authorization system for fine-grained permissions
 - **Django_Ninja**: Fast Django REST framework with automatic OpenAPI documentation
 - **Temporal**: Durable workflow orchestration for background job processing
 - **Keycloak**: Open-source identity and access management solution
@@ -92,23 +91,126 @@ This document specifies the requirements for implementing a production-grade Dja
 
 ---
 
-### Requirement 4: SpiceDB Authorization
+### Requirement 3A: Enhanced Role-Based Authentication
 
-**User Story:** As a platform operator, I want fine-grained permission control, so that I can enforce complex access policies across tenants and resources.
+**User Story:** As a platform operator, I want 8 distinct platform roles with clear hierarchical permissions, so that I can assign appropriate access levels to users.
 
 #### Acceptance Criteria
 
-1. THE SpiceDBClient SHALL connect to SpiceDB via gRPC with configurable endpoint and token
-2. THE SpiceDBClient SHALL implement check_permission(resource_type, resource_id, relation, subject_type, subject_id)
-3. THE SpiceDBClient SHALL implement write_relationship for creating permission relationships
-4. THE SpiceDBClient SHALL implement delete_relationship for removing permission relationships
-5. THE SpiceDBClient SHALL implement lookup_subjects for finding all subjects with a relation
-6. THE SpiceDB_Schema SHALL define tenant relations: sysadmin, admin, developer, operator, viewer, billing
-7. THE SpiceDB_Schema SHALL define computed permissions: manage, administrate, develop, operate, view, billing_access
-8. THE SpiceDB_Schema SHALL define resource types: tenant, project, api_key, session, voice_config, theme, persona
-9. THE @require_permission decorator SHALL check SpiceDB before allowing endpoint access
-10. THE @require_role decorator SHALL check JWT roles before allowing endpoint access
-11. WHEN permission is denied THEN the System SHALL return 403 Forbidden with error code "permission_denied"
+1. THE Keycloak_Realm SHALL define 8 platform roles:
+   - `saas_admin`: System-wide administrator with cross-tenant access
+   - `tenant_admin`: Tenant administrator with full tenant access
+   - `agent_admin`: Agent configuration and persona management
+   - `supervisor`: Session monitoring and operator management
+   - `operator`: Live session handling and conversation access
+   - `agent_user`: Agent interaction and own conversation access
+   - `viewer`: Read-only access to permitted resources
+   - `billing_admin`: Billing and usage management
+
+2. THE JWT_Claims SHALL include:
+   - `sub`: User ID (Keycloak subject)
+   - `tenant_id`: Current tenant context
+   - `roles`: Array of assigned platform roles
+   - `aud`: Audience claim for API validation
+   - `email`: User email address
+   - `given_name`: User first name
+   - `family_name`: User last name
+
+3. THE AuthBearer class SHALL:
+   - Validate JWT tokens from Authorization header
+   - Extract and validate all required claims
+   - Attach user context to request.auth
+   - Support both Bearer token and API key authentication
+
+4. THE User_Model SHALL include:
+   - `role`: Primary platform role (CharField with choices)
+   - `additional_roles`: Array of additional roles (ArrayField)
+   - `role_assigned_at`: Timestamp of last role assignment
+   - `role_assigned_by`: FK to User who assigned the role
+
+---
+
+### Requirement 4A: Granular RBAC Permissions Architecture
+
+**User Story:** As a platform operator, I want granular resource:action permission tuples with hierarchical role inheritance, so that I can enforce precise access control at the endpoint level.
+
+#### Acceptance Criteria
+
+1. THE Platform SHALL define 8 platform roles with hierarchical inheritance:
+   - `saas_admin`: Full platform access, cross-tenant operations
+   - `tenant_admin`: Full tenant access, user management, settings
+   - `agent_admin`: Agent configuration, persona management
+   - `supervisor`: Monitor sessions, view analytics, manage operators
+   - `operator`: Handle live sessions, view assigned conversations
+   - `agent_user`: Interact with agents, view own conversations
+   - `viewer`: Read-only access to permitted resources
+   - `billing_admin`: Billing management, usage reports, invoices
+
+2. THE Permission_Matrix SHALL define 65+ granular resource:action permission tuples:
+   - **Tenant Resources**: `tenants:read`, `tenants:update`, `tenants:delete`, `tenants:manage_users`, `tenants:manage_settings`, `tenants:view_audit`
+   - **User Resources**: `users:create`, `users:read`, `users:update`, `users:delete`, `users:assign_roles`
+   - **Agent Resources**: `agents:create`, `agents:read`, `agents:update`, `agents:delete`, `agents:deploy`, `agents:configure`
+   - **Persona Resources**: `personas:create`, `personas:read`, `personas:update`, `personas:delete`, `personas:assign`
+   - **Session Resources**: `sessions:create`, `sessions:read`, `sessions:update`, `sessions:terminate`, `sessions:monitor`, `sessions:takeover`
+   - **Conversation Resources**: `conversations:read`, `conversations:export`, `conversations:delete`, `conversations:annotate`
+   - **API Key Resources**: `api_keys:create`, `api_keys:read`, `api_keys:revoke`, `api_keys:rotate`
+   - **Project Resources**: `projects:create`, `projects:read`, `projects:update`, `projects:delete`, `projects:manage_members`
+   - **Voice Resources**: `voice:configure`, `voice:read`, `voice:test`, `voice:deploy`
+   - **Theme Resources**: `themes:create`, `themes:read`, `themes:update`, `themes:delete`, `themes:apply`
+   - **Billing Resources**: `billing:read`, `billing:manage`, `billing:export`, `billing:configure_plans`
+   - **Analytics Resources**: `analytics:read`, `analytics:export`, `analytics:configure`
+   - **Audit Resources**: `audit:read`, `audit:export`
+   - **Notification Resources**: `notifications:read`, `notifications:configure`, `notifications:send`
+   - **Workflow Resources**: `workflows:create`, `workflows:read`, `workflows:execute`, `workflows:cancel`
+   - **Admin Resources**: `admin:platform_settings`, `admin:tenant_management`, `admin:user_impersonation`, `admin:system_health`
+
+3. THE @require_permission("resource:action") decorator SHALL:
+   - Extract user roles from JWT claims
+   - Check permission matrix for role → action mapping
+   - Return 403 with error code "permission_denied" if unauthorized
+
+4. THE Permission_Check_Flow SHALL follow this sequence:
+   - Request → AuthBearer (JWT validation)
+   - Extract roles from token claims
+   - Check permission matrix (role → allowed actions)
+   - Allow/Deny
+
+5. THE Hierarchical_Auth_Config SHALL support:
+   - Platform-level defaults set by SaaS Admin
+   - Tenant-level overrides by Tenant Admin
+   - Effective config = merged result (tenant overrides platform)
+
+6. THE Permission_Matrix_Model SHALL store:
+   - role: Platform role name
+   - resource: Resource type (e.g., "agents", "sessions")
+   - action: Action name (e.g., "create", "read", "delete")
+   - allowed: Boolean indicating if action is permitted
+   - conditions: Optional JSON conditions for contextual access
+
+7. THE TenantPermissionOverride_Model SHALL store:
+   - tenant: FK to Tenant
+   - role: Role name
+   - resource: Resource type
+   - action: Action name
+   - allowed: Boolean override
+   - conditions: Optional JSON conditions
+
+8. THE GranularPermissionService SHALL implement:
+   - `check_permission(user, resource, action)` → bool
+   - `get_effective_permissions(user)` → List[str]
+   - `get_role_permissions(role)` → List[str]
+   - `override_permission(tenant, role, resource, action, allowed)` → void
+
+9. THE AuthBearer class SHALL:
+   - Validate JWT tokens from Keycloak
+   - Extract user info, roles, tenant_id from token claims
+   - Attach user context to request.auth
+   - Support both JWT and API key authentication
+
+10. WHEN a permission check fails THEN the System SHALL:
+    - Log the denied access attempt with full context
+    - Return 403 Forbidden with error code "permission_denied"
+    - Include the required permission in the error response
 
 ---
 
@@ -345,7 +447,7 @@ This document specifies the requirements for implementing a production-grade Dja
 1. THE Dockerfile SHALL build a production-ready image with Python 3.12
 2. THE Dockerfile SHALL run as non-root user for security
 3. THE Dockerfile SHALL include health check for container orchestration
-4. THE Docker_Compose SHALL define services: backend, temporal-server, temporal-worker, postgres, redis, keycloak, spicedb, vault
+4. THE Docker_Compose SHALL define services: backend, temporal-server, temporal-worker, postgres, redis, keycloak, vault
 5. THE Kubernetes_Deployment SHALL support horizontal pod autoscaling based on CPU and memory
 6. THE Kubernetes_Deployment SHALL include liveness and readiness probes
 7. THE Gunicorn_Config SHALL use Uvicorn workers for ASGI support

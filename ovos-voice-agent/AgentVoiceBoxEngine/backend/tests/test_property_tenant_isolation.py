@@ -210,11 +210,14 @@ class TestTenantContextExtraction:
         from apps.core.middleware.tenant import TenantMiddleware
 
         tenant = tenant_factory(slug=slug)
+        
+        # Use the actual tenant slug (which includes UUID suffix)
+        actual_slug = tenant.slug
 
         factory = RequestFactory()
         request = factory.get(
             "/api/v2/test/",
-            HTTP_HOST=f"{slug}.example.com",
+            HTTP_HOST=f"{actual_slug}.example.com",
         )
 
         middleware = TenantMiddleware(get_response=lambda r: r)
@@ -269,10 +272,13 @@ class TestTenantContextExtraction:
         tenant = tenant_factory(slug=slug)
         assume(jwt_uuid != tenant.id)
 
+        # Use the actual tenant slug (which includes UUID suffix)
+        actual_slug = tenant.slug
+
         factory = RequestFactory()
         request = factory.get(
             "/api/v2/test/",
-            HTTP_HOST=f"{slug}.example.com",
+            HTTP_HOST=f"{actual_slug}.example.com",
         )
         request.jwt_tenant_id = str(jwt_uuid)
 
@@ -302,10 +308,13 @@ class TestTenantContextExtraction:
         tenant = tenant_factory(slug=slug)
         assume(header_uuid != tenant.id)
 
+        # Use the actual tenant slug (which includes UUID suffix)
+        actual_slug = tenant.slug
+
         factory = RequestFactory()
         request = factory.get(
             "/api/v2/test/",
-            HTTP_HOST=f"{slug}.example.com",
+            HTTP_HOST=f"{actual_slug}.example.com",
             HTTP_X_TENANT_ID=str(header_uuid),
         )
 

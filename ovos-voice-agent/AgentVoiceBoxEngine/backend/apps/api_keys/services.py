@@ -109,7 +109,8 @@ class APIKeyService:
         key.record_usage(ip_address)
 
         return {
-            "key_id": key.id,
+            "api_key_id": key.id,
+            "key_id": key.id,  # Alias for backwards compatibility
             "tenant_id": key.tenant_id,
             "tenant": key.tenant,
             "project_id": key.project_id,

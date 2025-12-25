@@ -11,8 +11,14 @@ This implementation plan converts the Django SaaS Backend design into actionable
 - Django ORM (PostgreSQL 16+)
 - Temporal (Workflow orchestration)
 - HashiCorp Vault (Secrets management)
-- Keycloak (Authentication)
-- SpiceDB (Authorization)
+- Keycloak (Authentication with 8 platform roles)
+- Django Native Permissions (Authorization with granular RBAC)
+
+**Granular Permissions Architecture:**
+- 8 Platform Roles: saas_admin, tenant_admin, agent_admin, supervisor, operator, agent_user, viewer, billing_admin
+- 65+ Resource:Action Permission Tuples
+- Hierarchical Permission Resolution (Platform defaults → Tenant overrides)
+- @require_permission("resource:action") decorator pattern
 
 ---
 
@@ -49,7 +55,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Test that missing required env vars cause startup failure with clear error
     - **Validates: Requirements 1.3, 1.7**
 
-- [-] 2. Checkpoint - Project Foundation
+- [x] 2. Checkpoint - Project Foundation
   - Ensure Django project starts successfully
   - Verify health endpoints respond
   - Ask the user if questions arise
@@ -102,9 +108,10 @@ This implementation plan converts the Django SaaS Backend design into actionable
   - [x] 4.1 Create User model with Django ORM
     - Extend `AbstractBaseUser` and `PermissionsMixin`
     - Add fields: keycloak_id, email, first_name, last_name, tenant FK, is_active, preferences JSONField
+    - Add role fields: role (CharField), additional_roles (ArrayField), role_assigned_at, role_assigned_by FK
     - Create custom user manager
     - Create Django migrations
-    - _Requirements: 3.8_
+    - _Requirements: 3.8, 3A.4_
 
   - [x] 4.2 Implement KeycloakMiddleware
     - Validate JWT tokens from Authorization header
@@ -130,40 +137,85 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Test valid keys authenticate, expired returns 401 "api_key_expired", revoked returns 401 "api_key_revoked"
     - **Validates: Requirements 3.9, 7.9, 7.10**
 
-- [-] 5. Checkpoint - Authentication
+- [x] 5. Checkpoint - Authentication
   - Ensure JWT authentication works end-to-end
   - Verify tenant context is set correctly
   - Ask the user if questions arise
 
 ---
 
-- [x] 6. SpiceDB Authorization
-  - [x] 6.1 Create SpiceDB client integration
-    - Implement gRPC client connection with configurable endpoint and token
-    - Implement `check_permission(resource_type, resource_id, relation, subject_type, subject_id)`
-    - Implement `write_relationship()` for creating permissions
-    - Implement `delete_relationship()` for removing permissions
-    - Implement `lookup_subjects()` for finding subjects with relation
-    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
+- [x] 6A. Granular RBAC Permissions Architecture
+  - [x] 6A.1 Create granular permission models
+    - Create `PlatformRole` TextChoices with 8 roles: saas_admin, tenant_admin, agent_admin, supervisor, operator, agent_user, viewer, billing_admin
+    - Create `PermissionMatrix` model for platform-level role → resource:action mappings
+    - Create `TenantPermissionOverride` model for tenant-level permission overrides
+    - Create `UserRoleAssignment` model for user role assignments within tenants
+    - Create Django migrations
+    - _Requirements: 4A.1, 4A.6, 4A.7_
 
-  - [x] 6.2 Create SpiceDB schema
-    - Define tenant relations: sysadmin, admin, developer, operator, viewer, billing
-    - Define computed permissions: manage, administrate, develop, operate, view, billing_access
-    - Define resource types: tenant, project, api_key, session, voice_config, theme, persona
-    - Create schema.zed file
-    - _Requirements: 4.6, 4.7, 4.8_
+  - [x] 6A.2 Implement GranularPermissionService
+    - Implement `check_permission(user, resource, action, resource_id)` with hierarchical resolution
+    - Implement `get_user_roles(user)` to get all roles for a user
+    - Implement `get_effective_permissions(user)` to get all resource:action permissions
+    - Implement `override_permission(tenant, role, resource, action, allowed)` for tenant overrides
+    - Implement `_check_conditions()` for contextual access (e.g., "own" resources)
+    - _Requirements: 4A.4, 4A.5, 4A.8_
 
-  - [x] 6.3 Implement permission decorators
-    - Create `@require_permission` decorator for SpiceDB checks
-    - Create `@require_role` decorator for JWT role checks
-    - Return 403 with "permission_denied" on failure
-    - _Requirements: 4.9, 4.10, 4.11_
+  - [x] 6A.3 Create AuthBearer class for Django Ninja
+    - Implement `authenticate(request, token)` for JWT and API key validation
+    - Extract user_id, tenant_id, roles from JWT claims
+    - Attach user context to request.auth
+    - Cache Keycloak public key for performance
+    - _Requirements: 4A.9, 3A.3_
 
-  - [x]* 6.4 Write property tests for SpiceDB permission enforcement
-    - **Property 8: SpiceDB Permission Enforcement**
-    - Test check_permission returns accurate results
-    - Test denied permissions return 403 "permission_denied"
-    - **Validates: Requirements 4.2, 4.11**
+  - [x] 6A.4 Implement enhanced @require_permission decorator
+    - Support "resource:action" format (e.g., `@require_permission("agents:create")`)
+    - Extract user roles from request
+    - Check tenant overrides first, then platform defaults
+    - Support resource_id_param for resource-specific checks
+    - Return 403 with required_permission in error details
+    - _Requirements: 4A.3, 4A.10_
+
+  - [x] 6A.5 Seed permission matrix data
+    - Create Django management command `seed_permission_matrix`
+    - Seed 65+ resource:action permission tuples for all 8 roles
+    - Include all resources: tenants, users, agents, personas, sessions, conversations, api_keys, projects, voice, themes, billing, analytics, audit, notifications, workflows, admin
+    - _Requirements: 4A.2_
+
+  - [x] 6A.6 Update User model with role fields
+    - Add `role` CharField with PlatformRole choices
+    - Add `additional_roles` ArrayField for multiple roles
+    - Add `role_assigned_at` DateTimeField
+    - Add `role_assigned_by` ForeignKey to User
+    - Create Django migrations
+    - _Requirements: 3A.4_
+
+  - [x] 6A.7 Update Keycloak realm configuration
+    - Add 8 platform roles to Keycloak realm
+    - Configure role mappers for JWT claims
+    - Update realm export JSON
+    - _Requirements: 3A.1, 3A.2_
+
+  - [x]* 6A.8 Write property tests for granular permission enforcement
+    - **Property 8A: Granular Permission Matrix Enforcement**
+    - Test @require_permission decorator extracts roles correctly
+    - Test tenant overrides take precedence over platform defaults
+    - Test denied permissions return 403 with required_permission
+    - **Validates: Requirements 4A.3, 4A.4**
+
+  - [x]* 6A.9 Write property tests for hierarchical permission resolution
+    - **Property 8B: Hierarchical Permission Resolution**
+    - Test platform defaults apply when no tenant override exists
+    - Test tenant overrides correctly override platform defaults
+    - Test effective permissions merge correctly
+    - **Validates: Requirements 4A.5**
+
+- [x] 6B. Checkpoint - Granular Permissions
+  - Ensure all 8 roles are defined in Keycloak
+  - Verify permission matrix is seeded correctly
+  - Test @require_permission decorator on sample endpoints
+  - Verify tenant overrides work correctly
+  - Ask the user if questions arise
 
 ---
 
@@ -196,7 +248,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Test invalid requests return 400 with field-level error details
     - **Validates: Requirements 5.2, 5.8**
 
-- [-] 8. Checkpoint - API Layer
+- [x] 8. Checkpoint - API Layer
   - Ensure all API endpoints respond correctly
   - Verify OpenAPI documentation is generated
   - Ask the user if questions arise
@@ -275,7 +327,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Test unauthenticated connections close with code 4001
     - **Validates: Requirements 6.3, 6.10**
 
-- [-] 11. Checkpoint - WebSocket Layer
+- [x] 11. Checkpoint - WebSocket Layer
   - Ensure WebSocket connections authenticate correctly
   - Verify event streaming works
   - Ask the user if questions arise
@@ -349,7 +401,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Test failed activities retry up to 3 times with exponential backoff
     - **Validates: Requirements 9.9**
 
-- [-] 14. Checkpoint - Workflow Orchestration
+- [x] 14. Checkpoint - Workflow Orchestration
   - Ensure Temporal workflows execute correctly
   - Verify scheduled workflows run on time
   - Ask the user if questions arise
@@ -536,7 +588,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - _Requirements: 17.1, 17.2, 17.3, 17.7_
 
   - [x] 23.2 Create Docker Compose configuration
-    - Define services: backend, temporal, temporal-ui, temporal-worker, vault, postgres, redis, keycloak, spicedb, nginx, prometheus, grafana
+    - Define services: backend, temporal, temporal-ui, temporal-worker, vault, postgres, redis, keycloak, nginx, prometheus, grafana
     - Configure memory limits and reservations (15GB total)
     - Configure persistent volumes for all stateful services
     - Configure health checks for all services

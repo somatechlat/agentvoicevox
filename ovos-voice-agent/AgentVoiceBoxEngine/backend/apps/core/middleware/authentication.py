@@ -57,8 +57,10 @@ class KeycloakAuthenticationMiddleware:
             request.jwt_claims = result.get("claims", {})
             request.auth_type = "jwt"
             
-            # Create or update user record
-            self._sync_user(result)
+            # Create or update user record and set request.user
+            user = self._sync_user(result)
+            if user:
+                request.user = user
         
         # Try API key authentication
         elif api_key := request.headers.get("X-API-Key"):
@@ -79,6 +81,12 @@ class KeycloakAuthenticationMiddleware:
             request.api_key_id = result.get("api_key_id")
             request.api_key_scopes = result.get("scopes", [])
             request.auth_type = "api_key"
+            
+            # Set request.user if user_id is available
+            if result.get("user_id"):
+                user = self._get_user_by_id(result.get("user_id"))
+                if user:
+                    request.user = user
         
         return self.get_response(request)
     
@@ -157,15 +165,24 @@ class KeycloakAuthenticationMiddleware:
             error_code = getattr(e, "error_code", "authentication_error")
             return {"error": error_code, "message": str(e)}
     
-    def _sync_user(self, jwt_data: Dict[str, Any]) -> None:
-        """Create or update user from JWT claims."""
+    def _sync_user(self, jwt_data: Dict[str, Any]):
+        """Create or update user from JWT claims and return the user."""
         from apps.users.services import UserService
         
         try:
-            UserService.sync_from_jwt(jwt_data)
+            return UserService.sync_from_jwt(jwt_data)
         except Exception:
             # Log but don't fail request
-            pass
+            return None
+    
+    def _get_user_by_id(self, user_id: str):
+        """Get user by keycloak_id."""
+        from apps.users.models import User
+        
+        try:
+            return User.objects.get(keycloak_id=user_id)
+        except User.DoesNotExist:
+            return None
     
     def _get_client_ip(self, request: HttpRequest) -> str:
         """Extract client IP from request."""

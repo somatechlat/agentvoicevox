@@ -86,19 +86,6 @@ class Settings(BaseSettings):
     )
 
     # ==========================================================================
-    # SPICEDB
-    # ==========================================================================
-    spicedb_endpoint: str = Field(
-        default="localhost:50051",
-        description="SpiceDB gRPC endpoint",
-    )
-    spicedb_token: str = Field(..., description="SpiceDB preshared key")
-    spicedb_insecure: bool = Field(
-        default=True,
-        description="Use insecure connection (dev only)",
-    )
-
-    # ==========================================================================
     # TEMPORAL
     # ==========================================================================
     temporal_host: str = Field(
@@ -311,11 +298,6 @@ keycloak_url = _settings.keycloak_url
 keycloak_realm = _settings.keycloak_realm
 keycloak_client_id = _settings.keycloak_client_id
 keycloak_client_secret = _settings.keycloak_client_secret
-
-# SpiceDB
-spicedb_endpoint = _settings.spicedb_endpoint
-spicedb_token = _settings.spicedb_token
-spicedb_insecure = _settings.spicedb_insecure
 
 # Temporal
 temporal_host = _settings.temporal_host

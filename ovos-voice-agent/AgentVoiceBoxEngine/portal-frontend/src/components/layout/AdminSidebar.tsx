@@ -2,8 +2,7 @@
 
 /**
  * Admin Portal Sidebar Navigation
- * Implements comprehensive system configuration UI
- * Organized by: System, Security, Billing, Operations
+ * Clean, minimal design matching the design system
  */
 
 import Link from "next/link";
@@ -18,8 +17,6 @@ import {
   Settings,
   LogOut,
   Shield,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   Mic,
   Phone,
@@ -29,14 +26,13 @@ import {
   HardDrive,
   Lock,
   Key,
-  FileCode,
   BarChart3,
-  LineChart,
-  ScrollText,
   Cpu,
-  Volume2,
-  Brain,
   Network,
+  Building2,
+  Bell,
+  Palette,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -50,189 +46,46 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   permission?: Permission;
+  badge?: string | number;
   children?: NavItem[];
 }
 
-const adminNavigation: NavItem[] = [
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  
-  // System Configuration
+// Navigation organized by sections matching the design screenshots
+const navigationSections = [
   {
-    name: "System",
-    href: "/admin/system",
-    icon: Server,
-    permission: "system:configure",
-    children: [
-      { name: "Infrastructure", href: "/admin/system/infrastructure", icon: Database },
-      { name: "Workers", href: "/admin/system/workers", icon: Cpu },
-      { name: "Gateway", href: "/admin/system/gateway", icon: Network },
-      { name: "Observability", href: "/admin/system/observability", icon: BarChart3 },
+    title: "CORE",
+    items: [
+      { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+      { name: "Tenants", href: "/admin/tenants", icon: Building2, badge: 5 },
+      { name: "Sessions", href: "/admin/sessions", icon: Phone },
     ],
   },
-  
-  // Security
   {
-    name: "Security",
-    href: "/admin/security",
-    icon: Shield,
-    permission: "system:configure",
-    children: [
-      { name: "Keycloak", href: "/admin/security/keycloak", icon: Lock },
-      { name: "Policies", href: "/admin/security/policies", icon: FileCode },
-      { name: "Secrets", href: "/admin/security/secrets", icon: Key },
+    title: "PLATFORM",
+    items: [
+      { name: "Users", href: "/admin/users", icon: Users, badge: 8 },
+      { name: "Billing", href: "/admin/billing", icon: CreditCard },
+      { name: "Plans", href: "/admin/plans", icon: Package },
     ],
   },
-  
-  // Billing
   {
-    name: "Billing",
-    href: "/admin/billing",
-    icon: CreditCard,
-    permission: "billing:view",
-    children: [
-      { name: "Overview", href: "/admin/billing", icon: CreditCard },
-      { name: "Plans", href: "/admin/billing/plans", icon: Package },
-      { name: "Metering", href: "/admin/billing/metering", icon: BarChart3 },
+    title: "SYSTEM",
+    items: [
+      { name: "Monitoring", href: "/admin/monitoring", icon: Activity },
+      { name: "Audit Log", href: "/admin/audit", icon: ScrollText },
+      { name: "Settings", href: "/admin/settings", icon: Settings },
     ],
   },
-  
-  // Operations
-  { name: "Tenants", href: "/admin/tenants", icon: Users, permission: "tenant:view" },
-  { name: "Users", href: "/admin/users", icon: UserCog, permission: "tenant:manage" },
-  { name: "Sessions", href: "/admin/sessions", icon: Phone, permission: "tenant:view" },
-  { name: "Monitoring", href: "/admin/monitoring", icon: Activity, permission: "system:configure" },
-  { name: "Audit Log", href: "/admin/audit", icon: FileText, permission: "tenant:view" },
 ];
 
 interface AdminSidebarProps {
   onClose?: () => void;
 }
 
-function NavItemComponent({
-  item,
-  pathname,
-  collapsed,
-  onNavClick,
-  hasPermission,
-  expandedSections,
-  toggleSection,
-}: {
-  item: NavItem;
-  pathname: string;
-  collapsed: boolean;
-  onNavClick: () => void;
-  hasPermission: (p: Permission) => boolean;
-  expandedSections: Set<string>;
-  toggleSection: (name: string) => void;
-}) {
-  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-  const hasChildren = item.children && item.children.length > 0;
-  const isExpanded = expandedSections.has(item.name);
-
-  if (hasChildren) {
-    const visibleChildren = item.children!.filter(
-      (child) => !child.permission || hasPermission(child.permission)
-    );
-    if (visibleChildren.length === 0) return null;
-
-    return (
-      <div>
-        <button
-          onClick={() => toggleSection(item.name)}
-          className={cn(
-            "flex w-full items-center gap-3 px-3 py-2 text-sm font-medium transition-colors rounded-md",
-            isActive
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-            collapsed && "justify-center px-2"
-          )}
-          title={collapsed ? item.name : undefined}
-        >
-          <item.icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
-          {!collapsed && (
-            <>
-              <span className="flex-1 text-left">{item.name}</span>
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 transition-transform",
-                  isExpanded && "rotate-180"
-                )}
-              />
-            </>
-          )}
-        </button>
-        {!collapsed && isExpanded && (
-          <div className="ml-4 mt-1 space-y-1 border-l border-border pl-2">
-            {visibleChildren.map((child) => {
-              const childActive = pathname === child.href || pathname.startsWith(`${child.href}/`);
-              return (
-                <Link
-                  key={child.name}
-                  href={child.href}
-                  onClick={onNavClick}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors rounded-md",
-                    childActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  )}
-                  aria-current={childActive ? "page" : undefined}
-                >
-                  <child.icon className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
-                  {child.name}
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <Link
-      href={item.href}
-      onClick={onNavClick}
-      className={cn(
-        "flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors rounded-md",
-        isActive
-          ? "bg-primary text-primary-foreground"
-          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-        collapsed && "justify-center px-2"
-      )}
-      aria-current={isActive ? "page" : undefined}
-      title={collapsed ? item.name : undefined}
-    >
-      <item.icon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
-      {!collapsed && item.name}
-    </Link>
-  );
-}
-
 export function AdminSidebar({ onClose }: AdminSidebarProps) {
   const pathname = usePathname();
   const { user, logout, hasPermission } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(["System", "Security", "Billing"])
-  );
-
-  const toggleSection = (name: string) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) {
-        next.delete(name);
-      } else {
-        next.add(name);
-      }
-      return next;
-    });
-  };
-
-  // Filter navigation items based on permissions
-  const visibleNavigation = adminNavigation.filter(
-    (item) => !item.permission || hasPermission(item.permission)
-  );
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleNavClick = () => {
     onClose?.();
@@ -244,89 +97,111 @@ export function AdminSidebar({ onClose }: AdminSidebarProps) {
   };
 
   return (
-    <aside 
-      className={cn(
-        "flex h-full flex-col border-r bg-card transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
-      )}
-      role="navigation" 
-      aria-label="Admin navigation"
-    >
+    <aside className="flex h-full w-64 flex-col border-r border-border bg-card">
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b px-4">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" aria-hidden="true" />
-            <span className="text-lg font-semibold">Admin</span>
-          </div>
-        )}
-        {collapsed && (
-          <Shield className="h-8 w-8 text-primary mx-auto" aria-hidden="true" />
-        )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed(!collapsed)}
-          className="hidden md:flex"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </Button>
+      <div className="flex h-14 items-center gap-3 border-b border-border px-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground">
+          <Shield className="h-4 w-4 text-background" />
+        </div>
+        <span className="font-semibold text-foreground">Admin Portal</span>
       </div>
 
-      {/* Main Navigation */}
-      <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto" aria-label="Admin">
-        {visibleNavigation.map((item) => (
-          <NavItemComponent
-            key={item.name}
-            item={item}
-            pathname={pathname}
-            collapsed={collapsed}
-            onNavClick={handleNavClick}
-            hasPermission={hasPermission}
-            expandedSections={expandedSections}
-            toggleSection={toggleSection}
+      {/* Environment Badges */}
+      <div className="flex items-center gap-1 px-4 py-3 border-b border-border">
+        <span className="px-2 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground rounded">STG</span>
+        <span className="px-2 py-0.5 text-[10px] font-medium bg-foreground text-background rounded">ADM</span>
+        <span className="px-2 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground rounded">DEV</span>
+      </div>
+
+      {/* Search */}
+      <div className="px-3 py-3">
+        <div className="relative">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full h-9 pl-9 pr-3 text-sm bg-muted border-0 rounded-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-2">
+        {navigationSections.map((section) => (
+          <div key={section.title} className="mb-6">
+            <div className="px-3 py-2 text-[11px] font-medium text-muted-foreground tracking-wider">
+              {section.title}
+            </div>
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={handleNavClick}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                      isActive
+                        ? "bg-accent text-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-1">{item.name}</span>
+                    {item.badge && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium bg-muted text-muted-foreground rounded">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
         ))}
       </nav>
 
       {/* Theme Toggle */}
-      {!collapsed && (
-        <div className="border-t px-3 py-4">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <ThemeToggleSimple />
-            <span className="text-sm text-muted-foreground">Theme</span>
-          </div>
+      <div className="border-t border-border px-3 py-3">
+        <div className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
+          <Palette className="h-4 w-4" />
+          <span className="flex-1">Theme</span>
+          <ThemeToggleSimple />
         </div>
-      )}
+      </div>
 
       {/* User Section */}
-      <div className="border-t p-4">
-        <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
+      <div className="border-t border-border p-3">
+        <div className="flex items-center gap-3 px-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
             {user?.username?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "A"}
           </div>
-          {!collapsed && (
-            <>
-              <div className="flex-1 truncate">
-                <p className="text-sm font-medium truncate">{user?.username || "Admin"}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-                aria-label="Sign out"
-                title="Sign out"
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            </>
-          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">
+              {user?.username || "Admin"}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {user?.email || "admin@example.com"}
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
     </aside>

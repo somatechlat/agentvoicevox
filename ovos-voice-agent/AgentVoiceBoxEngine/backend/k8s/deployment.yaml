@@ -97,16 +97,6 @@ spec:
                 secretKeyRef:
                   name: avb-backend-secrets
                   key: keycloak-client-secret
-            - name: SPICEDB_ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  name: avb-backend-config
-                  key: spicedb-endpoint
-            - name: SPICEDB_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: avb-backend-secrets
-                  key: spicedb-token
             - name: TEMPORAL_HOST
               valueFrom:
                 configMapKeyRef:
@@ -294,7 +284,6 @@ data:
   db-host: "postgres.agentvoicebox.svc.cluster.local"
   redis-url: "redis://redis.agentvoicebox.svc.cluster.local:6379/0"
   keycloak-url: "http://keycloak.agentvoicebox.svc.cluster.local:8080"
-  spicedb-endpoint: "spicedb.agentvoicebox.svc.cluster.local:50051"
   temporal-host: "temporal.agentvoicebox.svc.cluster.local:7233"
   vault-addr: "http://vault.agentvoicebox.svc.cluster.local:8200"
 

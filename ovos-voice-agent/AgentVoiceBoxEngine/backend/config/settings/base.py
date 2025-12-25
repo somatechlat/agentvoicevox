@@ -53,6 +53,7 @@ LOCAL_APPS = [
     "apps.audit",               # Audit logging
     "apps.notifications",       # Notifications
     "apps.workflows",           # Temporal workflows
+    "apps.realtime",            # OpenAI Realtime API
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -232,15 +233,6 @@ KEYCLOAK = {
     "CLIENT_SECRET": env.keycloak_client_secret,
     "ALGORITHMS": ["RS256"],
     "AUDIENCE": env.keycloak_client_id,
-}
-
-# ==========================================================================
-# SPICEDB CONFIGURATION
-# ==========================================================================
-SPICEDB = {
-    "ENDPOINT": env.spicedb_endpoint,
-    "TOKEN": env.spicedb_token,
-    "INSECURE": env.spicedb_insecure,
 }
 
 # ==========================================================================

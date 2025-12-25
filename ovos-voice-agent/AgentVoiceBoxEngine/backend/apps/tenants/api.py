@@ -89,7 +89,7 @@ def list_tenants(
 
     Requires SYSADMIN role.
     """
-    # Check SYSADMIN permission (will be enforced by SpiceDB decorator later)
+    # Check SYSADMIN permission
     if not getattr(request, "is_sysadmin", False):
         raise PermissionDeniedError("SYSADMIN role required")
 
@@ -158,7 +158,7 @@ def update_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantUpdateSc
 
     Requires SYSADMIN or ADMIN role in the tenant.
     """
-    # Permission check will be enforced by SpiceDB decorator
+    # Permission check enforced by @require_permission decorator
     tenant = TenantService.update_tenant(
         tenant_id=tenant_id,
         name=payload.name,

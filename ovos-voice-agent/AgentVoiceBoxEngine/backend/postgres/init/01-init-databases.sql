@@ -7,10 +7,6 @@
 CREATE DATABASE keycloak;
 GRANT ALL PRIVILEGES ON DATABASE keycloak TO agentvoicebox;
 
--- Create SpiceDB database
-CREATE DATABASE spicedb;
-GRANT ALL PRIVILEGES ON DATABASE spicedb TO agentvoicebox;
-
 -- Create Temporal databases
 CREATE DATABASE temporal;
 CREATE DATABASE temporal_visibility;

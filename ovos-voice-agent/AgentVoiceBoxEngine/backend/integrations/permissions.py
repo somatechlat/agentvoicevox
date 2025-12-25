@@ -1,18 +1,15 @@
 """
-Permission decorators for SpiceDB authorization.
+Permission decorators using Django native authorization.
 
-Provides decorators for checking permissions on API endpoints.
+Provides decorators for checking permissions on API endpoints using
+Django's built-in permission system with PermissionMatrix model.
 """
-import asyncio
 import functools
 import logging
 from typing import Callable, List, Optional, Union
 
-from django.http import JsonResponse
-
 from apps.core.exceptions import PermissionDeniedError
 from apps.core.middleware.tenant import get_current_tenant
-from integrations.spicedb import spicedb_client
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +21,7 @@ def require_permission(
     resource_id_getter: Optional[Callable] = None,
 ):
     """
-    Decorator to require SpiceDB permission for an endpoint.
+    Decorator to require permission for an endpoint using Django native permissions.
 
     Args:
         resource_type: Type of resource (e.g., "tenant", "project")
@@ -45,12 +42,17 @@ def require_permission(
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(request, *args, **kwargs):
-            # Get user ID from request
+            from apps.core.permissions.service import GranularPermissionService
+
+            # Get user from request
+            user = getattr(request, "user", None)
             user_id = getattr(request, "user_id", None)
-            if not user_id:
+
+            if not user and not user_id:
                 raise PermissionDeniedError("Authentication required")
 
             # Get resource ID
+            resource_id = None
             if resource_id_getter:
                 resource_id = resource_id_getter(request)
             elif resource_id_param in kwargs:
@@ -60,27 +62,22 @@ def require_permission(
                 tenant = get_current_tenant()
                 if tenant and resource_type == "tenant":
                     resource_id = str(tenant.id)
-                else:
-                    raise PermissionDeniedError("Resource ID not found")
 
-            # Check permission
-            loop = asyncio.new_event_loop()
-            try:
-                result = loop.run_until_complete(
-                    spicedb_client.check_permission(
-                        resource_type=resource_type,
-                        resource_id=resource_id,
-                        relation=permission,
-                        subject_type="user",
-                        subject_id=str(user_id),
-                    )
+            # Check permission using Django native permission service
+            if user:
+                allowed = GranularPermissionService.check_permission(
+                    user=user,
+                    resource=resource_type,
+                    action=permission,
+                    resource_id=resource_id,
                 )
-            finally:
-                loop.close()
+            else:
+                # No user object, deny access
+                allowed = False
 
-            if not result.allowed:
+            if not allowed:
                 logger.warning(
-                    f"Permission denied: user={user_id} "
+                    f"Permission denied: user={user_id or user} "
                     f"resource={resource_type}:{resource_id} "
                     f"permission={permission}"
                 )
@@ -219,17 +216,17 @@ def require_project_permission(permission: str, project_id_param: str = "project
     )
 
 
-async def check_permission_async(
-    user_id: str,
+def check_permission_sync(
+    user,
     resource_type: str,
     resource_id: str,
     permission: str,
 ) -> bool:
     """
-    Check permission asynchronously.
+    Check permission synchronously using Django native permissions.
 
     Args:
-        user_id: User ID
+        user: User object
         resource_type: Type of resource
         resource_id: ID of the resource
         permission: Permission to check
@@ -237,65 +234,76 @@ async def check_permission_async(
     Returns:
         True if allowed, False otherwise
     """
-    result = await spicedb_client.check_permission(
-        resource_type=resource_type,
+    from apps.core.permissions.service import GranularPermissionService
+
+    return GranularPermissionService.check_permission(
+        user=user,
+        resource=resource_type,
+        action=permission,
         resource_id=resource_id,
-        relation=permission,
-        subject_type="user",
-        subject_id=user_id,
     )
-    return result.allowed
 
 
-async def grant_permission(
-    user_id: str,
-    resource_type: str,
-    resource_id: str,
-    relation: str,
+def grant_permission(
+    user,
+    role: str,
+    tenant=None,
 ) -> bool:
     """
-    Grant a permission to a user.
+    Grant a role to a user using Django native permissions.
 
     Args:
-        user_id: User ID
-        resource_type: Type of resource
-        resource_id: ID of the resource
-        relation: Relation to grant
+        user: User object
+        role: Role to assign
+        tenant: Tenant context (uses current tenant if not provided)
 
     Returns:
         True if successful
     """
-    return await spicedb_client.write_relationship(
-        resource_type=resource_type,
-        resource_id=resource_id,
-        relation=relation,
-        subject_type="user",
-        subject_id=user_id,
+    from apps.core.middleware.tenant import get_current_tenant
+    from apps.core.permissions.service import GranularPermissionService
+
+    if tenant is None:
+        tenant = get_current_tenant()
+
+    if not tenant:
+        return False
+
+    GranularPermissionService.assign_role(
+        user=user,
+        role=role,
+        tenant=tenant,
     )
+    return True
 
 
-async def revoke_permission(
-    user_id: str,
-    resource_type: str,
-    resource_id: str,
-    relation: str,
+def revoke_permission(
+    user,
+    role: str,
+    tenant=None,
 ) -> bool:
     """
-    Revoke a permission from a user.
+    Revoke a role from a user using Django native permissions.
 
     Args:
-        user_id: User ID
-        resource_type: Type of resource
-        resource_id: ID of the resource
-        relation: Relation to revoke
+        user: User object
+        role: Role to revoke
+        tenant: Tenant context (uses current tenant if not provided)
 
     Returns:
         True if successful
     """
-    return await spicedb_client.delete_relationship(
-        resource_type=resource_type,
-        resource_id=resource_id,
-        relation=relation,
-        subject_type="user",
-        subject_id=user_id,
+    from apps.core.middleware.tenant import get_current_tenant
+    from apps.core.permissions.service import GranularPermissionService
+
+    if tenant is None:
+        tenant = get_current_tenant()
+
+    if not tenant:
+        return False
+
+    return GranularPermissionService.revoke_role(
+        user=user,
+        role=role,
+        tenant=tenant,
     )

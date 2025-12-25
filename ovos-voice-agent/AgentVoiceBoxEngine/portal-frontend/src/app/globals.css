@@ -1,65 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Light Theme - Soft, clean, professional */
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    /* Light Theme - Clean, minimal, professional (matching design screenshots) */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 9%;
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 9%;
     --radius: 0.5rem;
     
-    /* Success, Warning colors */
+    /* Semantic colors */
     --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
   }
 
   .dark {
     /* Dark Theme - Deep, elegant, minimal */
-    --background: 240 10% 4%;
-    --foreground: 0 0% 90%;
-    --card: 240 6% 7%;
-    --card-foreground: 0 0% 90%;
-    --popover: 240 6% 7%;
-    --popover-foreground: 0 0% 90%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 90%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 240 4% 16%;
-    --accent-foreground: 0 0% 90%;
+    --background: 0 0% 4%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 95%;
     --destructive: 0 63% 31%;
-    --destructive-foreground: 0 0% 90%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-    --ring: 217 91% 60%;
+    --destructive-foreground: 0 0% 95%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 83%;
     
-    /* Success, Warning colors */
+    /* Semantic colors */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
   }
 }
 
@@ -70,18 +76,24 @@
   
   html {
     @apply antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
   
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  /* Geist Mono for code */
+  code, pre, .font-mono {
+    font-family: 'Geist Mono', 'SF Mono', Monaco, 'Cascadia Code', monospace;
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - minimal */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -89,7 +101,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/20 rounded-full;
+  @apply bg-border rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -99,7 +111,7 @@
 /* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
+  scrollbar-color: hsl(var(--border)) transparent;
 }
 
 /* Focus visible styles for accessibility */
@@ -119,35 +131,26 @@
 
 /* Smooth transitions for theme switching */
 html {
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-/* Card hover effect */
+/* Card hover effect - subtle */
 .card-hover {
-  @apply transition-all duration-200;
+  @apply transition-all duration-150;
 }
 
 .card-hover:hover {
-  @apply shadow-md;
-}
-
-.dark .card-hover:hover {
-  @apply bg-card/80;
-}
-
-/* Gradient backgrounds */
-.gradient-bg {
-  @apply bg-gradient-to-br from-background via-background to-muted/30;
+  @apply shadow-sm border-border/80;
 }
 
 /* Input focus animation */
 input:focus,
 textarea:focus,
 select:focus {
-  @apply transition-shadow duration-200;
+  @apply transition-shadow duration-150;
 }
 
-/* Button press effect */
+/* Button press effect - subtle */
 button:active:not(:disabled) {
   @apply scale-[0.98];
 }
@@ -175,4 +178,72 @@ button:active:not(:disabled) {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Navigation item styles */
+.nav-item {
+  @apply flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors rounded-md;
+  @apply text-muted-foreground hover:bg-accent hover:text-accent-foreground;
+}
+
+.nav-item.active {
+  @apply bg-accent text-foreground;
+}
+
+/* Sidebar styles */
+.sidebar {
+  @apply flex h-full flex-col border-r bg-card;
+}
+
+.sidebar-header {
+  @apply flex h-14 items-center gap-3 border-b px-4;
+}
+
+.sidebar-nav {
+  @apply flex-1 space-y-1 px-2 py-4 overflow-y-auto;
+}
+
+.sidebar-section {
+  @apply mb-4;
+}
+
+.sidebar-section-title {
+  @apply px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider;
+}
+
+/* Header styles */
+.header {
+  @apply h-14 border-b bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 md:px-6;
+}
+
+/* Page container */
+.page-container {
+  @apply flex-1 overflow-y-auto p-4 md:p-6;
+}
+
+/* Stats grid */
+.stats-grid {
+  @apply grid gap-4 md:grid-cols-2 lg:grid-cols-4;
+}
+
+/* Table styles */
+.table-container {
+  @apply rounded-lg border bg-card overflow-hidden;
+}
+
+/* Badge variants */
+.badge-success {
+  @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400;
+}
+
+.badge-warning {
+  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400;
+}
+
+.badge-error {
+  @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400;
+}
+
+.badge-info {
+  @apply bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400;
 }

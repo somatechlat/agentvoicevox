@@ -211,12 +211,3 @@ groups:
         annotations:
           summary: "Keycloak is down"
           description: "Keycloak has been down for more than 1 minute."
-
-      - alert: SpiceDBDown
-        expr: up{job="spicedb"} == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "SpiceDB is down"
-          description: "SpiceDB has been down for more than 1 minute."

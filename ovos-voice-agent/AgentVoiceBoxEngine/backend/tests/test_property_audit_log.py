@@ -22,6 +22,13 @@ from hypothesis import strategies as st
 # STRATEGIES FOR PROPERTY-BASED TESTING
 # ==========================================================================
 
+# Safe text strategy (excludes NUL bytes which PostgreSQL doesn't support)
+safe_text_strategy = st.text(
+    alphabet=st.characters(blacklist_characters="\x00"),
+    min_size=1,
+    max_size=200,
+).filter(str.strip)
+
 # Action strategy
 action_strategy = st.sampled_from(
     [
@@ -164,7 +171,7 @@ class TestAuditLogImmutability:
         action=action_strategy,
         resource_type=resource_type_strategy,
         actor_type=actor_type_strategy,
-        description=st.text(min_size=1, max_size=200).filter(str.strip),
+        description=safe_text_strategy,
     )
     @settings(
         max_examples=30,
@@ -382,8 +389,8 @@ class TestAuditLogConvenienceMethods:
 
     @pytest.mark.property
     @given(
-        old_value=st.text(min_size=1, max_size=50).filter(str.strip),
-        new_value=st.text(min_size=1, max_size=50).filter(str.strip),
+        old_value=safe_text_strategy,
+        new_value=safe_text_strategy,
     )
     @settings(
         max_examples=20,

@@ -132,7 +132,7 @@ def user_factory(db):
 # ==========================================================================
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 class TestAPIKeyAuthentication:
     """
     Property tests for API key authentication.
@@ -189,7 +189,6 @@ class TestAPIKeyAuthentication:
         assert request.auth_type == "api_key"
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_expired_api_key_returns_401(self, api_key_factory):
         """
         Property: Expired API keys return 401 with "api_key_expired".
@@ -224,7 +223,6 @@ class TestAPIKeyAuthentication:
         assert b"api_key_expired" in response.content
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_revoked_api_key_returns_401(self, api_key_factory):
         """
         Property: Revoked API keys return 401 with "api_key_revoked".
@@ -286,7 +284,6 @@ class TestAPIKeyAuthentication:
         assert b"invalid_api_key" in response.content
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_nonexistent_api_key_returns_401(self, tenant_factory):
         """
         Property: Non-existent API keys return 401.
@@ -321,7 +318,7 @@ class TestAPIKeyAuthentication:
 # ==========================================================================
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 class TestAPIKeyLifecycle:
     """
     Property tests for API key lifecycle.
@@ -390,7 +387,6 @@ class TestAPIKeyLifecycle:
             assert key_hash != full_key
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_full_key_returned_only_once(self, api_key_factory):
         """
         Property: Full key is only returned once at creation.
@@ -416,7 +412,6 @@ class TestAPIKeyLifecycle:
         assert retrieved_key.key_hash == APIKey.hash_key(full_key)
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_validation_by_hash_comparison(self, api_key_factory):
         """
         Property: Validation correctly identifies valid keys by hash.
@@ -441,7 +436,6 @@ class TestAPIKeyLifecycle:
         assert APIKey.hash_key(full_key) == api_key.key_hash
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_tampered_key_fails_validation(self, api_key_factory):
         """
         Property: Tampered keys fail validation.
@@ -468,7 +462,7 @@ class TestAPIKeyLifecycle:
 # ==========================================================================
 
 
-@pytest.mark.django_db(transaction=True)
+@pytest.mark.django_db
 class TestAPIKeyUsageTracking:
     """
     Property tests for API key usage tracking.

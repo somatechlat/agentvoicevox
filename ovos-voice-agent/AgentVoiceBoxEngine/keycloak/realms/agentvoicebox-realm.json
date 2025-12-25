@@ -36,16 +36,48 @@
   "roles": {
     "realm": [
       {
-        "name": "tenant_admin",
-        "description": "Full administrative access to tenant resources",
+        "name": "saas_admin",
+        "description": "System-wide administrator with cross-tenant access",
         "composite": true,
         "composites": {
-          "realm": ["developer", "viewer", "billing_admin"]
+          "realm": ["tenant_admin", "billing_admin"]
         }
       },
       {
-        "name": "developer",
-        "description": "API access and key management",
+        "name": "tenant_admin",
+        "description": "Full tenant access, user management, settings",
+        "composite": true,
+        "composites": {
+          "realm": ["agent_admin", "supervisor", "operator", "agent_user", "viewer"]
+        }
+      },
+      {
+        "name": "agent_admin",
+        "description": "Agent configuration and persona management",
+        "composite": true,
+        "composites": {
+          "realm": ["supervisor", "operator", "agent_user", "viewer"]
+        }
+      },
+      {
+        "name": "supervisor",
+        "description": "Monitor sessions, view analytics, manage operators",
+        "composite": true,
+        "composites": {
+          "realm": ["operator", "agent_user", "viewer"]
+        }
+      },
+      {
+        "name": "operator",
+        "description": "Handle live sessions, view assigned conversations",
+        "composite": true,
+        "composites": {
+          "realm": ["agent_user", "viewer"]
+        }
+      },
+      {
+        "name": "agent_user",
+        "description": "Interact with agents, view own conversations",
         "composite": true,
         "composites": {
           "realm": ["viewer"]
@@ -53,11 +85,19 @@
       },
       {
         "name": "viewer",
-        "description": "Read-only access to dashboards and usage"
+        "description": "Read-only access to permitted resources"
       },
       {
         "name": "billing_admin",
-        "description": "Billing and subscription management"
+        "description": "Billing management, usage reports, invoices"
+      },
+      {
+        "name": "developer",
+        "description": "Legacy role - mapped to agent_admin",
+        "composite": true,
+        "composites": {
+          "realm": ["agent_admin"]
+        }
       }
     ],
     "client": {
@@ -95,19 +135,35 @@
   },
   "groups": [
     {
-      "name": "Administrators",
+      "name": "SaaS Administrators",
+      "realmRoles": ["saas_admin"]
+    },
+    {
+      "name": "Tenant Administrators",
       "realmRoles": ["tenant_admin"]
     },
     {
-      "name": "Developers",
-      "realmRoles": ["developer"]
+      "name": "Agent Administrators",
+      "realmRoles": ["agent_admin"]
+    },
+    {
+      "name": "Supervisors",
+      "realmRoles": ["supervisor"]
+    },
+    {
+      "name": "Operators",
+      "realmRoles": ["operator"]
+    },
+    {
+      "name": "Agent Users",
+      "realmRoles": ["agent_user"]
     },
     {
       "name": "Viewers",
       "realmRoles": ["viewer"]
     },
     {
-      "name": "Billing",
+      "name": "Billing Administrators",
       "realmRoles": ["billing_admin"]
     }
   ],
@@ -294,6 +350,25 @@
   ],
   "users": [
     {
+      "username": "saasadmin@agentvoicebox.com",
+      "email": "saasadmin@agentvoicebox.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "SaaS",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "saasadmin123",
+          "temporary": true
+        }
+      ],
+      "realmRoles": ["saas_admin"],
+      "attributes": {
+        "tenant_id": ["00000000-0000-0000-0000-000000000000"]
+      }
+    },
+    {
       "username": "admin@agentvoicebox.com",
       "email": "admin@agentvoicebox.com",
       "emailVerified": true,
@@ -313,6 +388,63 @@
       }
     },
     {
+      "username": "agentadmin@agentvoicebox.com",
+      "email": "agentadmin@agentvoicebox.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Agent",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "agentadmin123",
+          "temporary": true
+        }
+      ],
+      "realmRoles": ["agent_admin"],
+      "attributes": {
+        "tenant_id": ["00000000-0000-0000-0000-000000000001"]
+      }
+    },
+    {
+      "username": "supervisor@agentvoicebox.com",
+      "email": "supervisor@agentvoicebox.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Supervisor",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "supervisor123",
+          "temporary": true
+        }
+      ],
+      "realmRoles": ["supervisor"],
+      "attributes": {
+        "tenant_id": ["00000000-0000-0000-0000-000000000001"]
+      }
+    },
+    {
+      "username": "operator@agentvoicebox.com",
+      "email": "operator@agentvoicebox.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Operator",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "operator123",
+          "temporary": true
+        }
+      ],
+      "realmRoles": ["operator"],
+      "attributes": {
+        "tenant_id": ["00000000-0000-0000-0000-000000000001"]
+      }
+    },
+    {
       "username": "developer@agentvoicebox.com",
       "email": "developer@agentvoicebox.com",
       "emailVerified": true,
@@ -326,7 +458,7 @@
           "temporary": true
         }
       ],
-      "realmRoles": ["developer"],
+      "realmRoles": ["agent_admin"],
       "attributes": {
         "tenant_id": ["00000000-0000-0000-0000-000000000001"]
       }
@@ -348,6 +480,25 @@
       "realmRoles": ["tenant_admin"],
       "attributes": {
         "tenant_id": ["00000000-0000-0000-0000-000000000002"]
+      }
+    },
+    {
+      "username": "billing@agentvoicebox.com",
+      "email": "billing@agentvoicebox.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Billing",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "billing123",
+          "temporary": true
+        }
+      ],
+      "realmRoles": ["billing_admin"],
+      "attributes": {
+        "tenant_id": ["00000000-0000-0000-0000-000000000001"]
       }
     }
   ],

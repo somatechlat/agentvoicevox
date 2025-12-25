@@ -50,10 +50,7 @@ services:
       - KEYCLOAK_REALM=agentvoicebox
       - KEYCLOAK_CLIENT_ID=agentvoicebox-backend
       - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-      # SpiceDB
-      - SPICEDB_ENDPOINT=spicedb:50051
-      - SPICEDB_TOKEN=${SPICEDB_TOKEN}
-      - SPICEDB_INSECURE=true
+
       # Temporal
       - TEMPORAL_HOST=temporal:7233
       - TEMPORAL_NAMESPACE=agentvoicebox
@@ -88,6 +85,11 @@ services:
     ports:
       - "65000:8000"
     volumes:
+      - ./apps:/app/apps  # Mount apps for live editing
+      - ./config:/app/config  # Mount config for live editing
+      - ./realtime:/app/realtime  # Mount realtime module
+      - ./integrations:/app/integrations  # Mount integrations
+      - ./tests:/app/tests  # Mount tests
       - agentvoicebox_backend_static:/app/staticfiles
       - agentvoicebox_backend_media:/app/media
       - agentvoicebox_backend_logs:/app/logs
@@ -204,8 +206,7 @@ services:
       - VAULT_ROLE_ID=${VAULT_WORKER_ROLE_ID}
       - VAULT_SECRET_ID=${VAULT_WORKER_SECRET_ID}
       - VAULT_FAIL_FAST=${VAULT_FAIL_FAST:-false}
-      - SPICEDB_ENDPOINT=spicedb:50051
-      - SPICEDB_TOKEN=${SPICEDB_TOKEN}
+
       - LOG_LEVEL=INFO
       - LOG_FORMAT=json
     volumes:
@@ -439,44 +440,6 @@ services:
       start_period: 120s
 
   # ==========================================================================
-  # AUTHORIZATION
-  # ==========================================================================
-  spicedb:
-    image: authzed/spicedb:v1.30.0
-    container_name: agentvoicebox_spicedb
-    command:
-      - "serve"
-      - "--grpc-preshared-key=${SPICEDB_TOKEN}"
-      - "--datastore-engine=postgres"
-      - "--datastore-conn-uri=postgres://agentvoicebox:${DB_PASSWORD}@postgres:5432/spicedb?sslmode=disable"
-      - "--datastore-gc-window=24h"
-      - "--telemetry-endpoint="
-      - "--log-level=info"
-    ports:
-      - "65007:50051"
-      - "65008:8443"
-    volumes:
-      - agentvoicebox_spicedb_data:/var/lib/spicedb
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: "1.0"
-        reservations:
-          memory: 256M
-          cpus: "0.25"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    networks:
-      - agentvoicebox-network
-    logging: *default-logging
-    restart: unless-stopped
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD", "grpc_health_probe", "-addr=:50051"]
-
-  # ==========================================================================
   # REVERSE PROXY
   # ==========================================================================
   nginx:
@@ -601,8 +564,6 @@ volumes:
   agentvoicebox_redis_data:
     driver: local
   agentvoicebox_keycloak_data:
-    driver: local
-  agentvoicebox_spicedb_data:
     driver: local
   agentvoicebox_backend_static:
     driver: local

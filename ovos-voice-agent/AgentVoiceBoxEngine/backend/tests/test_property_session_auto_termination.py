@@ -264,10 +264,6 @@ class TestSessionAutoTermination:
             assert session.status == Session.Status.TERMINATED
 
     @pytest.mark.property
-    @settings(
-        max_examples=10,
-        suppress_health_check=[HealthCheck.function_scoped_fixture],
-    )
     def test_non_active_sessions_not_affected(self, session_factory):
         """
         Property: Non-active sessions are not affected by cleanup.

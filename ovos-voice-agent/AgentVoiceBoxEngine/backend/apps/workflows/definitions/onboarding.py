@@ -43,7 +43,7 @@ class TenantOnboardingWorkflow:
 
     Handles:
     - Keycloak group creation
-    - SpiceDB permission setup
+    - Django permission setup
     - Lago customer creation
     - Default project creation
     - Welcome notification
@@ -95,21 +95,21 @@ class TenantOnboardingWorkflow:
             self.errors.append(f"Keycloak group: {str(e)}")
             workflow.logger.error(f"Failed to create Keycloak group: {e}")
 
-        # 2. Setup SpiceDB permissions
+        # 2. Setup Django permissions (role assignments)
         try:
             await workflow.execute_activity(
-                "onboarding_setup_spicedb_permissions",
+                "onboarding_setup_django_permissions",
                 input.tenant_id,
                 input.admin_email,
                 start_to_close_timeout=timedelta(seconds=30),
                 retry_policy=retry_policy,
             )
-            self.steps_completed.append("spicedb_permissions")
-            workflow.logger.info("Setup SpiceDB permissions")
+            self.steps_completed.append("django_permissions")
+            workflow.logger.info("Setup Django permissions")
 
         except Exception as e:
-            self.errors.append(f"SpiceDB permissions: {str(e)}")
-            workflow.logger.error(f"Failed to setup SpiceDB permissions: {e}")
+            self.errors.append(f"Django permissions: {str(e)}")
+            workflow.logger.error(f"Failed to setup Django permissions: {e}")
 
         # 3. Create Lago customer
         try:

@@ -347,7 +347,6 @@ class TestTenantStatusTransitions:
     """
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_pending_tenant_allows_request(self, tenant_factory):
         """
         Property: Pending tenant allows request to proceed.
@@ -379,7 +378,6 @@ class TestTenantStatusTransitions:
         assert request.tenant.id == pending_tenant.id
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_tenant_suspension_blocks_access(self, tenant_factory):
         """
         Property: Suspending a tenant immediately blocks access.
@@ -424,7 +422,6 @@ class TestTenantStatusTransitions:
         assert b"tenant_suspended" in response2.content
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_tenant_reactivation_restores_access(self, tenant_factory):
         """
         Property: Reactivating a tenant restores access.

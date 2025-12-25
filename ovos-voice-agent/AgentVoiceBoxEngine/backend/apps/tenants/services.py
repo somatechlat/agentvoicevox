@@ -266,6 +266,34 @@ class TenantService:
 
         return current_count < limit
 
+    @staticmethod
+    def enforce_limit(tenant: Tenant, resource_type: str, current_count: int) -> None:
+        """
+        Enforce tenant resource limit, raising exception if exceeded.
+
+        Args:
+            tenant: Tenant instance
+            resource_type: Type of resource (users, projects, api_keys)
+            current_count: Current count of resources
+
+        Raises:
+            TenantLimitExceededError: If limit is exceeded
+        """
+        limit_map = {
+            "users": tenant.max_users,
+            "projects": tenant.max_projects,
+            "api_keys": tenant.max_api_keys,
+        }
+
+        limit = limit_map.get(resource_type)
+        if limit is None:
+            return
+
+        if current_count >= limit:
+            raise TenantLimitExceededError(
+                f"Tenant {tenant.slug} has reached the {resource_type} limit ({limit})"
+            )
+
 
 class TenantSettingsService:
     """Service class for tenant settings operations."""

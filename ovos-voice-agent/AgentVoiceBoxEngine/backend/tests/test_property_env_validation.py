@@ -30,7 +30,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 REQUIRED_ENV_VARS = {
     "DJANGO_SECRET_KEY",
     "DB_PASSWORD",
-    "SPICEDB_TOKEN",
 }
 
 # Optional environment variables with defaults
@@ -44,7 +43,6 @@ OPTIONAL_ENV_VARS = {
     "REDIS_URL": "redis://localhost:6379/0",
     "KEYCLOAK_URL": "http://localhost:8080",
     "KEYCLOAK_REALM": "agentvoicebox",
-    "SPICEDB_ENDPOINT": "localhost:50051",
     "TEMPORAL_HOST": "localhost:7233",
     "VAULT_ADDR": "http://localhost:8200",
     "LOG_LEVEL": "INFO",
@@ -56,7 +54,6 @@ def get_valid_env_vars() -> Dict[str, str]:
     return {
         "DJANGO_SECRET_KEY": "a" * 50,  # Minimum 50 chars
         "DB_PASSWORD": "test_password",
-        "SPICEDB_TOKEN": "test_spicedb_token",
         **OPTIONAL_ENV_VARS,
     }
 
@@ -90,13 +87,11 @@ class TestEnvironmentValidation:
                 )
                 django_secret_key: str = Field(..., min_length=50)
                 db_password: str = Field(...)
-                spicedb_token: str = Field(...)
 
             # Should not raise
             test_settings = TestSettings()
             assert test_settings.django_secret_key == "a" * 50
             assert test_settings.db_password == "test_password"
-            assert test_settings.spicedb_token == "test_spicedb_token"
 
     @pytest.mark.property
     @given(missing_var=st.sampled_from(list(REQUIRED_ENV_VARS)))
@@ -119,7 +114,6 @@ class TestEnvironmentValidation:
             )
             django_secret_key: str = Field(..., min_length=50)
             db_password: str = Field(...)
-            spicedb_token: str = Field(...)
 
             # Override to prevent reading from environment
             @classmethod
@@ -138,14 +132,12 @@ class TestEnvironmentValidation:
         valid_values = {
             "django_secret_key": "a" * 50,
             "db_password": "test_password",
-            "spicedb_token": "test_spicedb_token",
         }
 
         # Map env var names to field names
         field_map = {
             "DJANGO_SECRET_KEY": "django_secret_key",
             "DB_PASSWORD": "db_password",
-            "SPICEDB_TOKEN": "spicedb_token",
         }
 
         # Remove the field corresponding to the missing env var
@@ -180,7 +172,6 @@ class TestEnvironmentValidation:
                 )
                 django_secret_key: str = Field(..., min_length=50)
                 db_password: str = Field(...)
-                spicedb_token: str = Field(...)
 
             with pytest.raises(ValidationError) as exc_info:
                 TestSettings()
@@ -212,7 +203,6 @@ class TestEnvironmentValidation:
                 )
                 django_secret_key: str = Field(..., min_length=50)
                 db_password: str = Field(...)
-                spicedb_token: str = Field(...)
 
             # Should not raise
             test_settings = TestSettings()
@@ -242,7 +232,6 @@ class TestEnvironmentValidation:
                 )
                 django_secret_key: str = Field(..., min_length=50)
                 db_password: str = Field(...)
-                spicedb_token: str = Field(...)
                 log_level: str = Field(default="INFO")
 
                 @field_validator("log_level")
@@ -285,7 +274,6 @@ class TestEnvironmentValidation:
             )
             django_secret_key: str = Field(..., min_length=50)
             db_password: str = Field(...)
-            spicedb_token: str = Field(...)
             log_level: str = Field(default="INFO")
 
             @field_validator("log_level")
@@ -300,6 +288,5 @@ class TestEnvironmentValidation:
             TestSettings(
                 django_secret_key="a" * 50,
                 db_password="test",
-                spicedb_token="test",
                 log_level=invalid_level,
             )

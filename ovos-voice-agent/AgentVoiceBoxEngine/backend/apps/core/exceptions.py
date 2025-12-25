@@ -21,9 +21,12 @@ class APIException(Exception):
         self,
         message: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
+        error_code: Optional[str] = None,
     ):
         self.message = message or self.default_message
         self.details = details or {}
+        if error_code:
+            self.error_code = error_code
         super().__init__(self.message)
 
 

@@ -58,10 +58,6 @@ class TestTenantScopedModelIsolation:
     """
 
     @pytest.mark.property
-    @settings(
-        max_examples=20,
-        suppress_health_check=[HealthCheck.function_scoped_fixture],
-    )
     def test_query_returns_only_current_tenant_records(self, tenant_factory):
         """
         Property: Queries only return current tenant's records.
@@ -150,7 +146,6 @@ class TestTenantScopedModelIsolation:
         assert project.tenant == tenant
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_save_without_tenant_context_raises_error(self, tenant_factory):
         """
         Property: Save without tenant context raises ValueError.
@@ -175,10 +170,6 @@ class TestTenantScopedModelIsolation:
             project.save()
 
     @pytest.mark.property
-    @settings(
-        max_examples=10,
-        suppress_health_check=[HealthCheck.function_scoped_fixture],
-    )
     def test_explicit_tenant_overrides_context(self, tenant_factory):
         """
         Property: Explicit tenant overrides context tenant.
@@ -205,10 +196,6 @@ class TestTenantScopedModelIsolation:
         assert project.tenant_id == tenant_b.id
 
     @pytest.mark.property
-    @settings(
-        max_examples=10,
-        suppress_health_check=[HealthCheck.function_scoped_fixture],
-    )
     def test_all_objects_bypasses_tenant_filter(self, tenant_factory):
         """
         Property: all_objects manager bypasses tenant filtering.
@@ -244,10 +231,6 @@ class TestTenantScopedModelIsolation:
         assert project_b.id in project_ids
 
     @pytest.mark.property
-    @settings(
-        max_examples=10,
-        suppress_health_check=[HealthCheck.function_scoped_fixture],
-    )
     def test_filter_operations_respect_tenant(self, tenant_factory):
         """
         Property: Filter operations respect tenant context.
@@ -290,10 +273,6 @@ class TestTenantScopedModelIsolation:
         assert filtered.first().id == project_b.id
 
     @pytest.mark.property
-    @settings(
-        max_examples=10,
-        suppress_health_check=[HealthCheck.function_scoped_fixture],
-    )
     def test_get_respects_tenant_isolation(self, tenant_factory):
         """
         Property: get() respects tenant isolation.
@@ -387,10 +366,6 @@ class TestCrossTenantIsolation:
                     assert visible_ids.isdisjoint(other_ids)
 
     @pytest.mark.property
-    @settings(
-        max_examples=10,
-        suppress_health_check=[HealthCheck.function_scoped_fixture],
-    )
     def test_count_respects_tenant_isolation(self, tenant_factory):
         """
         Property: count() respects tenant isolation.
@@ -431,10 +406,6 @@ class TestCrossTenantIsolation:
         assert Project.all_objects.count() >= 8
 
     @pytest.mark.property
-    @settings(
-        max_examples=10,
-        suppress_health_check=[HealthCheck.function_scoped_fixture],
-    )
     def test_exists_respects_tenant_isolation(self, tenant_factory):
         """
         Property: exists() respects tenant isolation.
@@ -475,7 +446,6 @@ class TestTenantContextClearing:
     """
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_cleared_context_returns_empty_queryset(self, tenant_factory):
         """
         Property: Cleared tenant context returns empty queryset.

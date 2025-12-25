@@ -15,6 +15,7 @@ from hypothesis import HealthCheck, settings as hypothesis_settings
 
 # Set Django settings module before importing Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.testing")
+os.environ["TESTING"] = "true"
 
 django.setup()
 
@@ -35,23 +36,30 @@ hypothesis_settings.register_profile(
     "default",
     max_examples=100,
     deadline=5000,  # 5 seconds
-    suppress_health_check=[HealthCheck.too_slow],
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
 )
 hypothesis_settings.register_profile(
     "ci",
     max_examples=200,
     deadline=10000,  # 10 seconds for CI
-    suppress_health_check=[HealthCheck.too_slow],
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
 )
 hypothesis_settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
 
 
 # ==========================================================================
-# PYTEST CONFIGURATION
+# PYTEST-DJANGO CONFIGURATION
 # ==========================================================================
+# Use transaction-based test isolation (no database flush between tests)
 @pytest.fixture(scope="session")
 def django_db_setup():
-    """Configure Django test database."""
+    """Configure Django test database - use existing database."""
+    pass
+
+
+@pytest.fixture(scope="session")
+def django_db_modify_db_settings():
+    """Don't modify database settings."""
     pass
 
 
@@ -79,6 +87,9 @@ def tenant_factory(db):
     ) -> Tenant:
         if slug is None:
             slug = f"test-tenant-{uuid.uuid4().hex[:8]}"
+        else:
+            # Ensure slug is unique by appending UUID suffix
+            slug = f"{slug}-{uuid.uuid4().hex[:8]}"
 
         tenant = Tenant.objects.create(
             name=name,
