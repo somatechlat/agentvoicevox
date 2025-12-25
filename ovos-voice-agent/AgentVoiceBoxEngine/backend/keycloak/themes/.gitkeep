@@ -1,0 +1,14 @@
+# Keycloak Custom Themes Directory
+# Place custom Keycloak themes here
+#
+# Theme structure:
+# themes/
+#   agentvoicebox/
+#     login/
+#       theme.properties
+#       resources/
+#       templates/
+#     account/
+#     email/
+#
+# See: https://www.keycloak.org/docs/latest/server_development/#_themes

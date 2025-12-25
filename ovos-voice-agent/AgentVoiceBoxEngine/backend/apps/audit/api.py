@@ -16,7 +16,6 @@ from apps.core.exceptions import NotFoundError
 from .schemas import (
     AuditLogListOut,
     AuditLogOut,
-    AuditLogStatsOut,
 )
 from .services import AuditLogService
 

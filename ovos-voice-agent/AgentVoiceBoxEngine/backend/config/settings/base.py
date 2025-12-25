@@ -4,7 +4,6 @@ Django base settings for AgentVoiceBox Platform.
 This module contains settings common to all environments.
 Environment-specific settings override these in their respective modules.
 """
-import os
 from pathlib import Path
 
 from . import settings_config as env
@@ -159,7 +158,8 @@ USE_TZ = True
 # ==========================================================================
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_DIRS = [BASE_DIR / "static"]
+# STATICFILES_DIRS only needed if you have additional static files outside apps
+# STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # ==========================================================================
 # MEDIA FILES
@@ -175,9 +175,6 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": env.redis_url.replace("/0", f"/{env.redis_cache_db}"),
         "KEY_PREFIX": "avb",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
     }
 }
 
@@ -268,6 +265,26 @@ VAULT = {
 }
 
 # ==========================================================================
+# OPA CONFIGURATION
+# ==========================================================================
+OPA = {
+    "URL": env.opa_url,
+    "DECISION_PATH": env.opa_decision_path,
+    "TIMEOUT_SECONDS": env.opa_timeout_seconds,
+    "ENABLED": env.opa_enabled,
+}
+
+# ==========================================================================
+# KAFKA CONFIGURATION
+# ==========================================================================
+KAFKA = {
+    "BOOTSTRAP_SERVERS": env.kafka_bootstrap_servers,
+    "CONSUMER_GROUP": env.kafka_consumer_group,
+    "ENABLED": env.kafka_enabled,
+    "SECURITY_PROTOCOL": env.kafka_security_protocol,
+}
+
+# ==========================================================================
 # LAGO BILLING CONFIGURATION
 # ==========================================================================
 LAGO = {
@@ -286,23 +303,28 @@ RATE_LIMITS = {
 }
 
 # ==========================================================================
-# LOGGING (Structlog)
+# LOGGING (Standard Python logging)
 # ==========================================================================
+
+# Standard Python logging configuration
+# Using simple formatters without external dependencies
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "json": {
-            "()": "django_structlog.celery.formatters.CeleryJsonFormatter",
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            "datefmt": "%Y-%m-%dT%H:%M:%S",
         },
         "console": {
-            "()": "django_structlog.celery.formatters.CeleryPlainFormatter",
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
         },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": env.log_format,
+            "formatter": "console",
         },
     },
     "root": {
@@ -311,6 +333,11 @@ LOGGING = {
     },
     "loggers": {
         "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,

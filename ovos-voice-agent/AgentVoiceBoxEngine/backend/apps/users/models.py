@@ -135,6 +135,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Basic info
     email = models.EmailField(
         max_length=255,
+        unique=True,
         help_text="User email address",
     )
     first_name = models.CharField(
@@ -203,12 +204,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         db_table = "users"
         ordering = ["-created_at"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["email", "tenant"],
-                name="unique_email_per_tenant",
-            ),
-        ]
         indexes = [
             models.Index(fields=["keycloak_id"]),
             models.Index(fields=["email"]),

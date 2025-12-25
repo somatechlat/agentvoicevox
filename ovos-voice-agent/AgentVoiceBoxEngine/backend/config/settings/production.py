@@ -56,8 +56,8 @@ LOGGING["handlers"]["console"]["formatter"] = "json"  # noqa: F405
 # ==========================================================================
 # CACHE (Production Redis settings)
 # ==========================================================================
-CACHES["default"]["OPTIONS"]["socket_timeout"] = 5  # noqa: F405
-CACHES["default"]["OPTIONS"]["socket_connect_timeout"] = 5  # noqa: F405
+# Django's built-in Redis cache doesn't support socket_timeout options
+# These are handled at the connection level by redis-py
 
 # ==========================================================================
 # DATABASE (Production optimizations)

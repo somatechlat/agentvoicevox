@@ -57,8 +57,15 @@ class NotificationListOut(Schema):
 class NotificationCountOut(Schema):
     """Schema for notification count."""
 
-    unread_count: int
-    total_count: int
+    unread: int
+    total: int
+    by_type: Dict[str, int] = {}
+
+
+class NotificationBulkActionOut(Schema):
+    """Schema for bulk action response."""
+
+    affected_count: int
 
 
 class MarkReadRequest(Schema):

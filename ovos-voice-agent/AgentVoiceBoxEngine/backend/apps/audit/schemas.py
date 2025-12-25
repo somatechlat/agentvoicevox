@@ -36,3 +36,12 @@ class AuditLogListOut(Schema):
     total: int
     page: int
     page_size: int
+
+
+class AuditLogStatsOut(Schema):
+    """Schema for audit log statistics."""
+
+    total_logs: int
+    actions_count: Dict[str, int]
+    resource_types_count: Dict[str, int]
+    actors_count: int

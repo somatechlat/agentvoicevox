@@ -44,7 +44,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Implement `/health/ready/` endpoint for readiness probe (checks DB, Redis, Temporal)
     - _Requirements: 1.8_
 
-  - [ ]* 1.5 Write property test for environment validation
+  - [x]* 1.5 Write property test for environment validation
     - **Property 1: Environment Variable Validation**
     - Test that missing required env vars cause startup failure with clear error
     - **Validates: Requirements 1.3, 1.7**
@@ -80,17 +80,17 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Override `get_queryset()` for automatic tenant filtering
     - _Requirements: 2.8, 2.9_
 
-  - [ ]* 3.4 Write property tests for tenant isolation
+  - [x]* 3.4 Write property tests for tenant isolation
     - **Property 2: Tenant Context Extraction**
     - Test tenant extraction from JWT, header, subdomain
     - **Validates: Requirements 2.4**
 
-  - [ ]* 3.5 Write property tests for tenant access control
+  - [x]* 3.5 Write property tests for tenant access control
     - **Property 3: Tenant Access Control**
     - Test missing tenant returns 400, suspended tenant returns 403
     - **Validates: Requirements 2.6, 2.7**
 
-  - [ ]* 3.6 Write property tests for tenant-scoped model isolation
+  - [x]* 3.6 Write property tests for tenant-scoped model isolation
     - **Property 4: Tenant-Scoped Model Isolation**
     - Test queries only return current tenant's records
     - Test auto-set tenant on save
@@ -120,12 +120,12 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Validate API key and set user/tenant context
     - _Requirements: 3.9_
 
-  - [ ]* 4.4 Write property tests for JWT authentication
+  - [x]* 4.4 Write property tests for JWT authentication
     - **Property 5: JWT Authentication Validation**
     - Test valid tokens accepted, expired returns 401 "token_expired", invalid returns 401 "invalid_token"
     - **Validates: Requirements 3.1, 3.5, 3.6**
 
-  - [ ]* 4.5 Write property tests for API key authentication
+  - [x]* 4.5 Write property tests for API key authentication
     - **Property 6: API Key Authentication**
     - Test valid keys authenticate, expired returns 401 "api_key_expired", revoked returns 401 "api_key_revoked"
     - **Validates: Requirements 3.9, 7.9, 7.10**
@@ -159,7 +159,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Return 403 with "permission_denied" on failure
     - _Requirements: 4.9, 4.10, 4.11_
 
-  - [ ]* 6.4 Write property tests for SpiceDB permission enforcement
+  - [x]* 6.4 Write property tests for SpiceDB permission enforcement
     - **Property 8: SpiceDB Permission Enforcement**
     - Test check_permission returns accurate results
     - Test denied permissions return 403 "permission_denied"
@@ -191,7 +191,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Create repository classes for Django ORM queries with QuerySet optimization
     - _Requirements: 5.9, 5.10_
 
-  - [ ]* 7.5 Write property tests for Pydantic validation
+  - [x]* 7.5 Write property tests for Pydantic validation
     - **Property 9: Pydantic Schema Validation**
     - Test invalid requests return 400 with field-level error details
     - **Validates: Requirements 5.2, 5.8**
@@ -229,7 +229,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - POST `/api/v2/api-keys/{id}/rotate/` - Rotate key
     - _Requirements: 7.1-7.11_
 
-  - [ ]* 9.4 Write property tests for API key lifecycle
+  - [x]* 9.4 Write property tests for API key lifecycle
     - **Property 7: API Key Lifecycle Round-Trip**
     - Test key format `avb_{random_32_bytes}`, hash storage, single return, validation
     - **Validates: Requirements 7.2, 7.3, 7.4, 7.7**
@@ -269,7 +269,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Stream TTS audio at `/ws/v2/tts/stream`
     - _Requirements: 6.8, 6.9_
 
-  - [ ]* 10.6 Write property tests for WebSocket authentication
+  - [x]* 10.6 Write property tests for WebSocket authentication
     - **Property 10: WebSocket Authentication**
     - Test authenticated connections have user/tenant in scope
     - Test unauthenticated connections close with code 4001
@@ -306,7 +306,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - GET `/api/v2/sessions/{id}/events/` - Get session events
     - _Requirements: 8.1-8.10_
 
-  - [ ]* 12.4 Write property tests for session auto-termination
+  - [x]* 12.4 Write property tests for session auto-termination
     - **Property 11: Session Auto-Termination**
     - Test sessions exceeding 24 hours are automatically terminated
     - **Validates: Requirements 8.10**
@@ -344,7 +344,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Route workflows to appropriate queues
     - _Requirements: 9.10_
 
-  - [ ]* 13.6 Write property tests for workflow retry
+  - [x]* 13.6 Write property tests for workflow retry
     - **Property 12: Task Retry with Backoff**
     - Test failed activities retry up to 3 times with exponential backoff
     - **Validates: Requirements 9.9**
@@ -371,12 +371,12 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Configure per-tier limits: DEFAULT (60/min), API_KEY (120/min), ADMIN (300/min)
     - _Requirements: 10.4, 10.5, 10.6, 10.7, 10.8_
 
-  - [ ]* 15.3 Write property tests for cache tenant isolation
+  - [x]* 15.3 Write property tests for cache tenant isolation
     - **Property 13: Cache Tenant Isolation**
     - Test cache keys are prefixed with tenant ID
     - **Validates: Requirements 10.1**
 
-  - [ ]* 15.4 Write property tests for rate limiting
+  - [x]* 15.4 Write property tests for rate limiting
     - **Property 14: Rate Limiting Enforcement**
     - Test exceeded limits return 429 with headers and retry_after
     - **Validates: Requirements 10.7**
@@ -403,7 +403,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Expose metrics at `/metrics`
     - _Requirements: 11.5, 11.6, 11.7, 11.8, 11.9_
 
-  - [ ]* 16.4 Write property tests for request ID generation
+  - [x]* 16.4 Write property tests for request ID generation
     - **Property 15: Request ID Generation**
     - Test every request gets unique request_id in X-Request-ID header
     - **Validates: Requirements 11.3**
@@ -433,7 +433,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Configure 90-day retention
     - _Requirements: 12.6, 12.7, 12.8_
 
-  - [ ]* 17.4 Write property tests for audit log immutability
+  - [x]* 17.4 Write property tests for audit log immutability
     - **Property 16: Audit Log Immutability**
     - Test update attempts raise error
     - Test delete attempts raise error
@@ -457,12 +457,12 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Log all exceptions with full context
     - _Requirements: 13.1, 13.6, 13.7, 13.8_
 
-  - [ ]* 18.3 Write property tests for exception sanitization
+  - [x]* 18.3 Write property tests for exception sanitization
     - **Property 17: Exception Sanitization**
     - Test production mode returns generic error without stack traces
     - **Validates: Requirements 13.6**
 
-- [-] 19. Checkpoint - Observability
+- [x] 19. Checkpoint - Observability
   - Ensure logging, metrics, and audit work correctly
   - Verify exception handling returns proper responses
   - Ask the user if questions arise
@@ -527,7 +527,7 @@ This implementation plan converts the Django SaaS Backend design into actionable
 
 ---
 
-- [ ] 23. Docker and Deployment
+- [x] 23. Docker and Deployment
   - [x] 23.1 Create Dockerfile
     - Multi-stage build with Python 3.12
     - Run as non-root user
@@ -554,10 +554,10 @@ This implementation plan converts the Django SaaS Backend design into actionable
     - Create Temporal dynamic config
     - Create Vault policies
     - Create Prometheus configuration
-    - Create Grafana dashboards
+    - Create Grafana dashboards (overview, backend, voice-sessions, temporal, infrastructure)
     - _Requirements: 17.1-17.8_
 
-- [ ] 24. Final Checkpoint - Full System
+- [x] 24. Final Checkpoint - Full System
   - Ensure all services start correctly with Docker Compose
   - Verify end-to-end flow: auth → API → WebSocket → Temporal
   - Run all property tests

@@ -50,6 +50,7 @@ def _preference_to_out(p) -> NotificationPreferenceOut:
     return NotificationPreferenceOut(
         id=p.id,
         user_id=p.user_id,
+        tenant_id=p.tenant_id,
         email_enabled=p.email_enabled,
         in_app_enabled=p.in_app_enabled,
         billing_notifications=p.billing_notifications,
