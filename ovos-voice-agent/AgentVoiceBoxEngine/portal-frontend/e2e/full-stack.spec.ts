@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test';
 
+// Service URLs from environment variables (same ports for test and prod)
+const API_URL = process.env.E2E_API_URL || 'http://localhost:65020';
+const KEYCLOAK_URL = process.env.E2E_KEYCLOAK_URL || 'http://localhost:65006';
+const PORTAL_URL = process.env.E2E_BASE_URL || 'http://localhost:65027';
+
 test.describe('Full Stack E2E Tests', () => {
     test('Django API health check', async ({ request }) => {
-        const response = await request.get('http://localhost:65020/health/');
+        const response = await request.get(`${API_URL}/health/`);
         expect(response.ok()).toBeTruthy();
         const body = await response.json();
         expect(body.status).toBe('ok');
@@ -10,7 +15,7 @@ test.describe('Full Stack E2E Tests', () => {
     });
 
     test('Keycloak is accessible', async ({ request }) => {
-        const response = await request.get('http://localhost:65006/realms/agentvoicebox/.well-known/openid-configuration');
+        const response = await request.get(`${KEYCLOAK_URL}/realms/agentvoicebox/.well-known/openid-configuration`);
         expect(response.ok()).toBeTruthy();
         const config = await response.json();
         expect(config.issuer).toContain('agentvoicebox');
@@ -64,11 +69,11 @@ test.describe('Full Stack E2E Tests', () => {
     });
 
     test('Service ports are accessible from browser perspective', async ({ page }) => {
-        // Test each service
+        // Test each service using env-configured URLs
         const services = [
-            { name: 'Django API', url: 'http://localhost:65020/health/' },
-            { name: 'Keycloak', url: 'http://localhost:65006/' },
-            { name: 'Portal', url: 'http://localhost:65027/' },
+            { name: 'Django API', url: `${API_URL}/health/` },
+            { name: 'Keycloak', url: `${KEYCLOAK_URL}/` },
+            { name: 'Portal', url: `${PORTAL_URL}/` },
         ];
 
         for (const svc of services) {

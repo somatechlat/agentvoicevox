@@ -15,6 +15,12 @@
 import { decodeJWT, isJWTExpired, getJWTTimeToExpiry, extractUserFromJWT, JWTClaims } from './jwt-utils';
 import { apiClient } from './api-client';
 
+// Get environment variables from Vite (same pattern as admin-api.ts)
+const getEnv = (name: string, defaultValue: string): string => {
+  const envVar = (import.meta as any).env?.[name];
+  return envVar || defaultValue;
+};
+
 interface KeycloakConfig {
   url: string;
   realm: string;
@@ -37,13 +43,20 @@ const STORAGE_KEYS = {
 
 class AuthService {
   private config: KeycloakConfig = {
-    url: 'http://localhost:65006',  // SHARED Keycloak on shared-services
-    realm: 'agentvoicebox',
-    clientId: 'portal-frontend'
+    url: getEnv('VITE_KEYCLOAK_URL', 'http://localhost:65006'),
+    realm: getEnv('VITE_KEYCLOAK_REALM', 'agentvoicebox'),
+    clientId: getEnv('VITE_KEYCLOAK_CLIENT_ID', 'portal-frontend')
   };
 
   private tokens: AuthTokens | null = null;
   private refreshTimer: number | null = null;
+
+  /**
+   * Get Keycloak configuration (for use by other components like view-login)
+   */
+  getKeycloakConfig(): KeycloakConfig {
+    return this.config;
+  }
 
   /**
    * Initialize authentication - check for existing session or handle callback
