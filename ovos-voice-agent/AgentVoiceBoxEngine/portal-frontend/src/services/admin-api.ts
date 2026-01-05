@@ -7,19 +7,17 @@
 
 import { apiClient, ApiResponse } from './api-client';
 
-const requireEnv = (name: string): string => {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
+// Get environment variables from Vite or use defaults
+const getEnv = (name: string, defaultValue: string): string => {
+  const envVar = (import.meta as any).env?.[name];
+  return envVar || defaultValue;
 };
 
 // API URLs
-const PORTAL_API_URL = requireEnv('NEXT_PUBLIC_API_URL');
-const LAGO_API_URL = requireEnv('NEXT_PUBLIC_LAGO_URL');
-const PROMETHEUS_URL = requireEnv('NEXT_PUBLIC_PROMETHEUS_URL');
-const KEYCLOAK_URL = requireEnv('NEXT_PUBLIC_KEYCLOAK_URL');
+const PORTAL_API_URL = getEnv('VITE_API_URL', 'http://localhost:65020');
+const LAGO_API_URL = getEnv('VITE_LAGO_URL', 'http://localhost:3000');
+const PROMETHEUS_URL = getEnv('VITE_PROMETHEUS_URL', 'http://localhost:9090');
+const KEYCLOAK_URL = getEnv('VITE_KEYCLOAK_URL', 'http://localhost:65006');
 
 // Create API clients
 const portalClient = new (apiClient.constructor as typeof import('./api-client').ApiClient)(PORTAL_API_URL);
@@ -176,7 +174,7 @@ export const usersApi = {
     if (params?.max) query.set('max', params.max.toString());
     if (params?.search) query.set('search', params.search);
     if (params?.tenant_id) query.set('tenant_id', params.tenant_id);
-    
+
     return portalClient.get(`/api/v2/admin/users?${query}`);
   },
 
@@ -253,7 +251,7 @@ export const billingApi = {
     const query = new URLSearchParams();
     if (params?.external_customer_id) query.set('external_customer_id', params.external_customer_id);
     if (params?.page) query.set('page', params.page.toString());
-    
+
     return portalClient.get(`/api/v2/admin/billing/subscriptions?${query}`);
   },
 
@@ -279,7 +277,7 @@ export const billingApi = {
     if (params?.external_customer_id) query.set('external_customer_id', params.external_customer_id);
     if (params?.status) query.set('status', params.status);
     if (params?.page) query.set('page', params.page.toString());
-    
+
     return portalClient.get(`/api/v2/admin/billing/invoices?${query}`);
   },
 
@@ -369,7 +367,7 @@ export const auditApi = {
     Object.entries(params || {}).forEach(([key, value]) => {
       if (value) query.set(key, value.toString());
     });
-    
+
     return portalClient.get(`/api/v2/admin/audit?${query}`);
   },
 
@@ -382,7 +380,7 @@ export const auditApi = {
     query.set('format', params.format);
     if (params.start_date) query.set('start_date', params.start_date);
     if (params.end_date) query.set('end_date', params.end_date);
-    
+
     const response = await fetch(`${PORTAL_API_URL}/api/v2/admin/audit/export?${query}`);
     return response.blob();
   },
@@ -431,7 +429,7 @@ export const monitoringApi = {
     Object.entries(params || {}).forEach(([key, value]) => {
       if (value) query.set(key, value.toString());
     });
-    
+
     return portalClient.get(`/api/v2/admin/monitoring/errors?${query}`);
   },
 
@@ -443,7 +441,7 @@ export const monitoringApi = {
 
   // Grafana dashboard URL
   getGrafanaUrl(): string {
-    return requireEnv('NEXT_PUBLIC_GRAFANA_URL');
+    return getEnv('VITE_GRAFANA_URL', 'http://localhost:3001');
   },
 };
 

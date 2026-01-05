@@ -32,13 +32,13 @@ const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
 /**
  * Sleep for a specified duration
  */
-const sleep = (ms: number): Promise<void> => 
+const sleep = (ms: number): Promise<void> =>
   new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Check if an error is retryable
  */
-const isRetryable = (status: number): boolean => 
+const isRetryable = (status: number): boolean =>
   RETRYABLE_STATUS_CODES.includes(status);
 
 /**
@@ -73,7 +73,7 @@ async function fetchWithRetry<T>(
 ): Promise<ApiResponse<T>> {
   const { retry = true, maxRetries = 3, timeout = DEFAULT_TIMEOUT, ...fetchOptions } = options;
   const retryDelays = DEFAULT_RETRY_DELAYS.slice(0, maxRetries);
-  
+
   let lastError: ApiError | null = null;
   let attempts = 0;
 
@@ -92,12 +92,12 @@ async function fetchWithRetry<T>(
 
       if (!response.ok) {
         const error = await createApiError(response);
-        
+
         // If not retryable or retry disabled, throw immediately
         if (!retry || !error.retryable || attempts >= retryDelays.length) {
           throw error;
         }
-        
+
         lastError = error;
         attempts++;
         await sleep(retryDelays[attempts - 1]);
@@ -227,15 +227,14 @@ export class ApiClient {
 }
 
 // Export singleton instance
-const requireEnv = (name: string): string => {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
+// Get API URL from Vite environment or use default
+const getApiUrl = (): string => {
+  // For Vite, use import.meta.env
+  const envUrl = (import.meta as any).env?.VITE_API_URL;
+  return envUrl || 'http://localhost:65020';
 };
 
-export const apiClient = new ApiClient(requireEnv("NEXT_PUBLIC_API_URL"));
+export const apiClient = new ApiClient(getApiUrl());
 
 // Export retry delays for testing
 export const RETRY_DELAYS = DEFAULT_RETRY_DELAYS;
