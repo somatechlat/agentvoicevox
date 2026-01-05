@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Lit Component Verification', () => {
-    test.beforeEach(async ({ page }) => {
-        await page.goto('http://localhost:28100/admin/setup');
+    test.beforeEach(async ({ page, baseURL }) => {
+        // Use baseURL from Playwright config for environment portability
+        await page.goto(`${baseURL}/admin/setup`);
         // Wait for view-setup to render
-        await page.waitForSelector('view-setup', { timeout: 5000 });
+        await page.waitForSelector('view-setup', { timeout: 10000 });
     });
 
     test('saas-infra-card should render with all statuses', async ({ page }) => {

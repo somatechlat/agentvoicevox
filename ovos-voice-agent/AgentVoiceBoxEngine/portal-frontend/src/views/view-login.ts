@@ -12,7 +12,7 @@ import { authService } from '../services/auth-service';
  * - Forgot Password (redirects to Keycloak password reset)
  * - Social Login (Google, GitHub via Keycloak)
  * 
- * NO MOCKING - All flows use real Keycloak server at localhost:65024
+ * All URLs are configured via environment variables (VITE_KEYCLOAK_URL, etc.)
  */
 
 type LoginView = 'login' | 'register' | 'forgot-password' | 'reset-password';
@@ -46,26 +46,29 @@ export class ViewLogin extends LitElement {
   private handleRegister() {
     this.loading = true;
     this.requestUpdate();
-    // Redirect to Keycloak registration page (SHARED on 65006)
+    // Redirect to Keycloak registration page (URL from env var)
+    const { url, realm, clientId } = authService.getKeycloakConfig();
     const redirectUri = `${window.location.origin}/auth/callback`;
-    const keycloakRegisterUrl = `http://localhost:65006/realms/agentvoicebox/protocol/openid-connect/registrations?client_id=portal-frontend&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email`;
+    const keycloakRegisterUrl = `${url}/realms/${realm}/protocol/openid-connect/registrations?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email`;
     window.location.href = keycloakRegisterUrl;
   }
 
   private handleForgotPassword() {
     this.loading = true;
     this.requestUpdate();
-    // Redirect to Keycloak password reset (SHARED on 65006)
+    // Redirect to Keycloak password reset (URL from env var)
+    const { url, realm, clientId } = authService.getKeycloakConfig();
     const redirectUri = `${window.location.origin}/`;
-    const keycloakResetUrl = `http://localhost:65006/realms/agentvoicebox/login-actions/reset-credentials?client_id=portal-frontend&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    const keycloakResetUrl = `${url}/realms/${realm}/login-actions/reset-credentials?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
     window.location.href = keycloakResetUrl;
   }
 
   private handleSocialLogin(provider: 'google' | 'github') {
     this.loading = true;
     this.requestUpdate();
+    const { url, realm, clientId } = authService.getKeycloakConfig();
     const redirectUri = `${window.location.origin}/auth/callback`;
-    const socialLoginUrl = `http://localhost:65006/realms/agentvoicebox/protocol/openid-connect/auth?client_id=portal-frontend&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email&kc_idp_hint=${provider}`;
+    const socialLoginUrl = `${url}/realms/${realm}/protocol/openid-connect/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email&kc_idp_hint=${provider}`;
     window.location.href = socialLoginUrl;
   }
 

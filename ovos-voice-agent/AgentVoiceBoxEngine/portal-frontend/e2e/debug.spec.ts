@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('Debug Lit rendering', async ({ page }) => {
+test('Debug Lit rendering', async ({ page, baseURL }) => {
     // Capture all console messages
     const consoleLogs: string[] = [];
     const consoleErrors: string[] = [];
@@ -19,8 +19,8 @@ test('Debug Lit rendering', async ({ page }) => {
         pageErrors.push(error);
     });
 
-    // Navigate
-    await page.goto('http://localhost:28100/login');
+    // Navigate using baseURL from config (env var: E2E_BASE_URL)
+    await page.goto(`${baseURL}/login`);
 
     // Wait a bit for scripts to load
     await page.waitForTimeout(3000);
@@ -54,3 +54,4 @@ test('Debug Lit rendering', async ({ page }) => {
     // Screenshot
     await page.screenshot({ path: 'debug-screenshot.png', fullPage: true });
 });
+

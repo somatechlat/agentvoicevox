@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// API URL from environment variable (same ports for test and prod)
+const API_URL = process.env.E2E_API_URL || 'http://localhost:65020';
+
 test.describe('Lit 3 Frontend Health Check', () => {
     test('should load the login page with Lit components', async ({ page, baseURL }) => {
         // Navigate to login page using baseURL from config
@@ -39,8 +42,8 @@ test.describe('Lit 3 Frontend Health Check', () => {
     });
 
     test('should verify API is accessible', async ({ request }) => {
-        // Test Django API health endpoint
-        const apiResponse = await request.get('http://localhost:65020/health/');
+        // Test Django API health endpoint using env var
+        const apiResponse = await request.get(`${API_URL}/health/`);
         expect(apiResponse.ok()).toBeTruthy();
 
         const body = await apiResponse.json();
