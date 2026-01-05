@@ -3,43 +3,45 @@ Health check views.
 
 Provides liveness and readiness probes for container orchestration.
 """
-import asyncio
-from typing import Dict, Any
 
-from django.http import JsonResponse
-from django.db import connection
-from django.core.cache import cache
+from typing import Any
+
 from django.conf import settings
+from django.core.cache import cache
+from django.db import connection
+from django.http import JsonResponse
 
 
 def liveness_check(request) -> JsonResponse:
     """
     Liveness probe endpoint.
-    
+
     Returns 200 if the application is running.
     Used by Kubernetes to determine if the container should be restarted.
     """
-    return JsonResponse({
-        "status": "ok",
-        "service": "agentvoicebox-backend",
-    })
+    return JsonResponse(
+        {
+            "status": "ok",
+            "service": "agentvoicebox-backend",
+        }
+    )
 
 
 def readiness_check(request) -> JsonResponse:
     """
     Readiness probe endpoint.
-    
+
     Checks connectivity to:
     - PostgreSQL database
     - Redis cache
     - Temporal server (if configured)
-    
+
     Returns 200 if all dependencies are healthy, 503 otherwise.
     Used by Kubernetes to determine if the container should receive traffic.
     """
-    checks: Dict[str, Dict[str, Any]] = {}
+    checks: dict[str, dict[str, Any]] = {}
     all_healthy = True
-    
+
     # Check PostgreSQL
     try:
         with connection.cursor() as cursor:
@@ -49,7 +51,7 @@ def readiness_check(request) -> JsonResponse:
     except Exception as e:
         checks["database"] = {"status": "unhealthy", "error": str(e)}
         all_healthy = False
-    
+
     # Check Redis
     try:
         cache.set("health_check", "ok", timeout=5)
@@ -62,13 +64,14 @@ def readiness_check(request) -> JsonResponse:
     except Exception as e:
         checks["cache"] = {"status": "unhealthy", "error": str(e)}
         all_healthy = False
-    
+
     # Check Temporal (optional)
     temporal_config = getattr(settings, "TEMPORAL", {})
     if temporal_config.get("HOST"):
         try:
             # Simple TCP check for Temporal
             import socket
+
             host, port = temporal_config["HOST"].split(":")
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(2)
@@ -82,7 +85,7 @@ def readiness_check(request) -> JsonResponse:
         except Exception as e:
             checks["temporal"] = {"status": "unhealthy", "error": str(e)}
             all_healthy = False
-    
+
     status_code = 200 if all_healthy else 503
     return JsonResponse(
         {

@@ -1,6 +1,7 @@
 """
 WebSocket middleware for authentication and tenant context.
 """
+
 import logging
 from typing import Optional
 from urllib.parse import parse_qs
@@ -19,6 +20,7 @@ class WebSocketAuthMiddleware:
     """
 
     def __init__(self, app):
+        """Initializes the middleware with the application."""
         self.app = app
 
     async def __call__(self, scope, receive, send):

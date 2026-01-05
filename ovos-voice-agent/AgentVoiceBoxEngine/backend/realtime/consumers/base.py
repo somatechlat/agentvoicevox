@@ -1,11 +1,11 @@
 """
 Base WebSocket consumer with authentication and tenant context.
 """
+
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from django.conf import settings
 
 from apps.tenants.models import Tenant
 from apps.users.models import User
@@ -33,6 +33,7 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
     CLOSE_RATE_LIMITED = 4029
 
     def __init__(self, *args, **kwargs):
+        """Initializes the BaseConsumer and sets default auth/context state."""
         super().__init__(*args, **kwargs)
         self.user: Optional[User] = None
         self.tenant: Optional[Tenant] = None
@@ -69,9 +70,7 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
                 self.channel_name,
             )
 
-        logger.info(
-            f"WebSocket connected: user={self.user_id}, tenant={self.tenant_id}"
-        )
+        logger.info(f"WebSocket connected: user={self.user_id}, tenant={self.tenant_id}")
 
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection."""
@@ -88,11 +87,9 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
                 self.channel_name,
             )
 
-        logger.info(
-            f"WebSocket disconnected: user={self.user_id}, code={close_code}"
-        )
+        logger.info(f"WebSocket disconnected: user={self.user_id}, code={close_code}")
 
-    async def receive_json(self, content: Dict[str, Any], **kwargs):
+    async def receive_json(self, content: dict[str, Any], **kwargs):
         """Handle incoming JSON message."""
         message_type = content.get("type", "")
 
@@ -178,29 +175,33 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
             await self.close(code=self.CLOSE_TENANT_INVALID)
             return False
 
-    async def send_error(self, code: str, message: str, details: Dict = None):
+    async def send_error(self, code: str, message: str, details: dict = None):
         """Send error message to client."""
-        await self.send_json({
-            "type": "error",
-            "error": {
-                "code": code,
-                "message": message,
-                "details": details or {},
-            },
-        })
+        await self.send_json(
+            {
+                "type": "error",
+                "error": {
+                    "code": code,
+                    "message": message,
+                    "details": details or {},
+                },
+            }
+        )
 
-    async def send_event(self, event_type: str, data: Dict[str, Any]):
+    async def send_event(self, event_type: str, data: dict[str, Any]):
         """Send event to client."""
-        await self.send_json({
-            "type": event_type,
-            "data": data,
-        })
+        await self.send_json(
+            {
+                "type": event_type,
+                "data": data,
+            }
+        )
 
     # Group message handlers
-    async def tenant_message(self, event: Dict[str, Any]):
+    async def tenant_message(self, event: dict[str, Any]):
         """Handle message sent to tenant group."""
         await self.send_json(event["message"])
 
-    async def user_message(self, event: Dict[str, Any]):
+    async def user_message(self, event: dict[str, Any]):
         """Handle message sent to user group."""
         await self.send_json(event["message"])

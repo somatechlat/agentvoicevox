@@ -5,11 +5,12 @@ Catches all exceptions and returns consistent JSON responses.
 In production, returns generic error without stack trace.
 In development, includes stack trace for debugging.
 """
-import traceback
-import structlog
 
-from django.http import HttpRequest, HttpResponse, JsonResponse
+import traceback
+
+import structlog
 from django.conf import settings
+from django.http import HttpRequest, HttpResponse, JsonResponse
 
 from apps.core.exceptions import APIException
 
@@ -18,16 +19,18 @@ logger = structlog.get_logger(__name__)
 
 class ExceptionMiddleware:
     """Middleware for global exception handling."""
-    
+
     def __init__(self, get_response):
+        """Initializes the middleware."""
         self.get_response = get_response
-    
+
     def __call__(self, request: HttpRequest) -> HttpResponse:
+        """Processes the request and handles any exceptions."""
         try:
             return self.get_response(request)
         except Exception as exc:
             return self._handle_exception(request, exc)
-    
+
     def _handle_exception(self, request: HttpRequest, exc: Exception) -> JsonResponse:
         """Handle exception and return JSON response."""
         # Log the exception
@@ -38,7 +41,7 @@ class ExceptionMiddleware:
             path=request.path,
             method=request.method,
         )
-        
+
         # Handle known API exceptions
         if isinstance(exc, APIException):
             return JsonResponse(
@@ -49,7 +52,7 @@ class ExceptionMiddleware:
                 },
                 status=exc.status_code,
             )
-        
+
         # Handle unknown exceptions
         if settings.DEBUG:
             # Include stack trace in development

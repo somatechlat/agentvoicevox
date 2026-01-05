@@ -1,0 +1,183 @@
+"""
+LLM integration for realtime sessions.
+"""
+
+from __future__ import annotations
+
+import json
+from typing import Any, Optional
+
+from django.conf import settings
+
+from apps.realtime.models import ConversationItem
+from apps.realtime.services.conversation_service import (
+    add_function_call_item,
+    add_function_call_output_item,
+    add_message_item,
+    clear_conversation_items,
+    get_or_create_conversation,
+)
+from apps.realtime.services.function_calling import get_function_engine
+from apps.workflows.activities.llm import LLMActivities, LLMRequest, Message
+
+
+async def generate_ai_response(
+    session_id: str,
+    user_input: str,
+    context: Optional[dict[str, Any]] = None,
+    instructions: Optional[str] = None,
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int | str] = None,
+) -> str:
+    """Generate an assistant response for a realtime session."""
+    session, conversation = await get_or_create_conversation(session_id)
+
+    if user_input:
+        await add_message_item(
+            conversation=conversation,
+            role=ConversationItem.Role.USER,
+            content=[{"type": "input_text", "text": user_input}],
+        )
+
+    history_limit = settings.LLM_WORKER["MAX_HISTORY_ITEMS"]
+    items = await _get_recent_messages(conversation.id, history_limit)
+
+    messages = [Message(role=item["role"], content=item["content"]) for item in items]
+
+    llm_request = LLMRequest(
+        tenant_id=str(session.tenant_id),
+        session_id=str(session.id),
+        messages=messages,
+        model=session.model or settings.LLM_WORKER["DEFAULT_MODEL"],
+        provider=settings.LLM_WORKER["DEFAULT_PROVIDER"],
+        max_tokens=_resolve_max_tokens(session.max_response_output_tokens, max_tokens),
+        temperature=temperature if temperature is not None else session.temperature,
+        system_prompt=instructions if instructions is not None else session.instructions,
+        tools=session.tools,
+    )
+
+    activities = LLMActivities()
+    result = await activities.generate_response(llm_request)
+
+    if result.tool_calls:
+        await _handle_tool_calls(conversation, result.tool_calls)
+
+    response_text = result.content or ""
+    await add_message_item(
+        conversation=conversation,
+        role=ConversationItem.Role.ASSISTANT,
+        content=[{"type": "text", "text": response_text}],
+    )
+
+    return response_text
+
+
+async def clear_session_memory(session_id: str) -> None:
+    """Clear conversation history for a session."""
+    _, conversation = await get_or_create_conversation(session_id)
+    await clear_conversation_items(conversation)
+
+
+def _resolve_max_tokens(session_value: str, override: Optional[int | str]) -> int:
+    """
+    Resolves the maximum number of tokens to use, prioritizing an override value
+    over the session's default, and converting "inf" to a configured maximum.
+
+    Args:
+        session_value: The max_tokens value from the session configuration (can be "inf").
+        override: An optional integer or "inf" value to override the session's max_tokens.
+
+    Returns:
+        int: The resolved maximum number of tokens.
+    """
+    if override is not None:
+        if override == "inf":
+            return settings.LLM_WORKER["MAX_TOKENS"]
+        return int(override)
+
+    if session_value == "inf":
+        return settings.LLM_WORKER["MAX_TOKENS"]
+    return int(session_value)
+
+
+async def _get_recent_messages(conversation_id: str, max_items: int) -> list[dict[str, str]]:
+    """
+    Retrieves a list of recent message items from a conversation, formatted for LLM input.
+
+    Args:
+        conversation_id: The ID of the conversation to retrieve messages from.
+        max_items: The maximum number of recent messages to fetch.
+
+    Returns:
+        list[dict[str, str]]: A list of dictionaries, each representing a message
+                              with "role" and "content" keys.
+    """
+    from asgiref.sync import sync_to_async
+
+    from apps.realtime.models import ConversationItem
+
+    @sync_to_async
+    def _fetch() -> list[dict[str, str]]:
+        """
+        Fetches and formats recent `ConversationItem` messages from the database.
+        """
+        qs = ConversationItem.objects.filter(
+            conversation_id=conversation_id,
+            type=ConversationItem.ItemType.MESSAGE,
+        ).order_by("-position")[:max_items]
+        items = []
+        for item in reversed(list(qs)):
+            content_text = ""
+            for part in item.content:
+                if part.get("type") in {"input_text", "text"}:
+                    content_text = part.get("text", "")
+                    break
+            items.append({"role": item.role or "user", "content": content_text})
+        return items
+
+    return await _fetch()
+
+
+async def _handle_tool_calls(conversation, tool_calls: list[dict[str, Any]]) -> None:
+    """
+    Handles a list of tool calls generated by the LLM.
+
+    For each tool call, it adds a `function_call` item to the conversation,
+    executes the function via the `FunctionEngine`, and adds a
+    `function_call_output` item with the result.
+
+    Args:
+        conversation: The current `Conversation` instance.
+        tool_calls: A list of tool call dictionaries from the LLM response.
+    """
+    engine = get_function_engine()
+    for tool_call in tool_calls:
+        function_data = tool_call.get("function", {})
+        name = function_data.get("name", "")
+        arguments_raw = function_data.get("arguments", "{}")
+        call_id = tool_call.get("id", "")
+
+        await add_function_call_item(
+            conversation=conversation,
+            name=name,
+            call_id=call_id,
+            arguments=arguments_raw,
+        )
+
+        try:
+            arguments = json.loads(arguments_raw)
+        except json.JSONDecodeError:
+            arguments = {}
+
+        is_valid, error = engine.validate_arguments(name, arguments)
+        if not is_valid:
+            output = json.dumps({"success": False, "error": error or "Invalid arguments"})
+        else:
+            result = await engine.execute_function(name, arguments)
+            output = json.dumps(result)
+
+        await add_function_call_output_item(
+            conversation=conversation,
+            call_id=call_id,
+            output=output,
+        )

@@ -55,6 +55,7 @@ class TestRequestIDGeneration:
         request_ids = set()
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RequestLoggingMiddleware(get_response=get_response)
@@ -90,6 +91,7 @@ class TestRequestIDGeneration:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RequestLoggingMiddleware(get_response=get_response)
@@ -125,6 +127,7 @@ class TestRequestIDGeneration:
         captured_request_id = None
 
         def get_response(req):
+            """A dummy response handler that captures the request ID."""
             nonlocal captured_request_id
             captured_request_id = getattr(req, "request_id", None)
             return HttpResponse("OK", status=200)
@@ -151,6 +154,7 @@ class TestRequestIDGeneration:
         request = factory.get("/api/v2/test/")
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RequestLoggingMiddleware(get_response=get_response)
@@ -283,6 +287,7 @@ class TestResponseHeaders:
         request = request_method(path)
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RequestLoggingMiddleware(get_response=get_response)
@@ -308,6 +313,7 @@ class TestResponseHeaders:
         request = factory.get("/api/v2/test/")
 
         def get_response(req):
+            """A dummy response handler that returns a specific status code."""
             return HttpResponse("Response", status=status_code)
 
         middleware = RequestLoggingMiddleware(get_response=get_response)

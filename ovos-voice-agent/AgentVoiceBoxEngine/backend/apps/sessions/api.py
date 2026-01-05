@@ -1,8 +1,13 @@
 """
-Session API endpoints.
+Session Management API Endpoints
+================================
 
-Public session endpoints for tenant-scoped operations.
+This module provides the tenant-scoped API endpoints for managing voice
+interaction sessions. It includes functionality for listing, retrieving,
+creating, and transitioning the state of sessions (e.g., start, complete, terminate).
+Endpoints for retrieving session events and aggregated statistics are also provided.
 """
+
 from typing import Optional
 from uuid import UUID
 
@@ -13,8 +18,8 @@ from apps.core.middleware.tenant import get_current_tenant
 
 from .schemas import (
     SessionCreate,
-    SessionEventsResponse,
     SessionEventResponse,
+    SessionEventsResponse,
     SessionListResponse,
     SessionResponse,
     SessionStats,
@@ -22,30 +27,39 @@ from .schemas import (
 )
 from .services import SessionService
 
-router = Router()
+# Router for session management endpoints, tagged for OpenAPI documentation.
+router = Router(tags=["Sessions"])
 
 
-@router.get("", response=SessionListResponse)
+@router.get("", response=SessionListResponse, summary="List Sessions in Tenant")
 def list_sessions(
     request,
-    project_id: Optional[UUID] = Query(None, description="Filter by project"),
-    status: Optional[str] = Query(None, description="Filter by status"),
-    api_key_id: Optional[UUID] = Query(None, description="Filter by API key"),
-    from_date: Optional[str] = Query(None, description="Filter from date (ISO format)"),
-    to_date: Optional[str] = Query(None, description="Filter to date (ISO format)"),
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    project_id: Optional[UUID] = Query(
+        None, description="Filter sessions by a specific project ID."
+    ),
+    status: Optional[str] = Query(
+        None, description="Filter sessions by their status (e.g., 'active', 'completed')."
+    ),
+    api_key_id: Optional[UUID] = Query(None, description="Filter sessions by the API key used."),
+    from_date: Optional[str] = Query(
+        None, description="Filter sessions created on or after this date (ISO 8601 format)."
+    ),
+    to_date: Optional[str] = Query(
+        None, description="Filter sessions created on or before this date (ISO 8601 format)."
+    ),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
 ):
     """
-    List sessions in the current tenant.
+    Lists all sessions within the current user's tenant, with filtering and pagination.
 
-    Requires at least OPERATOR role.
+    **Permissions:** Requires OPERATOR role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     if not user.is_operator:
-        raise PermissionDeniedError("Operator role required to list sessions")
+        raise PermissionDeniedError("Operator role or higher required to list sessions.")
 
     sessions, total = SessionService.list_sessions(
         tenant=tenant,
@@ -58,7 +72,7 @@ def list_sessions(
         page_size=page_size,
     )
 
-    pages = (total + page_size - 1) // page_size
+    pages = (total + page_size - 1) // page_size if total > 0 else 1
 
     return SessionListResponse(
         items=[SessionResponse.from_orm(s) for s in sessions],
@@ -69,23 +83,32 @@ def list_sessions(
     )
 
 
-@router.get("/stats", response=SessionStats)
+@router.get("/stats", response=SessionStats, summary="Get Session Statistics")
 def get_session_stats(
     request,
-    project_id: Optional[UUID] = Query(None, description="Filter by project"),
-    from_date: Optional[str] = Query(None, description="Filter from date (ISO format)"),
-    to_date: Optional[str] = Query(None, description="Filter to date (ISO format)"),
+    project_id: Optional[UUID] = Query(
+        None, description="Filter statistics for a specific project."
+    ),
+    from_date: Optional[str] = Query(
+        None, description="Include sessions created on or after this date (ISO 8601 format)."
+    ),
+    to_date: Optional[str] = Query(
+        None, description="Include sessions created on or before this date (ISO 8601 format)."
+    ),
 ):
     """
-    Get session statistics.
+    Retrieves aggregated statistics for sessions within the current tenant.
 
-    Requires at least OPERATOR role.
+    This endpoint provides insights into session usage, duration, token consumption,
+    and status breakdowns, with optional filtering by project and date range.
+
+    **Permissions:** Requires OPERATOR role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     if not user.is_operator:
-        raise PermissionDeniedError("Operator role required to view session stats")
+        raise PermissionDeniedError("Operator role or higher required to view session statistics.")
 
     stats = SessionService.get_stats(
         tenant=tenant,
@@ -97,47 +120,51 @@ def get_session_stats(
     return SessionStats(**stats)
 
 
-@router.get("/{session_id}", response=SessionResponse)
+@router.get("/{session_id}", response=SessionResponse, summary="Get a Session by ID")
 def get_session(request, session_id: UUID):
     """
-    Get session by ID.
+    Retrieves details for a specific session by its ID.
 
-    Requires at least OPERATOR role.
+    The session must belong to the current user's tenant.
+
+    **Permissions:** Requires OPERATOR role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     if not user.is_operator:
-        raise PermissionDeniedError("Operator role required to view sessions")
+        raise PermissionDeniedError("Operator role or higher required to view sessions.")
 
     session = SessionService.get_by_id(session_id)
 
     if session.tenant_id != tenant.id:
-        raise PermissionDeniedError("Session not found in this tenant")
+        raise PermissionDeniedError("Session not found in this tenant.")
 
     return SessionResponse.from_orm(session)
 
 
-@router.get("/{session_id}/events", response=SessionEventsResponse)
+@router.get("/{session_id}/events", response=SessionEventsResponse, summary="Get Session Events")
 def get_session_events(
     request,
     session_id: UUID,
-    event_type: Optional[str] = Query(None, description="Filter by event type"),
+    event_type: Optional[str] = Query(None, description="Filter events by a specific type."),
 ):
     """
-    Get session events.
+    Retrieves all logged events for a specific session.
 
-    Requires at least OPERATOR role.
+    The session must belong to the current user's tenant.
+
+    **Permissions:** Requires OPERATOR role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     if not user.is_operator:
-        raise PermissionDeniedError("Operator role required to view session events")
+        raise PermissionDeniedError("Operator role or higher required to view session events.")
 
     session = SessionService.get_by_id(session_id)
     if session.tenant_id != tenant.id:
-        raise PermissionDeniedError("Session not found in this tenant")
+        raise PermissionDeniedError("Session not found in this tenant.")
 
     events, total = SessionService.get_events(session_id, event_type)
 
@@ -147,25 +174,25 @@ def get_session_events(
     )
 
 
-@router.post("", response=SessionResponse)
+@router.post("", response=SessionResponse, summary="Create a New Session")
 def create_session(request, payload: SessionCreate):
     """
-    Create a new session.
+    Initiates a new voice interaction session.
 
-    This endpoint is typically called via API key authentication.
-    Requires at least DEVELOPER role for user authentication.
+    The session can be created either with API key authentication or user authentication.
+    If created via user authentication, the user must have at least DEVELOPER role.
+
+    **Permissions:** Requires valid API key OR DEVELOPER role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
-    # Get API key from request if present
+    # Determine authentication context and check permissions.
     api_key = getattr(request, "api_key", None)
-
-    # If no API key, require developer role
     if not api_key and not user.is_developer:
-        raise PermissionDeniedError("Developer role required to create sessions")
+        raise PermissionDeniedError("Developer role or valid API key required to create sessions.")
 
-    # Get client info
+    # Populate client information from the request.
     client_ip = request.META.get("REMOTE_ADDR")
     user_agent = request.META.get("HTTP_USER_AGENT", "")
 
@@ -173,6 +200,7 @@ def create_session(request, payload: SessionCreate):
         tenant=tenant,
         project_id=payload.project_id,
         api_key=api_key,
+        # If API key is used, the user is typically not directly associated with the session.
         user=user if not api_key else None,
         config=payload.config,
         metadata=payload.metadata,
@@ -183,67 +211,77 @@ def create_session(request, payload: SessionCreate):
     return SessionResponse.from_orm(session)
 
 
-@router.post("/{session_id}/start", response=SessionResponse)
+@router.post("/{session_id}/start", response=SessionResponse, summary="Start a Session")
 def start_session(request, session_id: UUID):
     """
-    Start a session.
+    Transitions a session from 'CREATED' to 'ACTIVE' status.
 
-    Requires at least DEVELOPER role.
+    The session must belong to the current user's tenant.
+
+    **Permissions:** Requires valid API key OR DEVELOPER role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     api_key = getattr(request, "api_key", None)
     if not api_key and not user.is_developer:
-        raise PermissionDeniedError("Developer role required to start sessions")
+        raise PermissionDeniedError("Developer role or valid API key required to start sessions.")
 
     session = SessionService.get_by_id(session_id)
     if session.tenant_id != tenant.id:
-        raise PermissionDeniedError("Session not found in this tenant")
+        raise PermissionDeniedError("Session not found in this tenant.")
 
     started_session = SessionService.start_session(session_id)
     return SessionResponse.from_orm(started_session)
 
 
-@router.post("/{session_id}/complete", response=SessionResponse)
+@router.post("/{session_id}/complete", response=SessionResponse, summary="Complete a Session")
 def complete_session(request, session_id: UUID):
     """
-    Complete a session normally.
+    Marks a session as 'COMPLETED' (normal termination).
 
-    Requires at least DEVELOPER role.
+    The session must belong to the current user's tenant.
+
+    **Permissions:** Requires valid API key OR DEVELOPER role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     api_key = getattr(request, "api_key", None)
     if not api_key and not user.is_developer:
-        raise PermissionDeniedError("Developer role required to complete sessions")
+        raise PermissionDeniedError(
+            "Developer role or valid API key required to complete sessions."
+        )
 
     session = SessionService.get_by_id(session_id)
     if session.tenant_id != tenant.id:
-        raise PermissionDeniedError("Session not found in this tenant")
+        raise PermissionDeniedError("Session not found in this tenant.")
 
     completed_session = SessionService.complete_session(session_id)
     return SessionResponse.from_orm(completed_session)
 
 
-@router.post("/{session_id}/terminate", response=SessionResponse)
-def terminate_session(request, session_id: UUID, payload: SessionTerminate = None):
+@router.post("/{session_id}/terminate", response=SessionResponse, summary="Terminate a Session")
+def terminate_session(request, session_id: UUID, payload: Optional[SessionTerminate] = None):
     """
-    Terminate a session.
+    Transitions a session to 'TERMINATED' status (abnormal termination).
 
-    Requires at least OPERATOR role.
+    Allows for an optional reason to be provided for the termination.
+    The session must belong to the current user's tenant.
+
+    **Permissions:** Requires OPERATOR role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     api_key = getattr(request, "api_key", None)
+    # Operator role can terminate, or if API key is used, Developer+ can terminate.
     if not api_key and not user.is_operator:
-        raise PermissionDeniedError("Operator role required to terminate sessions")
+        raise PermissionDeniedError("Operator role or higher required to terminate sessions.")
 
     session = SessionService.get_by_id(session_id)
     if session.tenant_id != tenant.id:
-        raise PermissionDeniedError("Session not found in this tenant")
+        raise PermissionDeniedError("Session not found in this tenant.")
 
     reason = payload.reason if payload else ""
     terminated_session = SessionService.terminate_session(session_id, reason)

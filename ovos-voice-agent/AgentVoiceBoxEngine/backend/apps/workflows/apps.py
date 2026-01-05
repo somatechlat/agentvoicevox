@@ -1,4 +1,5 @@
 """Django app configuration for workflows."""
+
 from django.apps import AppConfig
 
 

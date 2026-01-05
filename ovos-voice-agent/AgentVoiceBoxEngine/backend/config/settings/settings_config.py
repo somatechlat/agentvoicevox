@@ -4,8 +4,9 @@ Environment configuration using pydantic-settings.
 All environment variables are validated at startup.
 Missing required variables cause immediate failure with clear error messages.
 """
+
 import sys
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -36,21 +37,33 @@ class Settings(BaseSettings):
     )
     django_debug: bool = Field(default=False, description="Debug mode")
     django_allowed_hosts: str = Field(
-        default="localhost,127.0.0.1",
+        ...,
         description="Comma-separated list of allowed hosts",
     )
     django_settings_module: str = Field(
-        default="config.settings.development",
+        ...,
         description="Django settings module path",
+    )
+
+    # ==========================================================================
+    # VOICE AGENT BASE URLS
+    # ==========================================================================
+    voice_agent_base_url: str = Field(
+        ...,
+        description="Public HTTP base URL for voice agent",
+    )
+    voice_agent_ws_base_url: str = Field(
+        ...,
+        description="Public WS base URL for voice agent",
     )
 
     # ==========================================================================
     # DATABASE (PostgreSQL)
     # ==========================================================================
-    db_host: str = Field(default="localhost", description="Database host")
+    db_host: str = Field(..., description="Database host")
     db_port: int = Field(default=5432, description="Database port")
-    db_name: str = Field(default="agentvoicebox", description="Database name")
-    db_user: str = Field(default="agentvoicebox", description="Database user")
+    db_name: str = Field(..., description="Database name")
+    db_user: str = Field(..., description="Database user")
     db_password: str = Field(..., description="Database password")
     db_conn_max_age: int = Field(default=60, description="Database connection max age")
 
@@ -58,7 +71,7 @@ class Settings(BaseSettings):
     # REDIS
     # ==========================================================================
     redis_url: str = Field(
-        default="redis://localhost:6379/0",
+        ...,
         description="Redis connection URL",
     )
     redis_cache_db: int = Field(default=1, description="Redis database for cache")
@@ -69,15 +82,15 @@ class Settings(BaseSettings):
     # KEYCLOAK
     # ==========================================================================
     keycloak_url: str = Field(
-        default="http://localhost:8080",
+        ...,
         description="Keycloak server URL",
     )
     keycloak_realm: str = Field(
-        default="agentvoicebox",
+        ...,
         description="Keycloak realm name",
     )
     keycloak_client_id: str = Field(
-        default="agentvoicebox-backend",
+        ...,
         description="Keycloak client ID",
     )
     keycloak_client_secret: Optional[str] = Field(
@@ -89,15 +102,15 @@ class Settings(BaseSettings):
     # TEMPORAL
     # ==========================================================================
     temporal_host: str = Field(
-        default="localhost:7233",
+        ...,
         description="Temporal server host:port",
     )
     temporal_namespace: str = Field(
-        default="agentvoicebox",
+        ...,
         description="Temporal namespace",
     )
     temporal_task_queue: str = Field(
-        default="default",
+        ...,
         description="Default Temporal task queue",
     )
 
@@ -105,7 +118,7 @@ class Settings(BaseSettings):
     # HASHICORP VAULT
     # ==========================================================================
     vault_addr: str = Field(
-        default="http://localhost:8200",
+        ...,
         description="Vault server address",
     )
     vault_token: Optional[str] = Field(
@@ -133,11 +146,11 @@ class Settings(BaseSettings):
     # OPA (Open Policy Agent)
     # ==========================================================================
     opa_url: str = Field(
-        default="http://localhost:8181",
+        ...,
         description="OPA server URL",
     )
     opa_decision_path: str = Field(
-        default="/v1/data/agentvoicebox/allow",
+        ...,
         description="OPA decision path for policy evaluation",
     )
     opa_timeout_seconds: int = Field(
@@ -153,11 +166,11 @@ class Settings(BaseSettings):
     # KAFKA
     # ==========================================================================
     kafka_bootstrap_servers: str = Field(
-        default="localhost:9092",
+        ...,
         description="Kafka bootstrap servers (comma-separated)",
     )
     kafka_consumer_group: str = Field(
-        default="agentvoicebox-backend",
+        ...,
         description="Kafka consumer group ID",
     )
     kafka_enabled: bool = Field(
@@ -173,7 +186,7 @@ class Settings(BaseSettings):
     # LAGO BILLING
     # ==========================================================================
     lago_api_url: str = Field(
-        default="http://localhost:3000",
+        ...,
         description="Lago API URL",
     )
     lago_api_key: Optional[str] = Field(
@@ -200,10 +213,180 @@ class Settings(BaseSettings):
     )
 
     # ==========================================================================
+    # LLM PROVIDERS
+    # ==========================================================================
+    groq_api_key: str = Field(default="", description="Groq API key")
+    openai_api_key: str = Field(default="", description="OpenAI API key")
+    groq_api_base: str = Field(
+        ...,
+        description="Groq API base URL",
+    )
+    openai_api_base: str = Field(
+        ...,
+        description="OpenAI API base URL",
+    )
+    ollama_base_url: str = Field(
+        ...,
+        description="Ollama base URL",
+    )
+    llm_default_provider: str = Field(
+        ...,
+        description="Default LLM provider",
+    )
+    llm_default_model: str = Field(
+        ...,
+        description="Default LLM model",
+    )
+    llm_max_tokens: int = Field(
+        ...,
+        description="Default LLM max tokens",
+    )
+    llm_temperature: float = Field(
+        ...,
+        description="Default LLM temperature",
+    )
+    llm_circuit_breaker_threshold: int = Field(
+        ...,
+        description="LLM circuit breaker failure threshold",
+    )
+    llm_circuit_breaker_timeout: float = Field(
+        ...,
+        description="LLM circuit breaker timeout seconds",
+    )
+    llm_max_history_items: int = Field(
+        ...,
+        description="Max conversation items to include in LLM context",
+    )
+    llm_provider_priority: str = Field(
+        ...,
+        description="Comma-separated LLM provider priority list",
+    )
+
+    # ==========================================================================
+    # STT
+    # ==========================================================================
+    stt_model: str = Field(
+        ...,
+        description="Whisper model size",
+    )
+    stt_device: str = Field(
+        ...,
+        description="STT device (cpu, cuda, auto)",
+    )
+    stt_compute_type: str = Field(
+        ...,
+        description="STT compute type",
+    )
+    stt_batch_size: int = Field(
+        ...,
+        description="Max concurrent STT transcriptions",
+    )
+    stt_sample_rate: int = Field(
+        ...,
+        description="Target sample rate for STT processing",
+    )
+
+    # ==========================================================================
+    # TTS
+    # ==========================================================================
+    tts_model_dir: str = Field(
+        ...,
+        description="Kokoro model directory",
+    )
+    tts_model_file: str = Field(
+        ...,
+        description="Kokoro model filename",
+    )
+    tts_voices_file: str = Field(
+        ...,
+        description="Kokoro voices filename",
+    )
+    tts_default_voice: str = Field(
+        ...,
+        description="Default TTS voice",
+    )
+    tts_default_speed: float = Field(
+        ...,
+        description="Default TTS speed",
+    )
+    tts_chunk_size: int = Field(
+        ...,
+        description="TTS chunk size (samples)",
+    )
+
+    # ==========================================================================
+    # WORKER STREAMS
+    # ==========================================================================
+    llm_stream_requests: str = Field(
+        ...,
+        description="Redis stream for LLM requests",
+    )
+    llm_group_workers: str = Field(
+        ...,
+        description="Redis consumer group for LLM workers",
+    )
+    llm_response_channel: str = Field(
+        ...,
+        description="Redis channel prefix for LLM responses",
+    )
+    stt_stream_audio: str = Field(
+        ...,
+        description="Redis stream for STT audio",
+    )
+    stt_group_workers: str = Field(
+        ...,
+        description="Redis consumer group for STT workers",
+    )
+    stt_channel_transcription: str = Field(
+        ...,
+        description="Redis channel prefix for STT results",
+    )
+    tts_stream_requests: str = Field(
+        ...,
+        description="Redis stream for TTS requests",
+    )
+    tts_group_workers: str = Field(
+        ...,
+        description="Redis consumer group for TTS workers",
+    )
+    tts_channel_tts: str = Field(
+        ...,
+        description="Redis channel prefix for TTS control",
+    )
+    tts_channel_audio_out: str = Field(
+        ...,
+        description="Redis stream prefix for TTS audio output",
+    )
+
+    # ==========================================================================
+    # REDIS WORKER CONNECTIONS
+    # ==========================================================================
+    redis_max_connections: int = Field(
+        ...,
+        description="Redis max connections for workers",
+    )
+    redis_socket_timeout: float = Field(
+        ...,
+        description="Redis socket timeout seconds",
+    )
+    redis_socket_connect_timeout: float = Field(
+        ...,
+        description="Redis socket connect timeout seconds",
+    )
+    redis_retry_on_timeout: bool = Field(
+        ...,
+        description="Redis retry on timeout",
+    )
+    redis_health_check_interval: int = Field(
+        ...,
+        description="Redis health check interval seconds",
+    )
+
+    # ==========================================================================
     # CORS
     # ==========================================================================
     cors_allowed_origins: str = Field(
-        default="http://localhost:3000",
+        ...,
         description="Comma-separated CORS allowed origins",
     )
     cors_allow_credentials: bool = Field(
@@ -226,17 +409,29 @@ class Settings(BaseSettings):
         default=300,
         description="Admin rate limit per minute",
     )
+    realtime_requests_per_minute: int = Field(
+        ...,
+        description="Realtime session requests per minute",
+    )
+    realtime_tokens_per_minute: int = Field(
+        ...,
+        description="Realtime session tokens per minute",
+    )
+    realtime_rate_limit_window_seconds: int = Field(
+        ...,
+        description="Realtime rate limit window in seconds",
+    )
 
     # ==========================================================================
     # COMPUTED PROPERTIES
     # ==========================================================================
     @property
-    def allowed_hosts_list(self) -> List[str]:
+    def allowed_hosts_list(self) -> list[str]:
         """Parse allowed hosts into list."""
         return [h.strip() for h in self.django_allowed_hosts.split(",") if h.strip()]
 
     @property
-    def cors_origins_list(self) -> List[str]:
+    def cors_origins_list(self) -> list[str]:
         """Parse CORS origins into list."""
         return [o.strip() for o in self.cors_allowed_origins.split(",") if o.strip()]
 
@@ -278,6 +473,8 @@ django_debug = _settings.django_debug
 django_allowed_hosts = _settings.django_allowed_hosts
 django_settings_module = _settings.django_settings_module
 allowed_hosts_list = _settings.allowed_hosts_list
+voice_agent_base_url = _settings.voice_agent_base_url
+voice_agent_ws_base_url = _settings.voice_agent_ws_base_url
 
 # Database
 db_host = _settings.db_host
@@ -335,6 +532,55 @@ log_format = _settings.log_format
 sentry_dsn = _settings.sentry_dsn
 prometheus_enabled = _settings.prometheus_enabled
 
+# LLM Providers
+groq_api_key = _settings.groq_api_key
+openai_api_key = _settings.openai_api_key
+groq_api_base = _settings.groq_api_base
+openai_api_base = _settings.openai_api_base
+ollama_base_url = _settings.ollama_base_url
+llm_default_provider = _settings.llm_default_provider
+llm_default_model = _settings.llm_default_model
+llm_max_tokens = _settings.llm_max_tokens
+llm_temperature = _settings.llm_temperature
+llm_circuit_breaker_threshold = _settings.llm_circuit_breaker_threshold
+llm_circuit_breaker_timeout = _settings.llm_circuit_breaker_timeout
+llm_max_history_items = _settings.llm_max_history_items
+llm_provider_priority = _settings.llm_provider_priority
+
+# STT
+stt_model = _settings.stt_model
+stt_device = _settings.stt_device
+stt_compute_type = _settings.stt_compute_type
+stt_batch_size = _settings.stt_batch_size
+stt_sample_rate = _settings.stt_sample_rate
+
+# TTS
+tts_model_dir = _settings.tts_model_dir
+tts_model_file = _settings.tts_model_file
+tts_voices_file = _settings.tts_voices_file
+tts_default_voice = _settings.tts_default_voice
+tts_default_speed = _settings.tts_default_speed
+tts_chunk_size = _settings.tts_chunk_size
+
+# Worker Streams
+llm_stream_requests = _settings.llm_stream_requests
+llm_group_workers = _settings.llm_group_workers
+llm_response_channel = _settings.llm_response_channel
+stt_stream_audio = _settings.stt_stream_audio
+stt_group_workers = _settings.stt_group_workers
+stt_channel_transcription = _settings.stt_channel_transcription
+tts_stream_requests = _settings.tts_stream_requests
+tts_group_workers = _settings.tts_group_workers
+tts_channel_tts = _settings.tts_channel_tts
+tts_channel_audio_out = _settings.tts_channel_audio_out
+
+# Redis worker connection settings
+redis_max_connections = _settings.redis_max_connections
+redis_socket_timeout = _settings.redis_socket_timeout
+redis_socket_connect_timeout = _settings.redis_socket_connect_timeout
+redis_retry_on_timeout = _settings.redis_retry_on_timeout
+redis_health_check_interval = _settings.redis_health_check_interval
+
 # CORS
 cors_allowed_origins = _settings.cors_allowed_origins
 cors_allow_credentials = _settings.cors_allow_credentials
@@ -344,3 +590,6 @@ cors_origins_list = _settings.cors_origins_list
 rate_limit_default = _settings.rate_limit_default
 rate_limit_api_key = _settings.rate_limit_api_key
 rate_limit_admin = _settings.rate_limit_admin
+realtime_requests_per_minute = _settings.realtime_requests_per_minute
+realtime_tokens_per_minute = _settings.realtime_tokens_per_minute
+realtime_rate_limit_window_seconds = _settings.realtime_rate_limit_window_seconds

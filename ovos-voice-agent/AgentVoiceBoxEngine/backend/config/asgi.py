@@ -11,6 +11,7 @@ WebSocket routes:
 - /ws/v2/stt/transcription   - STT streaming
 - /ws/v2/tts/stream          - TTS streaming
 """
+
 import os
 
 from channels.auth import AuthMiddlewareStack
@@ -25,21 +26,16 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
 django_asgi_app = get_asgi_application()
 
 # Import WebSocket routing after Django is initialized
-from realtime.routing import websocket_urlpatterns  # noqa: E402
 from realtime.middleware import WebSocketAuthMiddleware  # noqa: E402
+from realtime.routing import websocket_urlpatterns  # noqa: E402
 
 application = ProtocolTypeRouter(
     {
         # HTTP requests -> Django
         "http": django_asgi_app,
-        
         # WebSocket requests -> Django Channels
         "websocket": AllowedHostsOriginValidator(
-            WebSocketAuthMiddleware(
-                AuthMiddlewareStack(
-                    URLRouter(websocket_urlpatterns)
-                )
-            )
+            WebSocketAuthMiddleware(AuthMiddlewareStack(URLRouter(websocket_urlpatterns)))
         ),
     }
 )

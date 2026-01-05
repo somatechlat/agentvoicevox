@@ -3,10 +3,11 @@ Voice session workflow for processing voice interactions.
 
 Orchestrates STT -> LLM -> TTS pipeline with durable execution.
 """
+
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
@@ -21,7 +22,7 @@ class VoiceSessionInput:
     tenant_id: str
     session_id: str
     project_id: str
-    config: Dict[str, Any]
+    config: dict[str, Any]
 
 
 @dataclass
@@ -59,10 +60,16 @@ class VoiceSessionWorkflow:
     """
 
     def __init__(self):
+        """
+        Initializes the workflow state for a voice session.
+
+        Sets up variables to track the tenant, session ID, configuration,
+        conversation history, usage metrics, and active status.
+        """
         self.tenant_id: str = ""
         self.session_id: str = ""
-        self.config: Dict[str, Any] = {}
-        self.conversation: List[Dict[str, str]] = []
+        self.config: dict[str, Any] = {}
+        self.conversation: list[dict[str, str]] = []
         self.total_audio_seconds: float = 0.0
         self.total_input_tokens: int = 0
         self.total_output_tokens: int = 0
@@ -87,13 +94,11 @@ class VoiceSessionWorkflow:
         # Initialize conversation with system prompt
         system_prompt = self.config.get(
             "system_prompt",
-            "You are a helpful voice assistant. Keep responses concise and natural."
+            "You are a helpful voice assistant. Keep responses concise and natural.",
         )
         self.conversation = [{"role": "system", "content": system_prompt}]
 
-        workflow.logger.info(
-            f"Started voice session workflow for session {self.session_id}"
-        )
+        workflow.logger.info(f"Started voice session workflow for session {self.session_id}")
 
         # Wait for audio chunks via signals
         while self.is_active:
@@ -119,11 +124,12 @@ class VoiceSessionWorkflow:
         Args:
             chunk: AudioChunk to process
         """
-        from apps.workflows.activities.stt import STTActivities, TranscriptionRequest
-        from apps.workflows.activities.llm import LLMActivities, LLMRequest, Message
-        from apps.workflows.activities.tts import TTSActivities, SynthesisRequest
-        from apps.workflows.activities.billing import BillingActivities, UsageEvent
         from datetime import datetime
+
+        from apps.workflows.activities.billing import BillingActivities, UsageEvent
+        from apps.workflows.activities.llm import LLMActivities, LLMRequest, Message
+        from apps.workflows.activities.stt import STTActivities, TranscriptionRequest
+        from apps.workflows.activities.tts import SynthesisRequest, TTSActivities
 
         retry_policy = RetryPolicy(
             initial_interval=timedelta(seconds=1),
@@ -153,10 +159,12 @@ class VoiceSessionWorkflow:
             return  # No speech detected
 
         # Add user message to conversation
-        self.conversation.append({
-            "role": "user",
-            "content": transcription.text,
-        })
+        self.conversation.append(
+            {
+                "role": "user",
+                "content": transcription.text,
+            }
+        )
 
         # 2. Generate LLM response
         llm_result = await workflow.execute_activity(
@@ -178,13 +186,15 @@ class VoiceSessionWorkflow:
         self.total_output_tokens += llm_result.output_tokens
 
         # Add assistant response to conversation
-        self.conversation.append({
-            "role": "assistant",
-            "content": llm_result.content,
-        })
+        self.conversation.append(
+            {
+                "role": "assistant",
+                "content": llm_result.content,
+            }
+        )
 
-        # 3. Synthesize speech
-        tts_result = await workflow.execute_activity(
+        # 3. Synthesize speech (result used for streaming via signals)
+        await workflow.execute_activity(
             TTSActivities.synthesize_speech,
             SynthesisRequest(
                 tenant_id=self.tenant_id,
@@ -250,7 +260,7 @@ class VoiceSessionWorkflow:
         workflow.logger.info(f"Ending voice session {self.session_id}")
 
     @workflow.query(name="get_status")
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Query current session status."""
         return {
             "session_id": self.session_id,
@@ -263,6 +273,6 @@ class VoiceSessionWorkflow:
         }
 
     @workflow.query(name="get_conversation")
-    def get_conversation(self) -> List[Dict[str, str]]:
+    def get_conversation(self) -> list[dict[str, str]]:
         """Query current conversation history."""
         return self.conversation

@@ -1,8 +1,9 @@
 """
 Pydantic schemas for notifications API.
 """
+
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from ninja import Schema
@@ -18,10 +19,10 @@ class NotificationCreate(Schema):
     type: str = "info"
     title: str
     message: str
-    data: Dict[str, Any] = {}
+    data: dict[str, Any] = {}
     action_url: str = ""
     action_label: str = ""
-    channels: List[str] = ["in_app"]
+    channels: list[str] = ["in_app"]
 
 
 class NotificationOut(Schema):
@@ -33,11 +34,11 @@ class NotificationOut(Schema):
     type: str
     title: str
     message: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     action_url: str
     action_label: str
-    channels: List[str]
-    delivered_at: Dict[str, str]
+    channels: list[str]
+    delivered_at: dict[str, str]
     read_at: Optional[datetime] = None
     dismissed_at: Optional[datetime] = None
     created_at: datetime
@@ -47,7 +48,7 @@ class NotificationOut(Schema):
 class NotificationListOut(Schema):
     """Schema for paginated notification list."""
 
-    items: List[NotificationOut]
+    items: list[NotificationOut]
     total: int
     unread_count: int
     page: int
@@ -59,7 +60,7 @@ class NotificationCountOut(Schema):
 
     unread: int
     total: int
-    by_type: Dict[str, int] = {}
+    by_type: dict[str, int] = {}
 
 
 class NotificationBulkActionOut(Schema):
@@ -71,7 +72,7 @@ class NotificationBulkActionOut(Schema):
 class MarkReadRequest(Schema):
     """Schema for marking notifications as read."""
 
-    notification_ids: List[UUID]
+    notification_ids: list[UUID]
 
 
 class MarkReadResponse(Schema):

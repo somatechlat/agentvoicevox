@@ -1,0 +1,198 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>apps.core package &mdash; AgentVoiceBox Backend 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            AgentVoiceBox Backend
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">apps.core package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#apps-core-api-module">apps.core.api module</a></li>
+<li><a class="reference internal" href="#apps-core-api-admin-dashboard-module">apps.core.api_admin_dashboard module</a></li>
+<li><a class="reference internal" href="#apps-core-apps-module">apps.core.apps module</a></li>
+<li><a class="reference internal" href="#apps-core-cache-module">apps.core.cache module</a></li>
+<li><a class="reference internal" href="#apps-core-exceptions-module">apps.core.exceptions module</a></li>
+<li><a class="reference internal" href="#apps-core-models-module">apps.core.models module</a></li>
+<li><a class="reference internal" href="#module-contents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">AgentVoiceBox Backend</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">apps.core package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/source/api/apps.core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="apps-core-package">
+<h1>apps.core package<a class="headerlink" href="#apps-core-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="apps.core.management.html">apps.core.management package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.management.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="apps.core.management.commands.html">apps.core.management.commands package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="apps.core.management.commands.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps.core.management.commands.html#apps-core-management-commands-seed-permission-matrix-module">apps.core.management.commands.seed_permission_matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps.core.management.commands.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.management.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="apps.core.middleware.html">apps.core.middleware package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.middleware.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.middleware.html#apps-core-middleware-audit-module">apps.core.middleware.audit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.middleware.html#apps-core-middleware-authentication-module">apps.core.middleware.authentication module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.middleware.html#apps-core-middleware-exception-handler-module">apps.core.middleware.exception_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.middleware.html#apps-core-middleware-rate-limit-module">apps.core.middleware.rate_limit module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.middleware.html#apps-core-middleware-request-logging-module">apps.core.middleware.request_logging module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.middleware.html#apps-core-middleware-tenant-module">apps.core.middleware.tenant module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.middleware.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="apps.core.migrations.html">apps.core.migrations package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.migrations.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.migrations.html#apps-core-migrations-0001-initial-module">apps.core.migrations.0001_initial module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.migrations.html#apps-core-migrations-0002-initial-module">apps.core.migrations.0002_initial module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.migrations.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="apps.core.permissions.html">apps.core.permissions package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.permissions.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.permissions.html#apps-core-permissions-auth-bearer-module">apps.core.permissions.auth_bearer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.permissions.html#apps-core-permissions-decorators-module">apps.core.permissions.decorators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.permissions.html#apps-core-permissions-models-module">apps.core.permissions.models module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.permissions.html#apps-core-permissions-service-module">apps.core.permissions.service module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.permissions.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="apps.core.urls.html">apps.core.urls package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.urls.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.urls.html#apps-core-urls-health-module">apps.core.urls.health module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.urls.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="apps.core.views.html">apps.core.views package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.views.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.views.html#apps-core-views-health-module">apps.core.views.health module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="apps.core.views.html#module-contents">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="apps-core-api-module">
+<h2>apps.core.api module<a class="headerlink" href="#apps-core-api-module" title="Link to this heading"></a></h2>
+</section>
+<section id="apps-core-api-admin-dashboard-module">
+<h2>apps.core.api_admin_dashboard module<a class="headerlink" href="#apps-core-api-admin-dashboard-module" title="Link to this heading"></a></h2>
+</section>
+<section id="apps-core-apps-module">
+<h2>apps.core.apps module<a class="headerlink" href="#apps-core-apps-module" title="Link to this heading"></a></h2>
+</section>
+<section id="apps-core-cache-module">
+<h2>apps.core.cache module<a class="headerlink" href="#apps-core-cache-module" title="Link to this heading"></a></h2>
+</section>
+<section id="apps-core-exceptions-module">
+<h2>apps.core.exceptions module<a class="headerlink" href="#apps-core-exceptions-module" title="Link to this heading"></a></h2>
+</section>
+<section id="apps-core-models-module">
+<h2>apps.core.models module<a class="headerlink" href="#apps-core-models-module" title="Link to this heading"></a></h2>
+</section>
+<section id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, The AgentVoiceBox Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

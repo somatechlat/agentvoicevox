@@ -1501,54 +1501,105 @@ RateLimitError(APIException)
 ### 7.1 Testing Framework
 
 - **Unit Tests**: pytest with pytest-django
-- **Property Tests**: Hypothesis for property-based testing
+- **Property Tests**: Hypothesis with `hypothesis.extra.django` extension
 - **Integration Tests**: pytest with test containers
 - **API Tests**: pytest with Django test client
 - **WebSocket Tests**: pytest-asyncio with channels testing
 
-### 7.2 Test Configuration
+### 7.2 Django-Specific Hypothesis Configuration
+
+The `hypothesis.extra.django` extension provides Django-specific testing capabilities:
+
+1. **`hypothesis.extra.django.TestCase`** - Django test case with per-example transactions
+2. **`hypothesis.extra.django.TransactionTestCase`** - For tests needing transaction control
+3. **`hypothesis.extra.django.from_model()`** - Strategy for generating Django model instances
 
 ```python
+# conftest.py - Django-specific Hypothesis configuration
+from hypothesis import settings as hypothesis_settings, HealthCheck
+from hypothesis.extra.django import TestCase as HypothesisTestCase
+
 # Minimum 100 iterations per property test
-HYPOTHESIS_SETTINGS = {
-    "max_examples": 100,
-    "deadline": 5000,  # 5 seconds
-    "suppress_health_check": [HealthCheck.too_slow],
-}
+hypothesis_settings.register_profile(
+    "default",
+    max_examples=100,
+    deadline=5000,  # 5 seconds
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
+)
+hypothesis_settings.register_profile(
+    "ci",
+    max_examples=200,
+    deadline=10000,  # 10 seconds for CI
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
+)
 ```
 
-
-### 7.3 Property Test Examples
+### 7.3 Model Generation with from_model()
 
 ```python
+from hypothesis.extra.django import from_model
+from hypothesis import given, strategies as st
+from apps.tenants.models import Tenant
+
+# Generate valid Tenant instances automatically
+tenant_strategy = from_model(
+    Tenant,
+    tier=st.sampled_from(["free", "starter", "pro", "enterprise"]),
+    status=st.sampled_from(["active", "suspended", "pending"]),
+)
+
+# Use in property tests
+@given(tenant=tenant_strategy)
+def test_tenant_properties(tenant):
+    """Hypothesis generates valid Tenant instances respecting field validators."""
+    assert tenant.pk is not None
+    assert tenant.tier in ["free", "starter", "pro", "enterprise"]
+```
+
+### 7.4 Property Test Examples
+
+```python
+from hypothesis.extra.django import from_model, TestCase as HypothesisTestCase
+from hypothesis import given, strategies as st
+import pytest
+
 # Property 4: Tenant-Scoped Model Isolation
-@given(tenant=tenant_strategy(), records=st.lists(record_strategy(), min_size=1))
-def test_tenant_scoped_queryset_isolation(tenant, records):
-    """For any tenant, queries only return that tenant's records."""
-    set_current_tenant(tenant)
-    for record in records:
-        record.tenant = tenant
-        record.save()
+class TestTenantScopedModelIsolation(HypothesisTestCase):
+    """Uses HypothesisTestCase for per-example transaction isolation."""
     
-    results = TenantScopedModel.objects.all()
-    assert all(r.tenant_id == tenant.id for r in results)
+    @given(tenant=from_model(Tenant, status=st.just("active")))
+    def test_tenant_scoped_queryset_isolation(self, tenant):
+        """For any tenant, queries only return that tenant's records."""
+        set_current_tenant(tenant)
+        
+        # Create records for this tenant
+        record = TenantScopedModel.objects.create(name="test", tenant=tenant)
+        
+        results = TenantScopedModel.objects.all()
+        assert all(r.tenant_id == tenant.id for r in results)
 
 # Property 7: API Key Lifecycle Round-Trip
-@given(key_name=st.text(min_size=1, max_size=100))
+@pytest.mark.django_db(transaction=True)
+@given(key_name=st.text(min_size=1, max_size=100).filter(lambda x: x.strip()))
 def test_api_key_round_trip(key_name):
     """Generated keys can be validated by hash comparison."""
-    full_key, prefix, key_hash = APIKey.generate_key()
+    full_key, prefix, key_hash = APIKeyService.generate_key()
     
     assert full_key.startswith("avb_")
     assert len(full_key) == 47  # avb_ + 43 chars
-    assert APIKey.hash_key(full_key) == key_hash
+    assert APIKeyService.hash_key(full_key) == key_hash
     assert full_key[:12] == prefix
 
 # Property 16: Audit Log Immutability
-@given(audit_log=audit_log_strategy())
+@pytest.mark.django_db(transaction=True)
+@given(audit_log=from_model(
+    AuditLog,
+    action=st.sampled_from(["create", "update", "delete"]),
+    resource_type=st.sampled_from(["tenant", "user", "session"]),
+))
 def test_audit_log_immutable(audit_log):
     """Audit logs cannot be updated or deleted."""
-    audit_log.save()
+    # Record is already saved by from_model()
     
     with pytest.raises(ValueError, match="immutable"):
         audit_log.description = "modified"

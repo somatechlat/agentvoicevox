@@ -1,42 +1,38 @@
 # Kokoro Model Selection
 
-The Voice Engine now uses the **medium-sized** Kokoro model (`Kokoro-82M.onnx`) by default. You can switch to a different model (e.g., a larger model) without changing the code.
+The TTS worker uses Kokoro ONNX and reads the model filename from `KOKORO_MODEL_FILE`.
 
 ## Environment Variable
 
-- **`KOKORO_MODEL_FILE`** – Name of the ONNX model file to load from the cache directory (`/app/cache/kokoro`).
-  - Default: `Kokoro-82M.onnx` (the 82‑M parameter medium model).
-  - Example to use a larger model:
+- **`KOKORO_MODEL_FILE`** – ONNX model filename to load from the cache directory (`/app/cache/kokoro`).
+  - Default: `kokoro-v1.0.onnx`
+  - Example to use a different model:
     ```bash
     export KOKORO_MODEL_FILE=Kokoro-200M.onnx
     ```
 
-The variable is read in three places:
+The variable is read in these places:
 
-1. **Dockerfile** – during the image build the model is copied to the target name defined by `KOKORO_MODEL_FILE`.
-2. **Realtime WebSocket transport** – loads the model file using the same variable.
-3. **TTS route** – resolves the model path for the HTTP endpoint.
+1. **`ovos-voice-agent/AgentVoiceBoxEngine/Dockerfile`** – downloads the model into the cache directory.
+2. **`ovos-voice-agent/AgentVoiceBoxEngine/backend/apps/workflows/management/commands/run_tts_worker.py`** – loads the model at runtime.
 
 ## How to Provide a New Model
-1. Place the ONNX model file (e.g., `Kokoro-200M.onnx`) in a location accessible during the Docker build, such as the local cache or a volume mount.
-2. Set `KOKORO_MODEL_FILE` in your `.env` (or export it in the shell) before rebuilding the containers.
-3. Rebuild and restart the compose stack.
+
+1. Place the ONNX model file (e.g., `Kokoro-200M.onnx`) in a location accessible during the Docker build, such as a local cache or volume mount.
+2. Set `KOKORO_MODEL_FILE` (and optionally `KOKORO_MODEL_URL`) before building the image.
+3. Rebuild the Docker image and restart the stack.
 
 ## Rebuilding the Stack
+
 ```bash
-# From the repository root
-cd ovos-docker/compose
-# Rebuild images with the new configuration
-docker compose -f voice-agent-compose.yml build --no-cache
-# Start the services in detached mode
-docker compose -f voice-agent-compose.yml up -d
+cd ovos-voice-agent/AgentVoiceBoxEngine
+
+docker compose -p agentvoicebox build --no-cache
+docker compose -p agentvoicebox up -d
 ```
 
-The service will expose the health endpoint at `http://localhost:<VOICE_AGENT_PORT>/health` (default `60200`).
+The health endpoint is available at `http://localhost:65020/health/`.
 
 ## Verifying the Model
-You can check the logs of the `voice-agent` container to see which model file was loaded:
-```bash
-docker logs ovos_voice_agent 2>&1 | grep Kokoro-.*\.onnx
-```
-If the correct model name appears, the configuration is successful.
+
+You can check the logs of the TTS worker container to see which model file was loaded.

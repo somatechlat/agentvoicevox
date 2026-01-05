@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAsViewer } from './auth.setup';
 
 /**
  * User Portal E2E Tests
@@ -13,6 +14,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('User Portal - Dashboard', () => {
   test.beforeEach(async ({ page }) => {
+    await authenticateAsViewer(page);
     await page.goto('/app');
   });
 

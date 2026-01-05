@@ -15,12 +15,13 @@ Uses REAL Django models and database - NO MOCKS.
 import uuid
 
 import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
+
 from apps.core.middleware.tenant import (
     clear_current_tenant,
     set_current_tenant,
 )
-from hypothesis import HealthCheck, given, settings
-from hypothesis import strategies as st
 
 # ==========================================================================
 # STRATEGIES FOR PROPERTY-BASED TESTING

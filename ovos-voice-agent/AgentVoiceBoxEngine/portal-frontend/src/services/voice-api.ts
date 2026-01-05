@@ -1,13 +1,21 @@
 /**
  * Voice API Service - Connects to AgentVoiceBox Gateway
  * Endpoints: Sessions, STT, TTS, LLM, Personas, Audio Config
- * Gateway URL: http://localhost:25000
+ * Gateway URL: configured via NEXT_PUBLIC_GATEWAY_URL
  */
 
 import { apiClient, ApiResponse } from './api-client';
 
+const requireEnv = (name: string): string => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+};
+
 // Gateway base URL
-const GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL || 'http://localhost:25000';
+const GATEWAY_URL = requireEnv('NEXT_PUBLIC_GATEWAY_URL');
 
 // Create gateway client
 const gatewayClient = new (apiClient.constructor as typeof import('./api-client').ApiClient)(GATEWAY_URL);

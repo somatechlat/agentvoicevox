@@ -7,15 +7,16 @@ Provides fine-grained resource:action permission control with:
 - Tenant-level permission overrides
 - @require_permission("resource:action") decorator
 """
+
+from apps.core.permissions.auth_bearer import AuthBearer
+from apps.core.permissions.decorators import require_granular_role, require_permission
 from apps.core.permissions.models import (
-    PlatformRole,
     PermissionMatrix,
+    PlatformRole,
     TenantPermissionOverride,
     UserRoleAssignment,
 )
 from apps.core.permissions.service import GranularPermissionService
-from apps.core.permissions.decorators import require_permission, require_granular_role
-from apps.core.permissions.auth_bearer import AuthBearer
 
 __all__ = [
     "PlatformRole",

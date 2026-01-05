@@ -3,6 +3,7 @@ Theme API endpoints.
 
 Provides REST API for theme management.
 """
+
 from uuid import UUID
 
 from django.http import HttpResponse
@@ -11,9 +12,9 @@ from ninja import Query, Router
 from apps.core.exceptions import NotFoundError
 
 from .schemas import (
+    ThemeCreate,
     ThemeCSSOut,
     ThemeCSSVariablesOut,
-    ThemeCreate,
     ThemeListOut,
     ThemeOut,
     ThemeUpdate,

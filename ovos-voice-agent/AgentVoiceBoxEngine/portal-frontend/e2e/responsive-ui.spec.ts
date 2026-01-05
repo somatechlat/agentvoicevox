@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAsTenantAdmin } from './auth.setup';
 
 /**
  * Responsive UI E2E Tests

@@ -1,4 +1,5 @@
 """Django app configuration for API keys."""
+
 from django.apps import AppConfig
 
 

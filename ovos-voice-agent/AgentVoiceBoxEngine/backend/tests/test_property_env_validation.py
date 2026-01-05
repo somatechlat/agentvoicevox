@@ -9,8 +9,6 @@ with clear error messages identifying the missing variables.
 """
 
 import os
-from typing import Dict
-from unittest.mock import patch
 
 import pytest
 from hypothesis import given, settings
@@ -49,7 +47,7 @@ OPTIONAL_ENV_VARS = {
 }
 
 
-def get_valid_env_vars() -> Dict[str, str]:
+def get_valid_env_vars() -> dict[str, str]:
     """Return a complete set of valid environment variables."""
     return {
         "DJANGO_SECRET_KEY": "a" * 50,  # Minimum 50 chars
@@ -75,10 +73,13 @@ class TestEnvironmentValidation:
         the Settings class should instantiate without error.
         """
         valid_env = get_valid_env_vars()
-
-        with patch.dict(os.environ, valid_env, clear=True):
-
+        original_environ = dict(os.environ)
+        os.environ.clear()
+        os.environ.update(valid_env)
+        try:
             class TestSettings(BaseSettings):
+                """A Pydantic settings class for testing environment variable validation."""
+
                 model_config = SettingsConfigDict(
                     env_file=".env",
                     env_file_encoding="utf-8",
@@ -92,6 +93,9 @@ class TestEnvironmentValidation:
             test_settings = TestSettings()
             assert test_settings.django_secret_key == "a" * 50
             assert test_settings.db_password == "test_password"
+        finally:
+            os.environ.clear()
+            os.environ.update(original_environ)
 
     @pytest.mark.property
     @given(missing_var=st.sampled_from(list(REQUIRED_ENV_VARS)))
@@ -106,6 +110,8 @@ class TestEnvironmentValidation:
 
         # Create a fresh settings class that doesn't read from environment
         class TestSettings(BaseSettings):
+            """A Pydantic settings class for testing environment variable validation."""
+
             model_config = SettingsConfigDict(
                 env_file=None,  # Disable .env file loading
                 env_ignore_empty=True,
@@ -125,6 +131,13 @@ class TestEnvironmentValidation:
                 dotenv_settings,
                 file_secret_settings,
             ):
+                """
+                Disables loading settings from environment variables for isolated testing.
+
+                This is a hook provided by pydantic-settings to customize setting sources.
+                By returning only `init_settings`, we ensure that tests are not
+                affected by the actual environment they are run in.
+                """
                 # Only use init_settings, ignore environment
                 return (init_settings,)
 
@@ -160,10 +173,13 @@ class TestEnvironmentValidation:
         """
         valid_env = get_valid_env_vars()
         valid_env["DJANGO_SECRET_KEY"] = "short_key"  # Less than 50 chars
-
-        with patch.dict(os.environ, valid_env, clear=True):
-
+        original_environ = dict(os.environ)
+        os.environ.clear()
+        os.environ.update(valid_env)
+        try:
             class TestSettings(BaseSettings):
+                """A Pydantic settings class for testing environment variable validation."""
+
                 model_config = SettingsConfigDict(
                     env_file=".env",
                     env_file_encoding="utf-8",
@@ -179,6 +195,9 @@ class TestEnvironmentValidation:
             # Verify error mentions the field
             error_str = str(exc_info.value)
             assert "django_secret_key" in error_str.lower()
+        finally:
+            os.environ.clear()
+            os.environ.update(original_environ)
 
     @pytest.mark.property
     @given(secret_key_length=st.integers(min_value=50, max_value=200))
@@ -191,10 +210,13 @@ class TestEnvironmentValidation:
         """
         valid_env = get_valid_env_vars()
         valid_env["DJANGO_SECRET_KEY"] = "x" * secret_key_length
-
-        with patch.dict(os.environ, valid_env, clear=True):
-
+        original_environ = dict(os.environ)
+        os.environ.clear()
+        os.environ.update(valid_env)
+        try:
             class TestSettings(BaseSettings):
+                """A Pydantic settings class for testing environment variable validation."""
+
                 model_config = SettingsConfigDict(
                     env_file=".env",
                     env_file_encoding="utf-8",
@@ -207,6 +229,9 @@ class TestEnvironmentValidation:
             # Should not raise
             test_settings = TestSettings()
             assert len(test_settings.django_secret_key) == secret_key_length
+        finally:
+            os.environ.clear()
+            os.environ.update(original_environ)
 
     @pytest.mark.property
     @given(log_level=st.sampled_from(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]))
@@ -220,10 +245,13 @@ class TestEnvironmentValidation:
         """
         valid_env = get_valid_env_vars()
         valid_env["LOG_LEVEL"] = log_level
-
-        with patch.dict(os.environ, valid_env, clear=True):
-
+        original_environ = dict(os.environ)
+        os.environ.clear()
+        os.environ.update(valid_env)
+        try:
             class TestSettings(BaseSettings):
+                """A Pydantic settings class for testing environment variable validation."""
+
                 model_config = SettingsConfigDict(
                     env_file=".env",
                     env_file_encoding="utf-8",
@@ -237,6 +265,9 @@ class TestEnvironmentValidation:
                 @field_validator("log_level")
                 @classmethod
                 def validate_log_level(cls, v: str) -> str:
+                    """
+                    Validates that the provided log level is a valid choice.
+                    """
                     valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
                     if v.upper() not in valid_levels:
                         raise ValueError(f"Invalid log level: {v}")
@@ -244,6 +275,9 @@ class TestEnvironmentValidation:
 
             test_settings = TestSettings()
             assert test_settings.log_level == log_level.upper()
+        finally:
+            os.environ.clear()
+            os.environ.update(original_environ)
 
     @pytest.mark.property
     @given(
@@ -266,6 +300,8 @@ class TestEnvironmentValidation:
         """
 
         class TestSettings(BaseSettings):
+            """A Pydantic settings class for testing environment variable validation."""
+
             model_config = SettingsConfigDict(
                 env_file=None,
                 env_file_encoding="utf-8",
@@ -279,6 +315,9 @@ class TestEnvironmentValidation:
             @field_validator("log_level")
             @classmethod
             def validate_log_level(cls, v: str) -> str:
+                """
+                Validates that the provided log level is a valid choice.
+                """
                 valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
                 if v.upper() not in valid_levels:
                     raise ValueError(f"Invalid log level: {v}")

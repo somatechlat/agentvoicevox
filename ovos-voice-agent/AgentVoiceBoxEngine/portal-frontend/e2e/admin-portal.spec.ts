@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { authenticateAsPlatformAdmin, MOCK_TOKENS, setAuthCookie } from './auth.setup';
 
 /**
  * Admin Portal E2E Tests
@@ -14,7 +15,9 @@ import { test, expect, Page } from '@playwright/test';
 
 test.describe('Admin Portal - Dashboard', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to admin dashboard (requires admin auth in real scenario)
+    // Set up platform admin authentication
+    await authenticateAsPlatformAdmin(page);
+    // Navigate to admin dashboard
     await page.goto('/admin/dashboard');
   });
 

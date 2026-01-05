@@ -64,9 +64,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="apikey",
-            index=models.Index(
-                fields=["key_prefix"], name="api_keys_key_pre_9c2634_idx"
-            ),
+            index=models.Index(fields=["key_prefix"], name="api_keys_key_pre_9c2634_idx"),
         ),
         migrations.AddIndex(
             model_name="apikey",
@@ -74,26 +72,18 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="apikey",
-            index=models.Index(
-                fields=["expires_at"], name="api_keys_expires_f68b1a_idx"
-            ),
+            index=models.Index(fields=["expires_at"], name="api_keys_expires_f68b1a_idx"),
         ),
         migrations.AddIndex(
             model_name="apikey",
-            index=models.Index(
-                fields=["revoked_at"], name="api_keys_revoked_d42b6e_idx"
-            ),
+            index=models.Index(fields=["revoked_at"], name="api_keys_revoked_d42b6e_idx"),
         ),
         migrations.AddIndex(
             model_name="apikey",
-            index=models.Index(
-                fields=["created_at"], name="api_keys_created_88dd23_idx"
-            ),
+            index=models.Index(fields=["created_at"], name="api_keys_created_88dd23_idx"),
         ),
         migrations.AddIndex(
             model_name="apikey",
-            index=models.Index(
-                fields=["tenant", "revoked_at"], name="api_keys_tenant__a34131_idx"
-            ),
+            index=models.Index(fields=["tenant", "revoked_at"], name="api_keys_tenant__a34131_idx"),
         ),
     ]

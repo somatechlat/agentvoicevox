@@ -126,6 +126,7 @@ class TestRateLimitingEnforcement:
         from apps.core.middleware.rate_limit import RateLimitMiddleware
 
         def get_response(request: HttpRequest) -> HttpResponse:
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RateLimitMiddleware(get_response)
@@ -149,10 +150,12 @@ class TestRateLimitingEnforcement:
 
         **Validates: Requirement 10.7**
         """
-        from apps.core.middleware.rate_limit import RateLimitMiddleware
         from django.conf import settings
 
+        from apps.core.middleware.rate_limit import RateLimitMiddleware
+
         def get_response(request: HttpRequest) -> HttpResponse:
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RateLimitMiddleware(get_response)
@@ -203,6 +206,7 @@ class TestRateLimitingEnforcement:
         from apps.core.middleware.rate_limit import RateLimitMiddleware
 
         def get_response(request: HttpRequest) -> HttpResponse:
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RateLimitMiddleware(get_response)
@@ -239,6 +243,7 @@ class TestRateLimitingEnforcement:
         from apps.core.middleware.rate_limit import RateLimitMiddleware
 
         def get_response(request: HttpRequest) -> HttpResponse:
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RateLimitMiddleware(get_response)
@@ -274,6 +279,7 @@ class TestRateLimitingEnforcement:
         from apps.core.middleware.rate_limit import RateLimitMiddleware
 
         def get_response(request: HttpRequest) -> HttpResponse:
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RateLimitMiddleware(get_response)
@@ -302,10 +308,12 @@ class TestRateLimitingEnforcement:
 
         **Validates: Requirement 10.8**
         """
-        from apps.core.middleware.rate_limit import RateLimitMiddleware
         from django.conf import settings
 
+        from apps.core.middleware.rate_limit import RateLimitMiddleware
+
         def get_response(request: HttpRequest) -> HttpResponse:
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RateLimitMiddleware(get_response)
@@ -340,10 +348,12 @@ class TestRateLimitingEnforcement:
 
         **Validates: Requirement 10.6**
         """
-        from apps.core.middleware.rate_limit import RateLimitMiddleware
         from django.conf import settings
 
+        from apps.core.middleware.rate_limit import RateLimitMiddleware
+
         def get_response(request: HttpRequest) -> HttpResponse:
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RateLimitMiddleware(get_response)
@@ -375,6 +385,7 @@ class TestRateLimitingEnforcement:
         from apps.core.middleware.rate_limit import RateLimitMiddleware
 
         def get_response(request: HttpRequest) -> HttpResponse:
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RateLimitMiddleware(get_response)
@@ -417,10 +428,12 @@ class TestRateLimitTiers:
 
         **Validates: Requirement 10.8**
         """
-        from apps.core.middleware.rate_limit import RateLimitMiddleware
         from django.conf import settings
 
+        from apps.core.middleware.rate_limit import RateLimitMiddleware
+
         def get_response(request: HttpRequest) -> HttpResponse:
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RateLimitMiddleware(get_response)
@@ -471,6 +484,7 @@ class TestXForwardedFor:
         from apps.core.middleware.rate_limit import RateLimitMiddleware
 
         def get_response(request: HttpRequest) -> HttpResponse:
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = RateLimitMiddleware(get_response)

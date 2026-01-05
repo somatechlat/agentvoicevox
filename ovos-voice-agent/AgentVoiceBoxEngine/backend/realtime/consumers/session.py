@@ -3,9 +3,9 @@ Voice session WebSocket consumer.
 
 Handles real-time voice communication for sessions.
 """
+
 import logging
-from typing import Any, Dict, Optional
-from uuid import UUID
+from typing import Any, Optional
 
 from .base import BaseConsumer
 
@@ -24,6 +24,7 @@ class SessionConsumer(BaseConsumer):
     """
 
     def __init__(self, *args, **kwargs):
+        """Initializes the SessionConsumer."""
         super().__init__(*args, **kwargs)
         self.session_id: Optional[str] = None
         self.session = None
@@ -55,10 +56,13 @@ class SessionConsumer(BaseConsumer):
             await self._activate_session()
 
             # Send session info
-            await self.send_event("session.connected", {
-                "session_id": self.session_id,
-                "config": self.session.config if self.session else {},
-            })
+            await self.send_event(
+                "session.connected",
+                {
+                    "session_id": self.session_id,
+                    "config": self.session.config if self.session else {},
+                },
+            )
 
     async def disconnect(self, close_code):
         """Handle disconnection."""
@@ -115,7 +119,7 @@ class SessionConsumer(BaseConsumer):
             )
 
     # Message handlers
-    async def handle_audio_input(self, content: Dict[str, Any]):
+    async def handle_audio_input(self, content: dict[str, Any]):
         """Handle incoming audio chunk."""
         audio_data = content.get("audio")
         if not audio_data:
@@ -132,20 +136,26 @@ class SessionConsumer(BaseConsumer):
             },
         )
 
-    async def handle_response_create(self, content: Dict[str, Any]):
+    async def handle_response_create(self, content: dict[str, Any]):
         """Handle request to generate response."""
         # Trigger LLM response generation
-        await self.send_event("response.started", {
-            "session_id": self.session_id,
-        })
+        await self.send_event(
+            "response.started",
+            {
+                "session_id": self.session_id,
+            },
+        )
 
-    async def handle_response_cancel(self, content: Dict[str, Any]):
+    async def handle_response_cancel(self, content: dict[str, Any]):
         """Handle response cancellation."""
-        await self.send_event("response.cancelled", {
-            "session_id": self.session_id,
-        })
+        await self.send_event(
+            "response.cancelled",
+            {
+                "session_id": self.session_id,
+            },
+        )
 
-    async def handle_session_update(self, content: Dict[str, Any]):
+    async def handle_session_update(self, content: dict[str, Any]):
         """Handle session configuration update."""
         config = content.get("config", {})
 
@@ -153,24 +163,27 @@ class SessionConsumer(BaseConsumer):
             self.session.config.update(config)
             await self.session.asave(update_fields=["config", "updated_at"])
 
-        await self.send_event("session.updated", {
-            "session_id": self.session_id,
-            "config": self.session.config if self.session else {},
-        })
+        await self.send_event(
+            "session.updated",
+            {
+                "session_id": self.session_id,
+                "config": self.session.config if self.session else {},
+            },
+        )
 
     # Group message handlers
-    async def transcription_result(self, event: Dict[str, Any]):
+    async def transcription_result(self, event: dict[str, Any]):
         """Handle transcription result from STT worker."""
         await self.send_event("transcription.completed", event["data"])
 
-    async def response_chunk(self, event: Dict[str, Any]):
+    async def response_chunk(self, event: dict[str, Any]):
         """Handle response chunk from LLM worker."""
         await self.send_event("response.chunk", event["data"])
 
-    async def response_completed(self, event: Dict[str, Any]):
+    async def response_completed(self, event: dict[str, Any]):
         """Handle response completion."""
         await self.send_event("response.completed", event["data"])
 
-    async def audio_output(self, event: Dict[str, Any]):
+    async def audio_output(self, event: dict[str, Any]):
         """Handle audio output from TTS worker."""
         await self.send_event("audio.output", event["data"])

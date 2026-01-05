@@ -1,10 +1,10 @@
 # Core middleware
-from .tenant import TenantMiddleware
-from .authentication import KeycloakAuthenticationMiddleware
-from .rate_limit import RateLimitMiddleware
 from .audit import AuditMiddleware
-from .request_logging import RequestLoggingMiddleware
+from .authentication import KeycloakAuthenticationMiddleware
 from .exception_handler import ExceptionMiddleware
+from .rate_limit import RateLimitMiddleware
+from .request_logging import RequestLoggingMiddleware
+from .tenant import TenantMiddleware
 
 __all__ = [
     "TenantMiddleware",

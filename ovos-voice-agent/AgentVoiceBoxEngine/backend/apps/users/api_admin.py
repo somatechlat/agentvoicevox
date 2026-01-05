@@ -1,11 +1,16 @@
 """
-Admin User API endpoints.
+System-Level Admin API for User Management
+==========================================
 
-SYSADMIN-only endpoints for cross-tenant user management.
+This module provides API endpoints for system-level administration of all users
+across all tenants. Access to these endpoints is strictly limited to users with
+the SYSADMIN role.
 """
+
 from typing import Optional
 from uuid import UUID
 
+from django.db.models import Q
 from ninja import Query, Router
 
 from apps.core.exceptions import PermissionDeniedError
@@ -14,37 +19,46 @@ from .models import User
 from .schemas import UserListResponse, UserResponse, UserUpdate
 from .services import UserService
 
-router = Router()
+# Router for the admin-specific user endpoints.
+router = Router(tags=["Admin - Users"])
 
 
 def require_sysadmin(request):
-    """Check if user is SYSADMIN."""
+    """
+    A dependency function that checks if the requesting user has SYSADMIN privileges.
+
+    It inspects the `request.user` object provided by the authentication backend.
+
+    Raises:
+        PermissionDeniedError: If the user is not a system administrator.
+    """
     if not request.user.is_sysadmin:
         raise PermissionDeniedError("SYSADMIN role required")
 
 
-@router.get("", response=UserListResponse)
+@router.get("", response=UserListResponse, summary="List All Users (SysAdmin)")
 def list_all_users(
     request,
-    tenant_id: Optional[UUID] = Query(None, description="Filter by tenant"),
-    role: Optional[str] = Query(None, description="Filter by role"),
-    is_active: Optional[bool] = Query(None, description="Filter by active status"),
-    search: Optional[str] = Query(None, description="Search by name or email"),
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    tenant_id: Optional[UUID] = Query(None, description="Filter users by a specific tenant ID."),
+    role: Optional[str] = Query(None, description="Filter users by role."),
+    is_active: Optional[bool] = Query(None, description="Filter users by active status."),
+    search: Optional[str] = Query(None, description="Search term for user name or email."),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
 ):
     """
-    List all users across all tenants.
+    Lists all users across all tenants with filtering and pagination.
 
-    SYSADMIN only.
+    This provides a system-wide view of all user accounts.
+
+    **Permissions:** SYSADMIN role required.
     """
     require_sysadmin(request)
 
-    from django.db.models import Q
-
+    # Start with a non-tenant-scoped queryset.
     qs = User.objects.select_related("tenant").all()
 
-    # Apply filters
+    # Apply filters if provided.
     if tenant_id:
         qs = qs.filter(tenant_id=tenant_id)
     if role:
@@ -60,7 +74,7 @@ def list_all_users(
 
     total = qs.count()
     offset = (page - 1) * page_size
-    users = qs[offset : offset + page_size]
+    users = qs.order_by("-created_at")[offset : offset + page_size]
     pages = (total + page_size - 1) // page_size
 
     return UserListResponse(
@@ -72,69 +86,63 @@ def list_all_users(
     )
 
 
-@router.get("/{user_id}", response=UserResponse)
+@router.get("/{user_id}", response=UserResponse, summary="Get Any User by ID (SysAdmin)")
 def get_user_admin(request, user_id: UUID):
     """
-    Get any user by ID.
+    Retrieves details for any user in the system by their ID.
 
-    SYSADMIN only.
+    **Permissions:** SYSADMIN role required.
     """
     require_sysadmin(request)
     user = UserService.get_by_id(user_id)
     return UserResponse.from_orm(user)
 
 
-@router.patch("/{user_id}", response=UserResponse)
+@router.patch("/{user_id}", response=UserResponse, summary="Update Any User (SysAdmin)")
 def update_user_admin(request, user_id: UUID, payload: UserUpdate):
     """
-    Update any user.
+    Updates any user's details in the system.
 
-    SYSADMIN only.
+    **Permissions:** SYSADMIN role required.
     """
     require_sysadmin(request)
-
-    updated_user = UserService.update_user(
-        user_id=user_id,
-        first_name=payload.first_name,
-        last_name=payload.last_name,
-        role=payload.role,
-        is_active=payload.is_active,
-        preferences=payload.preferences,
-    )
-
+    updated_user = UserService.update_user(user_id=user_id, **payload.dict(exclude_unset=True))
     return UserResponse.from_orm(updated_user)
 
 
-@router.post("/{user_id}/deactivate", response=UserResponse)
+@router.post("/{user_id}/deactivate", response=UserResponse, summary="Deactivate Any User (SysAdmin)")
 def deactivate_user_admin(request, user_id: UUID):
     """
-    Deactivate any user.
+    Deactivates any user's account in the system.
 
-    SYSADMIN only.
+    **Permissions:** SYSADMIN role required.
     """
     require_sysadmin(request)
     updated_user = UserService.deactivate_user(user_id)
     return UserResponse.from_orm(updated_user)
 
 
-@router.post("/{user_id}/activate", response=UserResponse)
+@router.post("/{user_id}/activate", response=UserResponse, summary="Activate Any User (SysAdmin)")
 def activate_user_admin(request, user_id: UUID):
     """
-    Activate any user.
+    Activates any user's account in the system.
 
-    SYSADMIN only.
+    **Permissions:** SYSADMIN role required.
     """
     require_sysadmin(request)
     updated_user = UserService.activate_user(user_id)
     return UserResponse.from_orm(updated_user)
 
 
-@router.delete("/{user_id}", response={204: None})
+@router.delete("/{user_id}", response={204: None}, summary="Delete Any User (SysAdmin)")
 def delete_user_admin(request, user_id: UUID):
     """
-    Delete any user permanently.
+    Permanently deletes any user from the system.
 
-    SYSADMIN only.
+    **Permissions:** SYSADMIN role required.
+
+    Returns:
+        A 204 No Content response on success.
     """
     require_sysadmin(request)
     UserService.delete_user(user_id)

@@ -3,8 +3,8 @@ Task queue configuration for Temporal workflows.
 
 Defines task queues and routing rules for different workflow types.
 """
+
 from dataclasses import dataclass
-from typing import Dict, List
 
 
 @dataclass
@@ -13,13 +13,13 @@ class TaskQueueConfig:
 
     name: str
     description: str
-    workflows: List[str]
+    workflows: list[str]
     max_concurrent_activities: int = 100
     max_concurrent_workflows: int = 100
 
 
 # Task queue definitions
-TASK_QUEUES: Dict[str, TaskQueueConfig] = {
+TASK_QUEUES: dict[str, TaskQueueConfig] = {
     "default": TaskQueueConfig(
         name="default",
         description="Default task queue for general workflows",
@@ -76,7 +76,7 @@ def get_task_queue_for_workflow(workflow_type: str) -> str:
     return "default"
 
 
-def get_all_task_queues() -> List[str]:
+def get_all_task_queues() -> list[str]:
     """Get all defined task queue names."""
     return list(TASK_QUEUES.keys())
 

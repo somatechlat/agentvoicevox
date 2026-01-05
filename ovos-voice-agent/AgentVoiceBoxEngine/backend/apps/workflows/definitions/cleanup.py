@@ -3,10 +3,11 @@ Cleanup workflow for maintenance tasks.
 
 Runs periodically to clean up expired sessions, old data, etc.
 """
+
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
@@ -34,7 +35,7 @@ class CleanupWorkflowResult:
     audit_logs_archived: int
     files_deleted: int
     metrics_aggregated: bool
-    errors: List[str]
+    errors: list[str]
     duration_ms: float
 
 
@@ -172,12 +173,13 @@ class MetricsAggregationWorkflow:
     """
 
     @workflow.run
-    async def run(self, tenant_id: str = None) -> Dict[str, Any]:
+    async def run(self, tenant_id: str = None) -> dict[str, Any]:
         """
         Run metrics aggregation.
 
         Args:
-            tenant_id: Optional tenant to aggregate for
+            tenant_id: (Optional) The ID of a specific tenant to aggregate metrics for.
+                       If None, metrics are aggregated system-wide across all tenants.
 
         Returns:
             Dict with aggregated metrics

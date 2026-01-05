@@ -3,10 +3,11 @@ Temporal workflow orchestration client.
 
 Provides workflow execution and management via Temporal.
 """
+
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Optional
 
 from django.conf import settings
 
@@ -81,12 +82,12 @@ class TemporalClient:
         self,
         workflow: str,
         workflow_id: str,
-        args: List[Any],
+        args: list[Any],
         task_queue: Optional[str] = None,
         execution_timeout: Optional[timedelta] = None,
         run_timeout: Optional[timedelta] = None,
         task_timeout: Optional[timedelta] = None,
-        retry_policy: Optional[Dict[str, Any]] = None,
+        retry_policy: Optional[dict[str, Any]] = None,
     ) -> WorkflowExecution:
         """
         Start a workflow execution.
@@ -105,7 +106,6 @@ class TemporalClient:
             WorkflowExecution with workflow_id and run_id
         """
         try:
-            from temporalio.client import Client
             from temporalio.common import RetryPolicy
 
             client = await self._get_client()
@@ -149,7 +149,7 @@ class TemporalClient:
         self,
         workflow: str,
         workflow_id: str,
-        args: List[Any],
+        args: list[Any],
         task_queue: Optional[str] = None,
         execution_timeout: Optional[timedelta] = None,
     ) -> Any:
@@ -188,16 +188,12 @@ class TemporalClient:
         client = await self._get_client()
         return client.get_workflow_handle(workflow_id, run_id=run_id)
 
-    async def get_workflow_result(
-        self, workflow_id: str, run_id: Optional[str] = None
-    ) -> Any:
+    async def get_workflow_result(self, workflow_id: str, run_id: Optional[str] = None) -> Any:
         """Get the result of a completed workflow."""
         handle = await self.get_workflow_handle(workflow_id, run_id)
         return await handle.result()
 
-    async def cancel_workflow(
-        self, workflow_id: str, run_id: Optional[str] = None
-    ) -> None:
+    async def cancel_workflow(self, workflow_id: str, run_id: Optional[str] = None) -> None:
         """Cancel a running workflow."""
         handle = await self.get_workflow_handle(workflow_id, run_id)
         await handle.cancel()
@@ -216,7 +212,7 @@ class TemporalClient:
         self,
         workflow_id: str,
         signal: str,
-        args: List[Any],
+        args: list[Any],
         run_id: Optional[str] = None,
     ) -> None:
         """Send a signal to a workflow."""
@@ -227,7 +223,7 @@ class TemporalClient:
         self,
         workflow_id: str,
         query: str,
-        args: List[Any] = None,
+        args: list[Any] = None,
         run_id: Optional[str] = None,
     ) -> Any:
         """Query a workflow for its current state."""
@@ -254,7 +250,7 @@ class TemporalClient:
         self,
         query: Optional[str] = None,
         page_size: int = 100,
-    ) -> List[WorkflowInfo]:
+    ) -> list[WorkflowInfo]:
         """List workflow executions."""
         client = await self._get_client()
 

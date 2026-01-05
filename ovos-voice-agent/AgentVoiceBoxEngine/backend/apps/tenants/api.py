@@ -1,9 +1,20 @@
 """
-Tenant API endpoints using Django Ninja.
+Tenant Management API Endpoints
+===============================
 
-Provides REST API for tenant management operations.
+This module provides the core REST API endpoints for managing tenants and their
+settings, built using the Django Ninja framework. The endpoints are primarily
+intended for system administrators and tenant administrators.
+
+The API is divided into three main sections:
+- Admin Endpoints: For creating, listing, and managing the lifecycle of all tenants.
+  Access is restricted to users with the SYSADMIN role.
+- Tenant Settings Endpoints: For tenant administrators to manage their own
+  specific settings (e.g., branding, feature defaults).
+- Tenant Stats Endpoint: For retrieving usage and limit statistics for a tenant.
 """
-from typing import List, Optional
+
+from typing import Optional
 from uuid import UUID
 
 from django.http import HttpRequest
@@ -28,7 +39,15 @@ router = Router(tags=["Tenants"])
 
 
 def _tenant_to_response(tenant: Tenant) -> TenantResponseSchema:
-    """Convert Tenant model to response schema."""
+    """
+    Serializes a Tenant model instance into a TenantResponseSchema.
+
+    Args:
+        tenant: The Tenant model instance.
+
+    Returns:
+        A TenantResponseSchema object populated with the tenant's data.
+    """
     return TenantResponseSchema(
         id=tenant.id,
         name=tenant.name,
@@ -49,7 +68,15 @@ def _tenant_to_response(tenant: Tenant) -> TenantResponseSchema:
 
 
 def _settings_to_response(settings: TenantSettings) -> TenantSettingsSchema:
-    """Convert TenantSettings model to response schema."""
+    """
+    Serializes a TenantSettings model instance into a TenantSettingsSchema.
+
+    Args:
+        settings: The TenantSettings model instance.
+
+    Returns:
+        A TenantSettingsSchema object populated with the settings data.
+    """
     return TenantSettingsSchema(
         logo_url=settings.logo_url,
         favicon_url=settings.favicon_url,
@@ -71,34 +98,29 @@ def _settings_to_response(settings: TenantSettings) -> TenantSettingsSchema:
 
 
 # ==========================================================================
-# ADMIN ENDPOINTS (SYSADMIN only)
+# ADMIN ENDPOINTS (Primarily for SYSADMIN use)
 # ==========================================================================
 
 
-@router.get("/", response=TenantListResponseSchema)
+@router.get("/", response=TenantListResponseSchema, summary="List All Tenants (SysAdmin)")
 def list_tenants(
     request: HttpRequest,
-    status: Optional[str] = Query(None),
-    tier: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None, description="Filter by tenant status (e.g., 'active')."),
+    tier: Optional[str] = Query(None, description="Filter by tenant tier (e.g., 'pro')."),
+    search: Optional[str] = Query(None, description="Search term for tenant name or slug."),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
     """
-    List all tenants with filtering and pagination.
+    Lists all tenants in the system with filtering and pagination.
 
-    Requires SYSADMIN role.
+    **Permissions:** Requires SYSADMIN role.
     """
-    # Check SYSADMIN permission
     if not getattr(request, "is_sysadmin", False):
         raise PermissionDeniedError("SYSADMIN role required")
 
     tenants, total = TenantService.list_tenants(
-        status=status,
-        tier=tier,
-        search=search,
-        page=page,
-        page_size=page_size,
+        status=status, tier=tier, search=search, page=page, page_size=page_size
     )
 
     pages = (total + page_size - 1) // page_size
@@ -112,36 +134,39 @@ def list_tenants(
     )
 
 
-@router.post("/", response={201: TenantResponseSchema})
+@router.post("/", response={201: TenantResponseSchema}, summary="Create a Tenant (SysAdmin)")
 def create_tenant(request: HttpRequest, payload: TenantCreateSchema):
     """
-    Create a new tenant.
+    Creates a new tenant and its associated default settings.
 
-    Requires SYSADMIN role.
+    **Permissions:** Requires SYSADMIN role.
+
+    Args:
+        payload: A `TenantCreateSchema` with the new tenant's details.
+
+    Returns:
+        A 201 status code and the newly created tenant object.
     """
     if not getattr(request, "is_sysadmin", False):
         raise PermissionDeniedError("SYSADMIN role required")
 
     tenant = TenantService.create_tenant(
-        name=payload.name,
-        slug=payload.slug,
-        tier=payload.tier,
-        settings=payload.settings,
+        name=payload.name, slug=payload.slug, tier=payload.tier, settings=payload.settings
     )
 
     return 201, _tenant_to_response(tenant)
 
 
-@router.get("/{tenant_id}", response=TenantResponseSchema)
+@router.get("/{tenant_id}", response=TenantResponseSchema, summary="Get a Tenant by ID")
 def get_tenant(request: HttpRequest, tenant_id: UUID):
     """
-    Get tenant by ID.
+    Retrieves details for a specific tenant by its ID.
 
-    Requires SYSADMIN role or membership in the tenant.
+    **Permissions:** Requires SYSADMIN role or membership in the target tenant.
     """
     tenant = TenantService.get_by_id(tenant_id)
 
-    # Check permission: SYSADMIN or tenant member
+    # A user can only access their own tenant, unless they are a sysadmin.
     current_tenant_id = getattr(request, "tenant_id", None)
     is_sysadmin = getattr(request, "is_sysadmin", False)
 
@@ -151,29 +176,27 @@ def get_tenant(request: HttpRequest, tenant_id: UUID):
     return _tenant_to_response(tenant)
 
 
-@router.patch("/{tenant_id}", response=TenantResponseSchema)
+@router.patch("/{tenant_id}", response=TenantResponseSchema, summary="Update a Tenant")
 def update_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantUpdateSchema):
     """
-    Update tenant details.
+    Updates a tenant's name or settings.
 
-    Requires SYSADMIN or ADMIN role in the tenant.
+    **Permissions:** Requires SYSADMIN or an ADMIN role within the target tenant.
+    *Note: The implementation currently lacks an explicit permission check;
+    this is assumed to be handled by a decorator or middleware.*
     """
-    # Permission check enforced by @require_permission decorator
     tenant = TenantService.update_tenant(
-        tenant_id=tenant_id,
-        name=payload.name,
-        settings=payload.settings,
+        tenant_id=tenant_id, name=payload.name, settings=payload.settings
     )
-
     return _tenant_to_response(tenant)
 
 
-@router.post("/{tenant_id}/activate", response=TenantResponseSchema)
+@router.post("/{tenant_id}/activate", response=TenantResponseSchema, summary="Activate a Tenant (SysAdmin)")
 def activate_tenant(request: HttpRequest, tenant_id: UUID):
     """
-    Activate a pending tenant.
+    Activates a tenant with a 'pending' status.
 
-    Requires SYSADMIN role.
+    **Permissions:** Requires SYSADMIN role.
     """
     if not getattr(request, "is_sysadmin", False):
         raise PermissionDeniedError("SYSADMIN role required")
@@ -182,12 +205,12 @@ def activate_tenant(request: HttpRequest, tenant_id: UUID):
     return _tenant_to_response(tenant)
 
 
-@router.post("/{tenant_id}/suspend", response=TenantResponseSchema)
+@router.post("/{tenant_id}/suspend", response=TenantResponseSchema, summary="Suspend a Tenant (SysAdmin)")
 def suspend_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantSuspendSchema):
     """
-    Suspend a tenant.
+    Suspends an active tenant, preventing access and operations.
 
-    Requires SYSADMIN role.
+    **Permissions:** Requires SYSADMIN role.
     """
     if not getattr(request, "is_sysadmin", False):
         raise PermissionDeniedError("SYSADMIN role required")
@@ -196,12 +219,12 @@ def suspend_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantSuspend
     return _tenant_to_response(tenant)
 
 
-@router.post("/{tenant_id}/reactivate", response=TenantResponseSchema)
+@router.post("/{tenant_id}/reactivate", response=TenantResponseSchema, summary="Reactivate a Tenant (SysAdmin)")
 def reactivate_tenant(request: HttpRequest, tenant_id: UUID):
     """
-    Reactivate a suspended tenant.
+    Reactivates a suspended tenant, setting its status back to 'active'.
 
-    Requires SYSADMIN role.
+    **Permissions:** Requires SYSADMIN role.
     """
     if not getattr(request, "is_sysadmin", False):
         raise PermissionDeniedError("SYSADMIN role required")
@@ -210,12 +233,15 @@ def reactivate_tenant(request: HttpRequest, tenant_id: UUID):
     return _tenant_to_response(tenant)
 
 
-@router.delete("/{tenant_id}", response={204: None})
+@router.delete("/{tenant_id}", response={204: None}, summary="Soft-Delete a Tenant (SysAdmin)")
 def delete_tenant(request: HttpRequest, tenant_id: UUID):
     """
-    Soft delete a tenant.
+    Soft-deletes a tenant by setting its status to 'deleted'.
 
-    Requires SYSADMIN role.
+    **Permissions:** Requires SYSADMIN role.
+
+    Returns:
+        A 204 No Content response on success.
     """
     if not getattr(request, "is_sysadmin", False):
         raise PermissionDeniedError("SYSADMIN role required")
@@ -224,14 +250,12 @@ def delete_tenant(request: HttpRequest, tenant_id: UUID):
     return 204, None
 
 
-@router.post("/{tenant_id}/upgrade", response=TenantResponseSchema)
-def upgrade_tenant_tier(
-    request: HttpRequest, tenant_id: UUID, payload: TenantUpgradeTierSchema
-):
+@router.post("/{tenant_id}/upgrade", response=TenantResponseSchema, summary="Upgrade Tenant Tier (SysAdmin)")
+def upgrade_tenant_tier(request: HttpRequest, tenant_id: UUID, payload: TenantUpgradeTierSchema):
     """
-    Upgrade tenant to a new tier.
+    Upgrades or downgrades a tenant's subscription tier.
 
-    Requires SYSADMIN role.
+    **Permissions:** Requires SYSADMIN role.
     """
     if not getattr(request, "is_sysadmin", False):
         raise PermissionDeniedError("SYSADMIN role required")
@@ -245,25 +269,27 @@ def upgrade_tenant_tier(
 # ==========================================================================
 
 
-@router.get("/{tenant_id}/settings", response=TenantSettingsSchema)
+@router.get("/{tenant_id}/settings", response=TenantSettingsSchema, summary="Get Tenant Settings")
 def get_tenant_settings(request: HttpRequest, tenant_id: UUID):
     """
-    Get tenant settings.
+    Retrieves the extended settings for a specific tenant.
 
-    Requires ADMIN role in the tenant.
+    **Permissions:** Requires ADMIN role within the target tenant.
+    *Note: Assumes permission is handled by a decorator or middleware.*
     """
     settings = TenantSettingsService.get_settings(tenant_id)
     return _settings_to_response(settings)
 
 
-@router.patch("/{tenant_id}/settings", response=TenantSettingsSchema)
+@router.patch("/{tenant_id}/settings", response=TenantSettingsSchema, summary="Update Tenant Settings")
 def update_tenant_settings(
     request: HttpRequest, tenant_id: UUID, payload: TenantSettingsUpdateSchema
 ):
     """
-    Update tenant settings.
+    Updates the extended settings for a tenant.
 
-    Requires ADMIN role in the tenant.
+    **Permissions:** Requires ADMIN role within the target tenant.
+    *Note: Assumes permission is handled by a decorator or middleware.*
     """
     update_data = payload.dict(exclude_unset=True)
     settings = TenantSettingsService.update_settings(tenant_id, **update_data)
@@ -275,12 +301,13 @@ def update_tenant_settings(
 # ==========================================================================
 
 
-@router.get("/{tenant_id}/stats")
+@router.get("/{tenant_id}/stats", summary="Get Tenant Usage Statistics")
 def get_tenant_stats(request: HttpRequest, tenant_id: UUID):
     """
-    Get tenant statistics and usage.
+    Retrieves usage and limit statistics for a specific tenant.
 
-    Requires ADMIN or BILLING role in the tenant.
+    **Permissions:** Requires ADMIN or BILLING role within the target tenant.
+    *Note: Assumes permission is handled by a decorator or middleware.*
     """
     stats = TenantService.get_tenant_stats(tenant_id)
     return stats

@@ -3,6 +3,7 @@ Django development settings for AgentVoiceBox Platform.
 
 These settings are optimized for local development with Docker.
 """
+
 from .base import *  # noqa: F401, F403
 
 # ==========================================================================
@@ -30,6 +31,7 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 # ==========================================================================
 try:
     import debug_toolbar  # noqa: F401
+
     INSTALLED_APPS += ["debug_toolbar"]  # noqa: F405
     MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa: F405
     INTERNAL_IPS = ["127.0.0.1", "localhost"]

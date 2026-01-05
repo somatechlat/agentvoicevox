@@ -3,6 +3,7 @@ Theme models for UI customization.
 
 Stores theme configurations for the portal UI.
 """
+
 import uuid
 
 from django.db import models
@@ -135,6 +136,8 @@ class Theme(TenantScopedModel):
     all_objects = models.Manager()
 
     class Meta:
+        """Model metadata options."""
+
         db_table = "themes"
         ordering = ["-created_at"]
         constraints = [
@@ -145,6 +148,7 @@ class Theme(TenantScopedModel):
         ]
 
     def __str__(self) -> str:
+        """Returns a string representation of the theme."""
         return self.name
 
     def to_css_variables(self) -> dict:

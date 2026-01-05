@@ -57,6 +57,16 @@ class TestSessionAutoTermination:
         created_projects = []
 
         def _create_project(tenant=None, name="Test Project"):
+            """
+            Creates and returns a single Project instance.
+
+            Args:
+                tenant: The tenant to associate the project with. If None, one is created.
+                name: The name of the project.
+
+            Returns:
+                The newly created Project instance.
+            """
             if tenant is None:
                 tenant = tenant_factory()
 
@@ -89,6 +99,18 @@ class TestSessionAutoTermination:
             status="active",
             started_at=None,
         ):
+            """
+            Creates and returns a single Session instance.
+
+            Args:
+                tenant: The tenant to associate the session with.
+                project: The project to associate the session with.
+                status: The initial status of the session.
+                started_at: The start time of the session.
+
+            Returns:
+                The newly created Session instance.
+            """
             if tenant is None:
                 tenant = tenant_factory()
             if project is None:
@@ -307,6 +329,16 @@ class TestSessionTerminationEvents:
         created_projects = []
 
         def _create_project(tenant=None, name="Test Project"):
+            """
+            Creates and returns a single Project instance.
+
+            Args:
+                tenant: The tenant to associate the project with. If None, one is created.
+                name: The name of the project.
+
+            Returns:
+                The newly created Project instance.
+            """
             if tenant is None:
                 tenant = tenant_factory()
 
@@ -339,6 +371,18 @@ class TestSessionTerminationEvents:
             status="active",
             started_at=None,
         ):
+            """
+            Creates and returns a single Session instance.
+
+            Args:
+                tenant: The tenant to associate the session with.
+                project: The project to associate the session with.
+                status: The initial status of the session.
+                started_at: The start time of the session.
+
+            Returns:
+                The newly created Session instance.
+            """
             if tenant is None:
                 tenant = tenant_factory()
             if project is None:

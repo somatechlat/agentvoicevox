@@ -227,7 +227,15 @@ export class ApiClient {
 }
 
 // Export singleton instance
-export const apiClient = new ApiClient(process.env.NEXT_PUBLIC_API_URL || '');
+const requireEnv = (name: string): string => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+};
+
+export const apiClient = new ApiClient(requireEnv("NEXT_PUBLIC_API_URL"));
 
 // Export retry delays for testing
 export const RETRY_DELAYS = DEFAULT_RETRY_DELAYS;

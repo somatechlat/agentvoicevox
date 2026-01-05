@@ -4,14 +4,15 @@ Django testing settings for AgentVoiceBox Platform.
 These settings are optimized for running tests.
 Uses in-memory databases and caches for speed.
 """
+
 import os
 from pathlib import Path
 
 # Set TESTING flag before importing anything
 os.environ["TESTING"] = "true"
 
-# Import settings config for env vars
-from . import settings_config as env
+# Import settings config for env vars (must be after TESTING flag is set)
+from . import settings_config as env  # noqa: E402
 
 # ==========================================================================
 # PATH CONFIGURATION
@@ -149,19 +150,28 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 
 # ==========================================================================
-# TEST DATABASE - Use real PostgreSQL
+# TEST DATABASE - Use real PostgreSQL on shared services port
+# Optimized for parallel test execution with pytest-xdist
 # ==========================================================================
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env.db_name,
-        "USER": env.db_user,
-        "PASSWORD": env.db_password,
-        "HOST": env.db_host,
-        "PORT": env.db_port,
-        "CONN_MAX_AGE": 0,  # No persistent connections for tests
+        "NAME": "agentvoicebox",  # Database name from init script
+        "USER": "shared_admin",  # Shared services user
+        "PASSWORD": "shared_secure_2024",  # Shared services password
+        "HOST": "localhost",
+        "PORT": 65004,  # Shared services PostgreSQL port
+        "CONN_MAX_AGE": 60,  # Keep connections alive for 60s (parallel workers)
+        "CONN_HEALTH_CHECKS": True,  # Check connection health before use
         "OPTIONS": {
             "connect_timeout": 5,
+            # Connection pooling for parallel tests
+            "options": "-c statement_timeout=30000",  # 30s statement timeout
+        },
+        # pytest-xdist creates separate test databases per worker
+        "TEST": {
+            "NAME": "test_agentvoicebox",
+            "SERIALIZE": False,  # Don't serialize test database creation
         },
     }
 }

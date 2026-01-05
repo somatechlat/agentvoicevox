@@ -1,4 +1,5 @@
 """Django app configuration for notifications."""
+
 from django.apps import AppConfig
 
 

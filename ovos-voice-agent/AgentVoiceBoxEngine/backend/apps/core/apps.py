@@ -1,4 +1,5 @@
 """Core app configuration."""
+
 import logging
 
 from django.apps import AppConfig

@@ -1,6 +1,7 @@
 """
 WebSocket URL routing for Django Channels.
 """
+
 from django.urls import path, re_path
 
 from .consumers import EventConsumer, SessionConsumer, STTConsumer, TTSConsumer

@@ -7,11 +7,12 @@ Used for:
 - Cross-service communication
 - Real-time analytics
 """
+
 import json
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from uuid import uuid4
 
 from django.conf import settings
@@ -25,12 +26,12 @@ class KafkaEvent:
 
     topic: str
     key: Optional[str] = None
-    value: Dict[str, Any] = field(default_factory=dict)
-    headers: Dict[str, str] = field(default_factory=dict)
+    value: dict[str, Any] = field(default_factory=dict)
+    headers: dict[str, str] = field(default_factory=dict)
     timestamp: Optional[datetime] = None
     event_id: str = field(default_factory=lambda: str(uuid4()))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "event_id": self.event_id,
@@ -165,7 +166,7 @@ class KafkaClient:
         resource_id: str,
         actor_id: str,
         tenant_id: str,
-        details: Optional[Dict[str, Any]] = None,
+        details: Optional[dict[str, Any]] = None,
     ) -> bool:
         """
         Publish an audit event.
@@ -201,7 +202,7 @@ class KafkaClient:
         event_type: str,
         session_id: str,
         tenant_id: str,
-        data: Optional[Dict[str, Any]] = None,
+        data: Optional[dict[str, Any]] = None,
     ) -> bool:
         """
         Publish a session event.
@@ -232,7 +233,7 @@ class KafkaClient:
         self,
         event_type: str,
         tenant_id: str,
-        usage: Dict[str, Any],
+        usage: dict[str, Any],
     ) -> bool:
         """
         Publish a billing event.
@@ -262,7 +263,7 @@ class KafkaClient:
         notification_type: str,
         tenant_id: str,
         user_id: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None,
+        data: Optional[dict[str, Any]] = None,
     ) -> bool:
         """
         Publish a notification event.

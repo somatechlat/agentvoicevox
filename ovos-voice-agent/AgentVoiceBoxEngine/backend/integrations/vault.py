@@ -9,12 +9,13 @@ Provides secrets management via Vault including:
 - Automatic lease renewal
 - Fail-fast startup validation
 """
+
 import base64
 import logging
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from django.conf import settings
 from django.core.cache import cache
@@ -24,24 +25,28 @@ logger = logging.getLogger(__name__)
 
 class VaultUnavailableError(Exception):
     """Raised when Vault is unavailable and fail-fast is enabled."""
+
     pass
 
 
 class VaultAuthenticationError(Exception):
     """Raised when Vault authentication fails."""
+
     pass
 
 
 class VaultEncryptionError(Exception):
     """Raised when encryption/decryption fails."""
+
     pass
 
 
 @dataclass
 class VaultSecret:
     """Vault secret representation."""
-    data: Dict[str, Any]
-    metadata: Dict[str, Any]
+
+    data: dict[str, Any]
+    metadata: dict[str, Any]
     lease_id: Optional[str] = None
     lease_duration: int = 0
     renewable: bool = False
@@ -50,6 +55,7 @@ class VaultSecret:
 @dataclass
 class DatabaseCredentials:
     """Dynamic database credentials from Vault."""
+
     username: str
     password: str
     lease_id: str
@@ -64,9 +70,10 @@ class DatabaseCredentials:
 @dataclass
 class Certificate:
     """TLS certificate from Vault PKI."""
+
     certificate: str
     private_key: str
-    ca_chain: List[str]
+    ca_chain: list[str]
     serial_number: str
     expiration: datetime
 
@@ -95,14 +102,14 @@ class VaultClient:
 
         self._client = None
         self._token_expires: Optional[datetime] = None
-        self._db_credentials: Dict[str, DatabaseCredentials] = {}
+        self._db_credentials: dict[str, DatabaseCredentials] = {}
         self._renewal_lock = threading.Lock()
         self._initialized = False
 
     def initialize(self) -> None:
         """
         Initialize Vault client and validate connectivity.
-        
+
         Raises:
             VaultUnavailableError: If Vault is unavailable and fail_fast is True
             VaultAuthenticationError: If authentication fails
@@ -112,22 +119,22 @@ class VaultClient:
 
         try:
             client = self._get_client()
-            
+
             if not client.is_authenticated():
                 raise VaultAuthenticationError("Vault authentication failed")
-            
+
             # Verify we can access the health endpoint
             health = client.sys.read_health_status(method="GET")
             if health.get("sealed", True):
                 raise VaultUnavailableError("Vault is sealed")
-            
+
             self._initialized = True
             logger.info(f"Vault client initialized successfully at {self.addr}")
-            
+
         except Exception as e:
             error_msg = f"Failed to initialize Vault client: {e}"
             logger.error(error_msg)
-            
+
             if self.fail_fast:
                 raise VaultUnavailableError(error_msg) from e
             else:
@@ -138,7 +145,7 @@ class VaultClient:
         if self._client is None:
             try:
                 import hvac
-                
+
                 self._client = hvac.Client(url=self.addr)
 
                 # Authenticate with token or AppRole
@@ -149,9 +156,7 @@ class VaultClient:
                     self._authenticate_approle()
                     logger.debug("Using AppRole authentication")
                 else:
-                    raise VaultAuthenticationError(
-                        "Vault token or AppRole credentials required"
-                    )
+                    raise VaultAuthenticationError("Vault token or AppRole credentials required")
 
                 if not self._client.is_authenticated():
                     raise VaultAuthenticationError("Vault authentication failed")
@@ -233,7 +238,7 @@ class VaultClient:
     def write_secret(
         self,
         path: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         mount_point: Optional[str] = None,
     ) -> bool:
         """
@@ -388,9 +393,7 @@ class VaultClient:
                 password=response["data"]["password"],
                 lease_id=response["lease_id"],
                 lease_duration=response["lease_duration"],
-                expires_at=datetime.utcnow() + timedelta(
-                    seconds=response["lease_duration"]
-                ),
+                expires_at=datetime.utcnow() + timedelta(seconds=response["lease_duration"]),
             )
 
             self._db_credentials[role] = creds
@@ -625,8 +628,8 @@ class VaultClient:
         self,
         role: str,
         common_name: str,
-        alt_names: Optional[List[str]] = None,
-        ip_sans: Optional[List[str]] = None,
+        alt_names: Optional[list[str]] = None,
+        ip_sans: Optional[list[str]] = None,
         ttl: str = "720h",
         mount_point: str = "pki",
     ) -> Optional[Certificate]:
@@ -715,9 +718,7 @@ class VaultClient:
         client = self._get_client()
 
         try:
-            response = client.secrets.pki.read_ca_certificate_chain(
-                mount_point=mount_point
-            )
+            response = client.secrets.pki.read_ca_certificate_chain(mount_point=mount_point)
             return response
 
         except Exception as e:
@@ -738,7 +739,7 @@ class VaultClient:
             logger.error(f"Vault health check failed: {e}")
             return False
 
-    def get_health_details(self) -> Dict[str, Any]:
+    def get_health_details(self) -> dict[str, Any]:
         """Get detailed health information."""
         try:
             client = self._get_client()

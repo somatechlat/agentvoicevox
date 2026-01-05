@@ -4,13 +4,16 @@ Granular Permission Service.
 Implements hierarchical permission resolution with tenant overrides.
 Uses Django's native permission system with PermissionMatrix model.
 """
+
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Optional
 
 from django.db.models import Q
 from django.utils import timezone
 
 if TYPE_CHECKING:
+    from apps.core.permissions.models import TenantPermissionOverride, UserRoleAssignment
     from apps.tenants.models import Tenant
     from apps.users.models import User
 
@@ -118,8 +121,7 @@ class GranularPermissionService:
                     return True
 
         logger.info(
-            f"Permission denied: user={user.id} roles={user_roles} "
-            f"resource={resource}:{action}"
+            f"Permission denied: user={user.id} roles={user_roles} " f"resource={resource}:{action}"
         )
         return False
 
@@ -127,7 +129,7 @@ class GranularPermissionService:
     def get_user_roles(
         user: "User",
         tenant: Optional["Tenant"] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Get all roles assigned to a user within a tenant.
 
@@ -149,12 +151,14 @@ class GranularPermissionService:
 
         # Get roles from UserRoleAssignment (not expired)
         now = timezone.now()
-        assignments = UserRoleAssignment.objects.filter(
-            tenant=tenant,
-            user=user,
-        ).filter(
-            Q(expires_at__isnull=True) | Q(expires_at__gt=now)
-        ).values_list("role", flat=True)
+        assignments = (
+            UserRoleAssignment.objects.filter(
+                tenant=tenant,
+                user=user,
+            )
+            .filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now))
+            .values_list("role", flat=True)
+        )
 
         roles = list(assignments)
 
@@ -176,7 +180,7 @@ class GranularPermissionService:
     def get_effective_permissions(
         user: "User",
         tenant: Optional["Tenant"] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Get all effective permissions for a user as resource:action strings.
 
@@ -226,7 +230,7 @@ class GranularPermissionService:
         return sorted(permissions)
 
     @staticmethod
-    def get_role_permissions(role: str) -> List[str]:
+    def get_role_permissions(role: str) -> list[str]:
         """
         Get all platform-level permissions for a role.
 
@@ -252,7 +256,7 @@ class GranularPermissionService:
         resource: str,
         action: str,
         allowed: bool,
-        conditions: Optional[Dict[str, Any]] = None,
+        conditions: Optional[dict[str, Any]] = None,
         created_by: Optional["User"] = None,
     ) -> "TenantPermissionOverride":
         """
@@ -298,7 +302,7 @@ class GranularPermissionService:
         role: str,
         tenant: "Tenant",
         assigned_by: Optional["User"] = None,
-        expires_at: Optional["timezone.datetime"] = None,
+        expires_at: Optional[datetime] = None,
     ) -> "UserRoleAssignment":
         """
         Assign a role to a user within a tenant.
@@ -359,16 +363,14 @@ class GranularPermissionService:
         ).delete()
 
         if deleted:
-            logger.info(
-                f"Revoked role: user={user.id} role={role} tenant={tenant.id}"
-            )
+            logger.info(f"Revoked role: user={user.id} role={role} tenant={tenant.id}")
             return True
 
         return False
 
     @staticmethod
     def _check_conditions(
-        conditions: Dict[str, Any],
+        conditions: dict[str, Any],
         user: "User",
         resource_id: Optional[str],
     ) -> bool:
@@ -394,8 +396,7 @@ class GranularPermissionService:
         if conditions.get("own_only"):
             if resource_id and str(user.id) != resource_id:
                 logger.debug(
-                    f"Condition failed: own_only - user={user.id} "
-                    f"resource_id={resource_id}"
+                    f"Condition failed: own_only - user={user.id} " f"resource_id={resource_id}"
                 )
                 return False
 

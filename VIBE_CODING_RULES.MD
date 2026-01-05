@@ -174,7 +174,7 @@ NO CODING until the entire architecture + flow is understood.
 
 - **API Framework:** Django 5 + Django Ninja ONLY. No new FastAPI. All existing FastAPI surfaces must be migrated in-place to Django/Ninja `/api/v2` with parity, then retired.
 - **Realtime:** Django Channels (WS/SSE) for live updates (workflows, HITL, A2A, analytics).
-- **UI Framework:** Lit 3.x Web Components ONLY. No Alpine.js; React is legacy and must be migrated when touched.
+- **UI Framework:** Lit 3.x Web Components ONLY. No Alpine.js; React must be migrated when touched.
 - **Database ORM:** Django ORM ONLY. No SQLAlchemy for new work. Models live in the Django apps; migrations via `manage.py makemigrations && migrate`.
 - **Vectors:** Milvus ONLY (no Qdrant). Memory/vector integrations must use the Milvus client; remove Qdrant references when migrating.
 - **Infra kept:** Temporal, Kafka, Flink, Vault, OPA, Redis, Postgres, MinIO/S3, OTEL/Prom/Grafana/Loki/Tempo remain and must be wired.
@@ -187,7 +187,7 @@ NO CODING until the entire architecture + flow is understood.
 
 - Migration is IN-PLACE with feature parity. No functionality drops. No “rewrite from scratch.”
 - Existing behavior must be preserved while moving endpoints/models to Django/Ninja/ORM.
-- FastAPI references are legacy and must be removed once Django parity exists.
+- FastAPI references must be removed once Django parity exists.
     REINGORCES OF ARCHTECTURE AND PATTERNS
 
 # 1. NO BULLSHIT
@@ -335,7 +335,7 @@ NO CODING until the entire architecture + flow is understood.
 
 - **API Framework:** Django 5 + Django Ninja ONLY. No new FastAPI. All existing FastAPI surfaces must be migrated in-place to Django/Ninja `/api/v2` with parity, then retired.
 - **Realtime:** Django Channels (WS/SSE) for live updates (workflows, HITL, A2A, analytics).
-- **UI Framework:** Lit 3.x Web Components ONLY. No Alpine.js; React is legacy and must be migrated when touched.
+- **UI Framework:** Lit 3.x Web Components ONLY. No Alpine.js; React must be migrated when touched.
 - **Database ORM:** Django ORM ONLY. No SQLAlchemy for new work. Models live in the Django apps; migrations via `manage.py makemigrations && migrate`.
 - **Vectors:** Milvus ONLY (no Qdrant). Memory/vector integrations must use the Milvus client; remove Qdrant references when migrating.
 - **Infra kept:** Temporal, Kafka, Flink, Vault, OPA, Redis, Postgres, MinIO/S3, OTEL/Prom/Grafana/Loki/Tempo remain and must be wired.
@@ -348,4 +348,4 @@ NO CODING until the entire architecture + flow is understood.
 
 - Migration is IN-PLACE with feature parity. No functionality drops. No “rewrite from scratch.”
 - Existing behavior must be preserved while moving endpoints/models to Django/Ninja/ORM.
-- FastAPI references are legacy and must be removed once Django parity exists.
+- FastAPI references must be removed once Django parity exists.

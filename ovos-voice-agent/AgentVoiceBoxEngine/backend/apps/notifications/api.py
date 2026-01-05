@@ -3,7 +3,7 @@ Notifications API endpoints.
 
 Provides REST API for notification management.
 """
-from typing import List
+
 from uuid import UUID
 
 from ninja import Query, Router
@@ -139,7 +139,7 @@ def mark_all_as_read(request):
 
 
 @router.post("/mark-read", response=NotificationBulkActionOut)
-def mark_multiple_as_read(request, notification_ids: List[UUID]):
+def mark_multiple_as_read(request, notification_ids: list[UUID]):
     """Mark multiple notifications as read."""
     user = request.user
     count = NotificationService.mark_multiple_as_read(user, notification_ids)

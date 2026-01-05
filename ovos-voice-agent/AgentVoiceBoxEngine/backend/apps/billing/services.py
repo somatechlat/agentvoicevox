@@ -1,11 +1,16 @@
 """
-Billing service layer.
+Billing Service Layer
+=====================
 
-Contains all business logic for billing operations and Lago integration.
+This module contains all the business logic for billing operations, usage
+tracking, and integration with the Lago external billing provider. It handles
+recording usage events, calculating current and projected costs, managing
+billing alerts, and synchronizing customer and usage data with Lago.
 """
+
 from datetime import timedelta
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 from uuid import UUID
 
 from django.db import transaction
@@ -14,14 +19,16 @@ from django.utils import timezone
 
 from apps.core.exceptions import NotFoundError, ValidationError
 from apps.tenants.models import Tenant
+from apps.users.models import User
 
 from .models import BillingAlert, Invoice, UsageEvent
 
 
 class BillingService:
-    """Service class for billing operations."""
+    """A service class encapsulating all business logic for billing operations."""
 
     @staticmethod
+    @transaction.atomic
     def record_usage(
         tenant: Tenant,
         event_type: str,
@@ -30,25 +37,30 @@ class BillingService:
         session=None,
         project=None,
         api_key=None,
-        metadata: Dict[str, Any] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> UsageEvent:
         """
-        Record a usage event.
+        Records a single usage event in the database and triggers usage threshold checks.
+
+        This method is the primary entry point for tracking billable activity
+        within the application.
 
         Args:
-            tenant: Tenant for the usage
-            event_type: Type of usage event
-            quantity: Quantity of usage
-            unit: Unit of measurement
-            session: Associated session (optional)
-            project: Associated project (optional)
-            api_key: Associated API key (optional)
-            metadata: Additional metadata (optional)
+            tenant: The Tenant associated with this usage event.
+            event_type: The type of usage event (e.g., 'api_call', 'audio_minutes').
+            quantity: The quantity of usage for this event.
+            unit: The unit of measurement (e.g., 'count', 'minutes', 'tokens').
+            session: (Optional) The Session associated with this event.
+            project: (Optional) The Project associated with this event.
+            api_key: (Optional) The APIKey associated with this event.
+            metadata: (Optional) Additional, unstructured metadata for the event.
 
         Returns:
-            Created UsageEvent
+            The newly created UsageEvent instance.
+
+        Raises:
+            ValidationError: If an invalid `event_type` is provided.
         """
-        # Validate event type
         if event_type not in UsageEvent.EventType.values:
             raise ValidationError(f"Invalid event type: {event_type}")
 
@@ -61,28 +73,37 @@ class BillingService:
             project=project,
             api_key=api_key,
             metadata=metadata or {},
-            event_timestamp=timezone.now(),
+            event_timestamp=timezone.now(),  # Record the actual time of usage.
         )
         event.save()
 
-        # Check usage thresholds
+        # After recording usage, check if any billing alerts need to be triggered.
         BillingService._check_usage_thresholds(tenant)
 
         return event
 
     @staticmethod
-    def get_current_usage(tenant: Tenant) -> Dict[str, Any]:
+    def get_current_usage(tenant: Tenant) -> dict[str, Any]:
         """
-        Get current billing period usage.
+        Calculates and retrieves aggregated usage data for the current billing period
+        (month-to-date) for a specific tenant.
+
+        This provides a snapshot of the tenant's consumption across various metrics.
+
+        Args:
+            tenant: The Tenant for whom to retrieve usage data.
 
         Returns:
-            Dictionary with usage data
+            A dictionary containing the current billing period's usage for the tenant,
+            including raw usage counts, percentage used against limits, and period dates.
         """
         now = timezone.now()
+        # Define the start and end of the current billing period (month).
         period_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        # Calculate end of month, handling month rollovers.
         period_end = (period_start + timedelta(days=32)).replace(day=1)
 
-        # Aggregate usage by type
+        # Aggregate usage by event type.
         usage_qs = UsageEvent.all_objects.filter(
             tenant=tenant,
             event_timestamp__gte=period_start,
@@ -94,10 +115,12 @@ class BillingService:
             count=Count("id"),
         )
 
+        # Map aggregated results to a more accessible dictionary.
         usage_map = {u["event_type"]: u["total"] or Decimal("0") for u in usage_by_type}
 
-        # Get session count
-        from apps.sessions.models import Session
+        # Get session count separately (as it's tracked on the Session model).
+        from apps.sessions.models import Session  # Local import to avoid circular dependency.
+
         session_count = Session.all_objects.filter(
             tenant=tenant,
             created_at__gte=period_start,
@@ -116,15 +139,18 @@ class BillingService:
             "tts_minutes": usage_map.get(UsageEvent.EventType.TTS_MINUTES, Decimal("0")),
         }
 
-        # Calculate percentage used
+        # Define limits for comparison.
         limits = {
             "sessions": tenant.max_sessions_per_month,
         }
 
+        # Calculate percentage used against defined limits.
         percentage_used = {
-            "sessions": (session_count / tenant.max_sessions_per_month * 100)
-            if tenant.max_sessions_per_month > 0
-            else 0,
+            "sessions": (
+                (session_count / tenant.max_sessions_per_month * 100)
+                if tenant.max_sessions_per_month and tenant.max_sessions_per_month > 0
+                else 0
+            ),
         }
 
         return {
@@ -137,25 +163,34 @@ class BillingService:
         }
 
     @staticmethod
-    def get_projected_cost(tenant: Tenant) -> Dict[str, Any]:
+    def get_projected_cost(tenant: Tenant) -> dict[str, Any]:
         """
-        Get projected cost for current billing period.
+        Calculates the current month-to-date cost and projects the total cost
+        to the end of the current billing period for a specific tenant.
+
+        This projection assumes a linear consumption rate based on elapsed days.
+
+        Args:
+            tenant: The Tenant for whom to calculate projected costs.
 
         Returns:
-            Dictionary with projected cost data
+            A dictionary containing current and projected costs, along with a
+            breakdown of costs by usage type.
         """
         usage_data = BillingService.get_current_usage(tenant)
         usage = usage_data["usage"]
 
-        # Pricing (example rates - should come from Lago/config)
+        # Example pricing rates. In a production system, these should be dynamically
+        # retrieved from a configuration or the billing provider (Lago).
         rates = {
             "session": Decimal("0.01"),  # $0.01 per session
             "audio_minute": Decimal("0.006"),  # $0.006 per audio minute
             "input_token": Decimal("0.00001"),  # $0.00001 per input token
             "output_token": Decimal("0.00003"),  # $0.00003 per output token
+            # Add other event types as needed.
         }
 
-        # Calculate current cost
+        # Calculate current cost based on actual usage so far.
         current_cost = (
             Decimal(usage["sessions"]) * rates["session"]
             + usage["audio_minutes"] * rates["audio_minute"]
@@ -163,17 +198,21 @@ class BillingService:
             + Decimal(usage["output_tokens"]) * rates["output_token"]
         )
 
-        # Project to end of month
+        # Project to the end of the month.
         now = timezone.now()
-        days_in_month = (usage_data["period_end"] - usage_data["period_start"]).days
-        days_elapsed = (now - usage_data["period_start"]).days + 1
+        period_start = usage_data["period_start"]
+        period_end = usage_data["period_end"]
 
-        if days_elapsed > 0:
+        days_in_month = (period_end - period_start).days
+        days_elapsed = (now - period_start).days + 1
+
+        if days_elapsed > 0 and days_in_month > 0:
             daily_rate = current_cost / days_elapsed
             projected_cost = daily_rate * days_in_month
         else:
             projected_cost = current_cost
 
+        # Breakdown of current cost by usage type.
         breakdown = {
             "sessions": Decimal(usage["sessions"]) * rates["session"],
             "audio": usage["audio_minutes"] * rates["audio_minute"],
@@ -195,12 +234,20 @@ class BillingService:
         status: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[QuerySet, int]:
+    ) -> tuple[QuerySet, int]:
         """
-        List invoices for a tenant.
+        Retrieves a paginated list of invoices for a specific tenant.
+
+        Args:
+            tenant: The Tenant for whom to list invoices.
+            status: (Optional) Filter invoices by their status (e.g., 'paid', 'finalized').
+            page: The page number for pagination.
+            page_size: The number of items per page.
 
         Returns:
-            Tuple of (queryset, total_count)
+            A tuple containing:
+            - A queryset of `Invoice` instances for the requested page.
+            - An integer representing the total count of matching invoices.
         """
         qs = Invoice.all_objects.filter(tenant=tenant)
 
@@ -209,17 +256,23 @@ class BillingService:
 
         total = qs.count()
         offset = (page - 1) * page_size
-        qs = qs[offset : offset + page_size]
+        paginated_qs = qs[offset : offset + page_size]
 
-        return qs, total
+        return paginated_qs, total
 
     @staticmethod
     def get_invoice(invoice_id: UUID) -> Invoice:
         """
-        Get invoice by ID.
+        Retrieves a single invoice by its primary key (ID).
+
+        Args:
+            invoice_id: The UUID of the invoice to retrieve.
+
+        Returns:
+            The `Invoice` instance.
 
         Raises:
-            NotFoundError: If invoice not found
+            NotFoundError: If an invoice with the specified ID does not exist.
         """
         try:
             return Invoice.objects.get(id=invoice_id)
@@ -230,12 +283,18 @@ class BillingService:
     def list_alerts(
         tenant: Tenant,
         acknowledged: Optional[bool] = None,
-    ) -> Tuple[List[BillingAlert], int]:
+    ) -> tuple[list[BillingAlert], int]:
         """
-        List billing alerts for a tenant.
+        Retrieves a list of billing alerts for a specific tenant.
+
+        Args:
+            tenant: The Tenant for whom to list alerts.
+            acknowledged: (Optional) Filter alerts by their acknowledgment status.
 
         Returns:
-            Tuple of (alerts, total_count)
+            A tuple containing:
+            - A list of `BillingAlert` instances.
+            - An integer representing the total count of matching alerts.
         """
         qs = BillingAlert.all_objects.filter(tenant=tenant)
 
@@ -249,12 +308,19 @@ class BillingService:
 
     @staticmethod
     @transaction.atomic
-    def acknowledge_alert(alert_id: UUID, user) -> BillingAlert:
+    def acknowledge_alert(alert_id: UUID, user: User) -> BillingAlert:
         """
-        Acknowledge a billing alert.
+        Marks a specific billing alert as acknowledged by a user.
+
+        Args:
+            alert_id: The UUID of the billing alert to acknowledge.
+            user: The `User` instance who acknowledged the alert.
+
+        Returns:
+            The updated `BillingAlert` instance.
 
         Raises:
-            NotFoundError: If alert not found
+            NotFoundError: If the billing alert does not exist.
         """
         try:
             alert = BillingAlert.objects.get(id=alert_id)
@@ -266,11 +332,16 @@ class BillingService:
 
     @staticmethod
     def _check_usage_thresholds(tenant: Tenant) -> None:
-        """Check usage thresholds and create alerts if needed."""
+        """
+        Internal method to check a tenant's current usage against predefined
+        thresholds and create `BillingAlert`s if necessary.
+
+        This method is typically called after a new `UsageEvent` is recorded.
+        """
         usage_data = BillingService.get_current_usage(tenant)
         percentage = usage_data["percentage_used"].get("sessions", 0)
 
-        # Check for 80% warning
+        # Check for 80% warning threshold.
         if 80 <= percentage < 90:
             BillingService._create_alert_if_not_exists(
                 tenant=tenant,
@@ -278,10 +349,9 @@ class BillingService:
                 resource_type="sessions",
                 current_value=Decimal(usage_data["usage"]["sessions"]),
                 threshold_value=Decimal(tenant.max_sessions_per_month * 0.8),
-                message=f"Session usage at {percentage:.1f}% of monthly limit",
+                message=f"Session usage at {percentage:.1f}% of monthly limit.",
             )
-
-        # Check for 90% critical
+        # Check for 90% critical threshold.
         elif 90 <= percentage < 100:
             BillingService._create_alert_if_not_exists(
                 tenant=tenant,
@@ -289,10 +359,9 @@ class BillingService:
                 resource_type="sessions",
                 current_value=Decimal(usage_data["usage"]["sessions"]),
                 threshold_value=Decimal(tenant.max_sessions_per_month * 0.9),
-                message=f"Session usage at {percentage:.1f}% of monthly limit",
+                message=f"Session usage at {percentage:.1f}% of monthly limit.",
             )
-
-        # Check for limit exceeded
+        # Check for 100% (limit exceeded) threshold.
         elif percentage >= 100:
             BillingService._create_alert_if_not_exists(
                 tenant=tenant,
@@ -300,7 +369,7 @@ class BillingService:
                 resource_type="sessions",
                 current_value=Decimal(usage_data["usage"]["sessions"]),
                 threshold_value=Decimal(tenant.max_sessions_per_month),
-                message="Monthly session limit exceeded",
+                message="Monthly session limit exceeded.",
             )
 
     @staticmethod
@@ -312,20 +381,24 @@ class BillingService:
         threshold_value: Decimal,
         message: str,
     ) -> Optional[BillingAlert]:
-        """Create alert if one doesn't exist for this period."""
+        """
+        Internal method to create a new `BillingAlert` only if a similar
+        unacknowledged alert for the current billing period does not already exist.
+        """
         now = timezone.now()
         period_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        # Check if alert already exists for this period
+        # Check if an alert of this type for this resource already exists and is unacknowledged.
         existing = BillingAlert.all_objects.filter(
             tenant=tenant,
             alert_type=alert_type,
             resource_type=resource_type,
             created_at__gte=period_start,
+            acknowledged=False,
         ).exists()
 
         if existing:
-            return None
+            return None  # Do not create duplicate alerts.
 
         alert = BillingAlert(
             tenant=tenant,
@@ -340,27 +413,43 @@ class BillingService:
 
 
 class LagoService:
-    """Service class for Lago integration."""
+    """
+    A service class dedicated to handling interactions with the Lago billing API.
+    """
 
     @staticmethod
+    @transaction.atomic
     def sync_customer(tenant: Tenant) -> str:
         """
-        Sync tenant as customer to Lago.
+        Synchronizes a `Tenant` record with Lago, creating or updating a customer
+        entry in the Lago system.
+
+        If successful, it updates the `Tenant`'s `billing_id` with the Lago customer ID.
+
+        Args:
+            tenant: The `Tenant` instance to synchronize.
 
         Returns:
-            Lago customer ID
+            The Lago customer ID (`lago_id`).
+
+        Raises:
+            Exception: If the Lago API call fails.
         """
-        from django.conf import settings
         import httpx
+        from django.conf import settings  # Local import to avoid circular dependency.
 
-        lago_url = settings.LAGO_API_URL
-        lago_key = settings.LAGO_API_KEY
+        lago_url = getattr(settings, "LAGO_API_URL", None)
+        lago_key = getattr(settings, "LAGO_API_KEY", None)
 
+        if not lago_url or not lago_key:
+            raise Exception("Lago API URL or Key not configured.")
+
+        # Construct the payload for Lago customer creation/update.
         payload = {
             "customer": {
-                "external_id": str(tenant.id),
+                "external_id": str(tenant.id),  # Our internal tenant ID as Lago's external ID.
                 "name": tenant.name,
-                "email": "",  # Would come from tenant settings
+                "email": "billing@example.com",  # Placeholder; ideally from TenantSettings or primary user.
                 "metadata": [
                     {"key": "tier", "value": tenant.tier},
                     {"key": "slug", "value": tenant.slug},
@@ -371,10 +460,7 @@ class LagoService:
         response = httpx.post(
             f"{lago_url}/api/v1/customers",
             json=payload,
-            headers={
-                "Authorization": f"Bearer {lago_key}",
-                "Content-Type": "application/json",
-            },
+            headers={"Authorization": f"Bearer {lago_key}", "Content-Type": "application/json"},
             timeout=30,
         )
 
@@ -385,29 +471,42 @@ class LagoService:
             tenant.save(update_fields=["billing_id", "updated_at"])
             return lago_id
         else:
-            raise Exception(f"Lago sync failed: {response.text}")
+            raise Exception(f"Lago customer sync failed: {response.text}")
 
     @staticmethod
-    def send_usage_events(events: List[UsageEvent]) -> int:
+    @transaction.atomic
+    def send_usage_events(events: list[UsageEvent]) -> int:
         """
-        Send usage events to Lago.
+        Sends a list of `UsageEvent`s to the Lago API for billing purposes.
+
+        Each event is sent individually, and its sync status is updated accordingly.
+
+        Args:
+            events: A list of `UsageEvent` instances to send.
 
         Returns:
-            Number of events synced
+            The number of `UsageEvent`s successfully synchronized.
         """
-        from django.conf import settings
         import httpx
+        from django.conf import settings  # Local import.
 
-        lago_url = settings.LAGO_API_URL
-        lago_key = settings.LAGO_API_KEY
+        lago_url = getattr(settings, "LAGO_API_URL", None)
+        lago_key = getattr(settings, "LAGO_API_KEY", None)
+
+        if not lago_url or not lago_key:
+            # Mark all events with error if Lago is not configured
+            for event in events:
+                event.mark_sync_error("Lago API URL or Key not configured.")
+            return 0
 
         synced = 0
         for event in events:
+            # Construct the payload for a single Lago usage event.
             payload = {
                 "event": {
-                    "transaction_id": str(event.id),
-                    "external_customer_id": str(event.tenant_id),
-                    "code": event.event_type,
+                    "transaction_id": str(event.id),  # Unique ID for the event in Lago.
+                    "external_customer_id": str(event.tenant_id),  # Link to the Lago customer.
+                    "code": event.event_type,  # The billing metric code in Lago.
                     "timestamp": int(event.event_timestamp.timestamp()),
                     "properties": {
                         "quantity": str(event.quantity),
@@ -430,23 +529,29 @@ class LagoService:
 
                 if response.status_code in [200, 201]:
                     data = response.json()
-                    event.mark_synced(data.get("event", {}).get("lago_id", ""))
+                    lago_event_id = data.get("event", {}).get("lago_id", "")
+                    event.mark_synced(lago_event_id)
                     synced += 1
                 else:
+                    # Record error for the event if Lago returns a non-success status.
                     event.mark_sync_error(response.text)
             except Exception as e:
+                # Record any network or other exceptions during the API call.
                 event.mark_sync_error(str(e))
-
         return synced
 
     @staticmethod
-    def handle_webhook(webhook_type: str, data: Dict[str, Any]) -> None:
+    @transaction.atomic
+    def handle_webhook(webhook_type: str, data: dict[str, Any]) -> None:
         """
-        Handle Lago webhook.
+        Processes incoming webhooks from Lago to update local billing data.
+
+        This method acts as a dispatcher to specific handlers based on the
+        `webhook_type`.
 
         Args:
-            webhook_type: Type of webhook event
-            data: Webhook payload data
+            webhook_type: The type of webhook event (e.g., 'invoice.created').
+            data: The full payload of the webhook event from Lago.
         """
         if webhook_type == "invoice.created":
             LagoService._handle_invoice_created(data)
@@ -454,21 +559,28 @@ class LagoService:
             LagoService._handle_invoice_finalized(data)
         elif webhook_type == "invoice.payment_status_updated":
             LagoService._handle_payment_status_updated(data)
+        # Add more webhook types as needed.
 
     @staticmethod
-    def _handle_invoice_created(data: Dict[str, Any]) -> None:
-        """Handle invoice.created webhook."""
+    def _handle_invoice_created(data: dict[str, Any]) -> None:
+        """
+        Internal handler for the `invoice.created` webhook from Lago.
+
+        Creates a new `Invoice` record in the local database or updates an
+        existing one if it's a re-creation.
+        """
         invoice_data = data.get("invoice", {})
         customer_id = invoice_data.get("customer", {}).get("external_id")
 
         if not customer_id:
-            return
+            return  # Cannot process without a customer ID.
 
         try:
             tenant = Tenant.objects.get(id=customer_id)
         except Tenant.DoesNotExist:
-            return
+            return  # Tenant not found locally.
 
+        # Create or update the local Invoice record.
         Invoice.objects.update_or_create(
             lago_invoice_id=invoice_data.get("lago_id"),
             defaults={
@@ -478,16 +590,21 @@ class LagoService:
                 "taxes_amount_cents": invoice_data.get("taxes_amount_cents", 0),
                 "total_amount_cents": invoice_data.get("total_amount_cents", 0),
                 "currency": invoice_data.get("currency", "USD"),
-                "status": Invoice.Status.DRAFT,
+                "status": Invoice.Status.DRAFT,  # Newly created invoices from Lago are often in draft.
                 "issuing_date": invoice_data.get("issuing_date"),
                 "payment_due_date": invoice_data.get("payment_due_date"),
-                "metadata": invoice_data,
+                "metadata": invoice_data,  # Store full Lago payload as metadata.
             },
         )
 
     @staticmethod
-    def _handle_invoice_finalized(data: Dict[str, Any]) -> None:
-        """Handle invoice.finalized webhook."""
+    def _handle_invoice_finalized(data: dict[str, Any]) -> None:
+        """
+        Internal handler for the `invoice.finalized` webhook from Lago.
+
+        Updates the status of a local `Invoice` record to 'FINALIZED' and
+        stores the URL to the invoice PDF.
+        """
         invoice_data = data.get("invoice", {})
         lago_id = invoice_data.get("lago_id")
 
@@ -497,11 +614,16 @@ class LagoService:
             invoice.pdf_url = invoice_data.get("file_url", "")
             invoice.save(update_fields=["status", "pdf_url", "updated_at"])
         except Invoice.DoesNotExist:
-            pass
+            pass  # Invoice not found locally, might be an old event or out of sync.
 
     @staticmethod
-    def _handle_payment_status_updated(data: Dict[str, Any]) -> None:
-        """Handle invoice.payment_status_updated webhook."""
+    def _handle_payment_status_updated(data: dict[str, Any]) -> None:
+        """
+        Internal handler for the `invoice.payment_status_updated` webhook from Lago.
+
+        Updates the status of a local `Invoice` record based on payment outcome
+        and creates a `PAYMENT_FAILED` alert if payment fails.
+        """
         invoice_data = data.get("invoice", {})
         lago_id = invoice_data.get("lago_id")
         payment_status = invoice_data.get("payment_status")
@@ -509,6 +631,7 @@ class LagoService:
         status_map = {
             "succeeded": Invoice.Status.PAID,
             "failed": Invoice.Status.FAILED,
+            # Add other Lago payment statuses if necessary.
         }
 
         try:
@@ -517,7 +640,7 @@ class LagoService:
                 invoice.status = status_map[payment_status]
                 invoice.save(update_fields=["status", "updated_at"])
 
-                # Create alert for failed payment
+                # If payment failed, create a billing alert for the tenant.
                 if payment_status == "failed":
                     BillingAlert.objects.create(
                         tenant=invoice.tenant,
@@ -526,4 +649,4 @@ class LagoService:
                         metadata={"invoice_id": str(invoice.id)},
                     )
         except Invoice.DoesNotExist:
-            pass
+            pass  # Invoice not found locally.

@@ -4,9 +4,10 @@ OPA (Open Policy Agent) integration client.
 Provides policy-based authorization via OPA.
 Implements fail-closed security - denies on error.
 """
+
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import httpx
 from django.conf import settings
@@ -20,7 +21,7 @@ class PolicyDecision:
 
     allowed: bool
     reason: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    details: Optional[dict[str, Any]] = None
 
 
 class OPAClient:
@@ -36,10 +37,14 @@ class OPAClient:
     def __init__(self):
         """Initialize OPA client from Django settings."""
         opa_config = getattr(settings, "OPA", {})
-        self.url = opa_config.get("URL", "http://localhost:8181")
-        self.decision_path = opa_config.get("DECISION_PATH", "/v1/data/agentvoicebox/allow")
-        self.timeout = opa_config.get("TIMEOUT_SECONDS", 3)
-        self.enabled = opa_config.get("ENABLED", True)
+        missing = [key for key in ("URL", "DECISION_PATH", "TIMEOUT_SECONDS", "ENABLED") if key not in opa_config]
+        if missing:
+            raise ValueError(f"OPA configuration missing keys: {', '.join(missing)}")
+
+        self.url = opa_config["URL"]
+        self.decision_path = opa_config["DECISION_PATH"]
+        self.timeout = opa_config["TIMEOUT_SECONDS"]
+        self.enabled = opa_config["ENABLED"]
 
         self._client: Optional[httpx.AsyncClient] = None
 
@@ -60,7 +65,7 @@ class OPAClient:
         subject_type: str = "user",
         subject_id: Optional[str] = None,
         tenant_id: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        context: Optional[dict[str, Any]] = None,
     ) -> PolicyDecision:
         """
         Evaluate a policy decision.

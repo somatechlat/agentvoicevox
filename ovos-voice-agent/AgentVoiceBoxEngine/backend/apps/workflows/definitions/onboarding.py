@@ -3,10 +3,11 @@ Tenant onboarding workflow.
 
 Handles the complete tenant setup process with durable execution.
 """
+
 import logging
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
@@ -22,7 +23,7 @@ class OnboardingInput:
     tenant_name: str
     admin_email: str
     tier: str = "free"
-    settings: Dict[str, Any] = None
+    settings: dict[str, Any] = None
 
 
 @dataclass
@@ -31,8 +32,8 @@ class OnboardingResult:
 
     tenant_id: str
     success: bool
-    steps_completed: List[str]
-    errors: List[str]
+    steps_completed: list[str]
+    errors: list[str]
     duration_ms: float
 
 
@@ -50,8 +51,9 @@ class TenantOnboardingWorkflow:
     """
 
     def __init__(self):
-        self.steps_completed: List[str] = []
-        self.errors: List[str] = []
+        """Initializes the workflow state."""
+        self.steps_completed: list[str] = []
+        self.errors: list[str] = []
 
     @workflow.run
     async def run(self, input: OnboardingInput) -> OnboardingResult:
@@ -68,6 +70,7 @@ class TenantOnboardingWorkflow:
 
         start_time = time.time()
 
+        # Define a retry policy for activities to handle transient failures.
         retry_policy = RetryPolicy(
             initial_interval=timedelta(seconds=1),
             backoff_coefficient=2.0,
@@ -75,9 +78,7 @@ class TenantOnboardingWorkflow:
             maximum_attempts=3,
         )
 
-        workflow.logger.info(
-            f"Starting onboarding for tenant {input.tenant_id}"
-        )
+        workflow.logger.info(f"Starting TenantOnboardingWorkflow for tenant {input.tenant_id}.")
 
         # 1. Create Keycloak group
         try:
@@ -205,7 +206,7 @@ class TenantOnboardingWorkflow:
         )
 
     @workflow.query(name="get_progress")
-    def get_progress(self) -> Dict[str, Any]:
+    def get_progress(self) -> dict[str, Any]:
         """Query current onboarding progress."""
         return {
             "steps_completed": self.steps_completed,

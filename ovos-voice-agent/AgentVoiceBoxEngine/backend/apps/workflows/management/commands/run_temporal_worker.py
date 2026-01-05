@@ -6,11 +6,10 @@ Usage:
     python manage.py run_temporal_worker --task-queue voice-processing
     python manage.py run_temporal_worker --create-schedules
 """
+
 import asyncio
 import logging
 import signal
-import sys
-from typing import List, Optional
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -77,22 +76,23 @@ class Command(BaseCommand):
         from temporalio.client import Client
         from temporalio.worker import Worker
 
+        from apps.workflows.activities import (
+            BillingActivities,
+            CleanupActivities,
+            LLMActivities,
+            NotificationActivities,
+            STTActivities,
+            TTSActivities,
+        )
+
         # Import workflows and activities
         from apps.workflows.definitions import (
-            VoiceSessionWorkflow,
             BillingSyncWorkflow,
             CleanupWorkflow,
             TenantOnboardingWorkflow,
+            VoiceSessionWorkflow,
         )
         from apps.workflows.definitions.cleanup import MetricsAggregationWorkflow
-        from apps.workflows.activities import (
-            STTActivities,
-            TTSActivities,
-            LLMActivities,
-            BillingActivities,
-            NotificationActivities,
-            CleanupActivities,
-        )
 
         # Connect to Temporal
         temporal_settings = settings.TEMPORAL
@@ -102,9 +102,7 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Connected to Temporal at {temporal_settings['HOST']}"
-            )
+            self.style.SUCCESS(f"Connected to Temporal at {temporal_settings['HOST']}")
         )
 
         # Handle schedule operations
@@ -114,14 +112,10 @@ class Command(BaseCommand):
             results = await delete_schedules(client)
             for schedule_id, result in results.items():
                 if result["status"] == "deleted":
-                    self.stdout.write(
-                        self.style.SUCCESS(f"Deleted schedule: {schedule_id}")
-                    )
+                    self.stdout.write(self.style.SUCCESS(f"Deleted schedule: {schedule_id}"))
                 else:
                     self.stdout.write(
-                        self.style.ERROR(
-                            f"Failed to delete {schedule_id}: {result.get('error')}"
-                        )
+                        self.style.ERROR(f"Failed to delete {schedule_id}: {result.get('error')}")
                     )
             return
 
@@ -137,14 +131,10 @@ class Command(BaseCommand):
                         )
                     )
                 elif result["status"] == "exists":
-                    self.stdout.write(
-                        self.style.WARNING(f"Schedule exists: {schedule_id}")
-                    )
+                    self.stdout.write(self.style.WARNING(f"Schedule exists: {schedule_id}"))
                 else:
                     self.stdout.write(
-                        self.style.ERROR(
-                            f"Failed to create {schedule_id}: {result.get('error')}"
-                        )
+                        self.style.ERROR(f"Failed to create {schedule_id}: {result.get('error')}")
                     )
 
         # Determine task queues
@@ -194,9 +184,7 @@ class Command(BaseCommand):
             )
             workers.append(worker)
 
-            self.stdout.write(
-                self.style.SUCCESS(f"Worker configured for queue: {task_queue}")
-            )
+            self.stdout.write(self.style.SUCCESS(f"Worker configured for queue: {task_queue}"))
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -209,6 +197,11 @@ class Command(BaseCommand):
         shutdown_event = asyncio.Event()
 
         def signal_handler():
+            """
+            Handles OS signals for graceful shutdown.
+
+            Sets the `shutdown_event` to signal workers to stop.
+            """
             self.stdout.write(self.style.WARNING("\nShutting down workers..."))
             shutdown_event.set()
 

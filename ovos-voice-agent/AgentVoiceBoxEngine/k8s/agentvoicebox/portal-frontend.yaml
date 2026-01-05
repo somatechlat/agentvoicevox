@@ -1,0 +1,86 @@
+# ==========================================================================
+# PORTAL FRONTEND - Lit 3 / Vite (512MB)
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portal-frontend-config
+  namespace: agentvoicebox
+data:
+  VITE_API_URL: "http://localhost:30020"
+  VITE_KEYCLOAK_URL: "http://localhost:30006"
+  VITE_KEYCLOAK_REALM: "agentvoicebox"
+  VITE_KEYCLOAK_CLIENT_ID: "portal-frontend"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal-frontend
+  namespace: agentvoicebox
+  labels:
+    app: portal-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: portal-frontend
+  template:
+    metadata:
+      labels:
+        app: portal-frontend
+    spec:
+      containers:
+        - name: portal-frontend
+          image: avb-portal-frontend:latest
+          imagePullPolicy: Never  # Use local image from Tilt
+          ports:
+            - containerPort: 65027
+          envFrom:
+            - configMapRef:
+                name: portal-frontend-config
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 65027
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 65027
+            initialDelaySeconds: 30
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal-frontend
+  namespace: agentvoicebox
+spec:
+  selector:
+    app: portal-frontend
+  ports:
+    - port: 65027
+      targetPort: 65027
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portal-frontend-external
+  namespace: agentvoicebox
+spec:
+  selector:
+    app: portal-frontend
+  ports:
+    - port: 65027
+      targetPort: 65027
+      nodePort: 30027
+  type: NodePort

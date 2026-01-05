@@ -1,4 +1,5 @@
 """Django app configuration for voice."""
+
 from django.apps import AppConfig
 
 

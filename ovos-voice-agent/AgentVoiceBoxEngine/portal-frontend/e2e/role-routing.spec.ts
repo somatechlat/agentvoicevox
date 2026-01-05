@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAsPlatformAdmin, authenticateAsTenantAdmin, authenticateAsViewer, setAuthCookie, MOCK_TOKENS } from './auth.setup';
 
 /**
  * Role-Based Routing E2E Tests
