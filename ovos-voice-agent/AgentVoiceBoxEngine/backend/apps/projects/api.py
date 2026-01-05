@@ -1,8 +1,12 @@
 """
-Project API endpoints.
+Project Management API Endpoints
+================================
 
-Public project endpoints for tenant-scoped operations.
+This module provides the tenant-scoped API endpoints for managing projects.
+It allows users to create, list, update, and delete projects within their
+tenant, subject to their role-based permissions.
 """
+
 from typing import Optional
 from uuid import UUID
 
@@ -21,33 +25,30 @@ from .schemas import (
 )
 from .services import ProjectService
 
-router = Router()
+# Router for project management endpoints, tagged for OpenAPI documentation.
+router = Router(tags=["Projects"])
 
 
-@router.get("", response=ProjectListResponse)
+@router.get("", response=ProjectListResponse, summary="List Projects in Tenant")
 def list_projects(
     request,
-    is_active: Optional[bool] = Query(None, description="Filter by active status"),
-    search: Optional[str] = Query(None, description="Search by name or slug"),
-    page: int = Query(1, ge=1, description="Page number"),
-    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    is_active: Optional[bool] = Query(None, description="Filter projects by active status."),
+    search: Optional[str] = Query(None, description="Search term for project name or slug."),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
 ):
     """
-    List projects in the current tenant.
+    Lists all projects within the current user's tenant.
 
-    Requires at least VIEWER role.
+    This endpoint supports pagination and filtering by active status or a search term.
+
+    **Permissions:** Available to any authenticated user in the tenant (implicit viewer role).
     """
-    tenant = get_current_tenant()
-
+    tenant = get_current_tenant(request)
     projects, total = ProjectService.list_projects(
-        tenant=tenant,
-        is_active=is_active,
-        search=search,
-        page=page,
-        page_size=page_size,
+        tenant=tenant, is_active=is_active, search=search, page=page, page_size=page_size
     )
-
-    pages = (total + page_size - 1) // page_size
+    pages = (total + page_size - 1) // page_size if total > 0 else 1
 
     return ProjectListResponse(
         items=[ProjectResponse.from_orm(p) for p in projects],
@@ -58,182 +59,176 @@ def list_projects(
     )
 
 
-@router.get("/{project_id}", response=ProjectResponse)
+@router.get("/{project_id}", response=ProjectResponse, summary="Get a Project by ID")
 def get_project(request, project_id: UUID):
     """
-    Get project by ID.
+    Retrieves a specific project by its ID.
 
-    Requires at least VIEWER role.
+    The project must belong to the current user's tenant.
+
+    **Permissions:** Available to any authenticated user in the tenant.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     project = ProjectService.get_by_id(project_id)
 
-    # Ensure project belongs to current tenant
     if project.tenant_id != tenant.id:
-        raise PermissionDeniedError("Project not found in this tenant")
+        raise PermissionDeniedError("Project not found in this tenant.")
 
     return ProjectResponse.from_orm(project)
 
 
-@router.get("/{project_id}/voice-config", response=ProjectVoiceConfigResponse)
+@router.get("/{project_id}/voice-config", response=ProjectVoiceConfigResponse, summary="Get Project Voice Configuration")
 def get_project_voice_config(request, project_id: UUID):
     """
-    Get project voice configuration.
+    Retrieves the structured voice configuration for a specific project.
 
-    Requires at least VIEWER role.
+    The project must belong to the current user's tenant.
+
+    **Permissions:** Available to any authenticated user in the tenant.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     project = ProjectService.get_by_id(project_id)
 
     if project.tenant_id != tenant.id:
-        raise PermissionDeniedError("Project not found in this tenant")
+        raise PermissionDeniedError("Project not found in this tenant.")
 
     return ProjectVoiceConfigResponse.from_project(project)
 
 
-@router.post("", response=ProjectResponse)
+@router.post("", response=ProjectResponse, summary="Create a New Project")
 def create_project(request, payload: ProjectCreate):
     """
-    Create a new project.
+    Creates a new project within the current user's tenant.
 
-    Requires DEVELOPER role or higher.
+    **Permissions:** Requires DEVELOPER role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     if not user.is_developer:
-        raise PermissionDeniedError("Developer role required to create projects")
+        raise PermissionDeniedError("Developer role required to create projects.")
 
     project = ProjectService.create_project(
         tenant=tenant,
-        name=payload.name,
-        slug=payload.slug,
-        description=payload.description,
         created_by=user,
-        stt_model=payload.stt_model,
-        stt_language=payload.stt_language,
-        tts_model=payload.tts_model,
-        tts_voice=payload.tts_voice,
-        tts_speed=payload.tts_speed,
-        llm_provider=payload.llm_provider,
-        llm_model=payload.llm_model,
-        llm_temperature=payload.llm_temperature,
-        llm_max_tokens=payload.llm_max_tokens,
-        system_prompt=payload.system_prompt,
-        turn_detection_enabled=payload.turn_detection_enabled,
-        max_session_duration=payload.max_session_duration,
-        max_concurrent_sessions=payload.max_concurrent_sessions,
+        **payload.dict(),
     )
-
     return ProjectResponse.from_orm(project)
 
 
-@router.patch("/{project_id}", response=ProjectResponse)
+@router.patch("/{project_id}", response=ProjectResponse, summary="Update a Project")
 def update_project(request, project_id: UUID, payload: ProjectUpdate):
     """
-    Update a project.
+    Updates a project's details with partial data.
 
-    Requires DEVELOPER role or higher.
+    The project must belong to the current user's tenant.
+
+    **Permissions:** Requires DEVELOPER role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     if not user.is_developer:
-        raise PermissionDeniedError("Developer role required to update projects")
+        raise PermissionDeniedError("Developer role required to update projects.")
 
     project = ProjectService.get_by_id(project_id)
     if project.tenant_id != tenant.id:
-        raise PermissionDeniedError("Project not found in this tenant")
+        raise PermissionDeniedError("Project not found in this tenant.")
 
     updated_project = ProjectService.update_project(
-        project_id=project_id,
-        **payload.dict(exclude_none=True),
+        project_id=project_id, **payload.dict(exclude_unset=True)
     )
-
     return ProjectResponse.from_orm(updated_project)
 
 
-@router.patch("/{project_id}/voice-config", response=ProjectVoiceConfigResponse)
+@router.patch("/{project_id}/voice-config", response=ProjectVoiceConfigResponse, summary="Update Project Voice Configuration")
 def update_project_voice_config(request, project_id: UUID, payload: VoiceConfig):
     """
-    Update project voice configuration.
+    Updates a project's voice configuration from a structured dictionary.
 
-    Requires DEVELOPER role or higher.
+    The project must belong to the current user's tenant.
+
+    **Permissions:** Requires DEVELOPER role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     if not user.is_developer:
-        raise PermissionDeniedError("Developer role required to update voice config")
+        raise PermissionDeniedError("Developer role required to update voice config.")
 
     project = ProjectService.get_by_id(project_id)
     if project.tenant_id != tenant.id:
-        raise PermissionDeniedError("Project not found in this tenant")
+        raise PermissionDeniedError("Project not found in this tenant.")
 
-    config = payload.dict(exclude_none=True)
+    config = payload.dict(exclude_unset=True)
     updated_project = ProjectService.update_voice_config(project_id, config)
-
     return ProjectVoiceConfigResponse.from_project(updated_project)
 
 
-@router.post("/{project_id}/deactivate", response=ProjectResponse)
+@router.post("/{project_id}/deactivate", response=ProjectResponse, summary="Deactivate a Project")
 def deactivate_project(request, project_id: UUID):
     """
-    Deactivate a project.
+    Deactivates a project, disabling its API keys.
 
-    Requires ADMIN role.
+    The project must belong to the current user's tenant.
+
+    **Permissions:** Requires ADMIN role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     if not user.is_admin:
-        raise PermissionDeniedError("Admin role required to deactivate projects")
+        raise PermissionDeniedError("Admin role required to deactivate projects.")
 
     project = ProjectService.get_by_id(project_id)
     if project.tenant_id != tenant.id:
-        raise PermissionDeniedError("Project not found in this tenant")
+        raise PermissionDeniedError("Project not found in this tenant.")
 
     updated_project = ProjectService.deactivate_project(project_id)
     return ProjectResponse.from_orm(updated_project)
 
 
-@router.post("/{project_id}/activate", response=ProjectResponse)
+@router.post("/{project_id}/activate", response=ProjectResponse, summary="Activate a Project")
 def activate_project(request, project_id: UUID):
     """
-    Activate a project.
+    Activates an inactive project.
 
-    Requires ADMIN role.
+    The project must belong to the current user's tenant.
+
+    **Permissions:** Requires ADMIN role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     if not user.is_admin:
-        raise PermissionDeniedError("Admin role required to activate projects")
+        raise PermissionDeniedError("Admin role required to activate projects.")
 
     project = ProjectService.get_by_id(project_id)
     if project.tenant_id != tenant.id:
-        raise PermissionDeniedError("Project not found in this tenant")
+        raise PermissionDeniedError("Project not found in this tenant.")
 
     updated_project = ProjectService.activate_project(project_id)
     return ProjectResponse.from_orm(updated_project)
 
 
-@router.delete("/{project_id}", response={204: None})
+@router.delete("/{project_id}", response={204: None}, summary="Delete a Project")
 def delete_project(request, project_id: UUID):
     """
-    Delete a project permanently.
+    Permanently deletes a project and all its associated resources.
 
-    Requires ADMIN role.
+    The project must belong to the current user's tenant.
+
+    **Permissions:** Requires ADMIN role or higher.
     """
-    tenant = get_current_tenant()
+    tenant = get_current_tenant(request)
     user = request.user
 
     if not user.is_admin:
-        raise PermissionDeniedError("Admin role required to delete projects")
+        raise PermissionDeniedError("Admin role required to delete projects.")
 
     project = ProjectService.get_by_id(project_id)
     if project.tenant_id != tenant.id:
-        raise PermissionDeniedError("Project not found in this tenant")
+        raise PermissionDeniedError("Project not found in this tenant.")
 
     ProjectService.delete_project(project_id)
     return 204, None

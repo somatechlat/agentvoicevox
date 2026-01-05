@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAsTenantAdmin } from './auth.setup';
 
 /**
  * Voice Configuration E2E Tests
@@ -16,6 +17,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Voice Configuration - TTS Settings', () => {
   test.beforeEach(async ({ page }) => {
+    await authenticateAsTenantAdmin(page);
     await page.goto('/dashboard/voice');
   });
 

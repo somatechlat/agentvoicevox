@@ -3,16 +3,16 @@ Keycloak integration client.
 
 Provides JWT validation and user management via Keycloak.
 """
+
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
-from urllib.parse import urljoin
+from typing import Any, Optional
 
 import httpx
 from django.conf import settings
-from django.core.cache import cache
-from jwt import PyJWKClient, decode as jwt_decode
+from jwt import PyJWKClient
+from jwt import decode as jwt_decode
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 
 logger = logging.getLogger(__name__)
@@ -28,9 +28,9 @@ class KeycloakUser:
     last_name: str
     email_verified: bool
     enabled: bool
-    realm_roles: List[str]
-    groups: List[str]
-    attributes: Dict[str, Any]
+    realm_roles: list[str]
+    groups: list[str]
+    attributes: dict[str, Any]
 
 
 @dataclass
@@ -44,8 +44,8 @@ class TokenClaims:
     given_name: str
     family_name: str
     preferred_username: str
-    realm_access: Dict[str, List[str]]
-    resource_access: Dict[str, Dict[str, List[str]]]
+    realm_access: dict[str, list[str]]
+    resource_access: dict[str, dict[str, list[str]]]
     tenant_id: Optional[str]
     exp: int
     iat: int
@@ -204,14 +204,22 @@ class KeycloakClient:
                 f"{self.admin_url}/users/{user_id}/groups",
                 headers={"Authorization": f"Bearer {token}"},
             )
-            groups = [g["path"] for g in groups_response.json()] if groups_response.status_code == 200 else []
+            groups = (
+                [g["path"] for g in groups_response.json()]
+                if groups_response.status_code == 200
+                else []
+            )
 
             # Get realm roles
             roles_response = await client.get(
                 f"{self.admin_url}/users/{user_id}/role-mappings/realm",
                 headers={"Authorization": f"Bearer {token}"},
             )
-            roles = [r["name"] for r in roles_response.json()] if roles_response.status_code == 200 else []
+            roles = (
+                [r["name"] for r in roles_response.json()]
+                if roles_response.status_code == 200
+                else []
+            )
 
             return KeycloakUser(
                 id=data["id"],
@@ -354,6 +362,72 @@ class KeycloakClient:
                 json=["UPDATE_PASSWORD"],
             )
             response.raise_for_status()
+
+    async def update_user_profile(
+        self,
+        user_id: str,
+        email: Optional[str] = None,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+    ) -> None:
+        """Update user profile details in Keycloak."""
+        token = await self._get_admin_token()
+
+        updates = {}
+        if email is not None:
+            updates["email"] = email
+            updates["username"] = email
+        if first_name is not None:
+            updates["firstName"] = first_name
+        if last_name is not None:
+            updates["lastName"] = last_name
+
+        if not updates:
+            return
+
+        async with httpx.AsyncClient() as client:
+            response = await client.put(
+                f"{self.admin_url}/users/{user_id}",
+                headers={"Authorization": f"Bearer {token}"},
+                json=updates,
+            )
+            response.raise_for_status()
+
+    async def set_user_password(
+        self,
+        user_id: str,
+        password: str,
+        temporary: bool = False,
+    ) -> None:
+        """Set a user's password in Keycloak."""
+        token = await self._get_admin_token()
+
+        async with httpx.AsyncClient() as client:
+            response = await client.put(
+                f"{self.admin_url}/users/{user_id}/reset-password",
+                headers={"Authorization": f"Bearer {token}"},
+                json={
+                    "type": "password",
+                    "value": password,
+                    "temporary": temporary,
+                },
+            )
+            response.raise_for_status()
+
+    async def verify_user_password(self, username: str, password: str) -> bool:
+        """Verify user credentials via password grant."""
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                self.token_url,
+                data={
+                    "grant_type": "password",
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                    "username": username,
+                    "password": password,
+                },
+            )
+            return response.status_code == 200
 
 
 # Singleton instance

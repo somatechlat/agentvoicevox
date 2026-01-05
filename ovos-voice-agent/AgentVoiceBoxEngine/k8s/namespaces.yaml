@@ -1,0 +1,21 @@
+# ==========================================================================
+# SHARED NAMESPACE - All shared infrastructure
+# ==========================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shared-services
+  labels:
+    app.kubernetes.io/name: shared-services
+    app.kubernetes.io/component: infrastructure
+---
+# ==========================================================================
+# AGENTVOICEBOX NAMESPACE
+# ==========================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agentvoicebox
+  labels:
+    app.kubernetes.io/name: agentvoicebox
+    app.kubernetes.io/component: application

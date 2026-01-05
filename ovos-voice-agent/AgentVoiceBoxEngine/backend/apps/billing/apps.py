@@ -1,4 +1,5 @@
 """Django app configuration for billing."""
+
 from django.apps import AppConfig
 
 

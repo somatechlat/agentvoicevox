@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAsTenantAdmin } from './auth.setup';
 
 /**
  * Test all portal pages have unified layout with sidebar
@@ -17,6 +18,8 @@ test.describe('Unified Portal Layout', () => {
 
   for (const page of pages) {
     test(`${page.path} should have sidebar navigation`, async ({ page: browserPage, isMobile }) => {
+      // Set up tenant admin authentication
+      await authenticateAsTenantAdmin(browserPage);
       await browserPage.goto(page.path);
       
       // Should not redirect to login (dev bypass enabled)

@@ -13,7 +13,7 @@ Uses REAL JWT encoding/decoding - NO MOCKS for token validation logic.
 """
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 import pytest
@@ -96,7 +96,7 @@ def create_jwt_token(
     private_key: str = TEST_PRIVATE_KEY,
 ) -> str:
     """Create a JWT token for testing."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exp = now + (exp_delta or timedelta(hours=1))
 
     payload = {
@@ -137,8 +137,9 @@ class TestJWTAuthenticationValidation:
     @pytest.fixture(autouse=True)
     def setup_keycloak_mock(self, monkeypatch):
         """Mock Keycloak public key retrieval and audience validation."""
-        from apps.core.middleware import authentication
         from django.conf import settings
+
+        from apps.core.middleware import authentication
 
         # Mock the public key retrieval to return our test key
         monkeypatch.setattr(
@@ -197,6 +198,7 @@ class TestJWTAuthenticationValidation:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)
@@ -249,6 +251,7 @@ class TestJWTAuthenticationValidation:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)
@@ -282,6 +285,7 @@ class TestJWTAuthenticationValidation:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)
@@ -321,6 +325,7 @@ class TestJWTAuthenticationValidation:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)
@@ -370,6 +375,7 @@ class TestAuthExemptPaths:
         request = factory.get(path)
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)
@@ -394,8 +400,9 @@ class TestJWTClaimsExtraction:
     @pytest.fixture(autouse=True)
     def setup_keycloak_mock(self, monkeypatch):
         """Mock Keycloak public key retrieval and audience validation."""
-        from apps.core.middleware import authentication
         from django.conf import settings
+
+        from apps.core.middleware import authentication
 
         monkeypatch.setattr(
             authentication.KeycloakAuthenticationMiddleware,
@@ -442,7 +449,7 @@ class TestJWTClaimsExtraction:
         tenant_id = str(uuid.uuid4())
 
         # Create token with profile claims
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "sub": user_id,
             "tenant_id": tenant_id,
@@ -464,6 +471,7 @@ class TestJWTClaimsExtraction:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)
@@ -502,6 +510,7 @@ class TestJWTClaimsExtraction:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)

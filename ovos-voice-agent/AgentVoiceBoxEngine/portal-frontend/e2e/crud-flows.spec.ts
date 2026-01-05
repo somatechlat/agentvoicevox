@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAsTenantAdmin } from './auth.setup';
 
 /**
  * CRUD Operations E2E Tests
@@ -15,6 +16,7 @@ test.describe('API Key CRUD Flow', () => {
   const testKeyName = `test-key-${Date.now()}`;
 
   test('should complete full API key lifecycle', async ({ page }) => {
+    await authenticateAsTenantAdmin(page);
     await page.goto('/api-keys');
     
     // 1. CREATE - Open dialog

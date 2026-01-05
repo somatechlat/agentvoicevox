@@ -4,9 +4,11 @@ Permission decorators using Django native authorization.
 Provides decorators for checking permissions on API endpoints using
 Django's built-in permission system with PermissionMatrix model.
 """
+
 import functools
 import logging
-from typing import Callable, List, Optional, Union
+from collections.abc import Callable
+from typing import Optional, Union
 
 from apps.core.exceptions import PermissionDeniedError
 from apps.core.middleware.tenant import get_current_tenant
@@ -40,8 +42,16 @@ def require_permission(
     """
 
     def decorator(func: Callable) -> Callable:
+        """
+        The actual decorator that takes the function to be wrapped.
+        """
+
         @functools.wraps(func)
         def wrapper(request, *args, **kwargs):
+            """
+            The wrapper function that executes the permission check before
+            calling the original decorated function.
+            """
             from apps.core.permissions.service import GranularPermissionService
 
             # Get user from request
@@ -81,9 +91,7 @@ def require_permission(
                     f"resource={resource_type}:{resource_id} "
                     f"permission={permission}"
                 )
-                raise PermissionDeniedError(
-                    f"Permission '{permission}' denied on {resource_type}"
-                )
+                raise PermissionDeniedError(f"Permission '{permission}' denied on {resource_type}")
 
             return func(request, *args, **kwargs)
 
@@ -92,7 +100,7 @@ def require_permission(
     return decorator
 
 
-def require_role(roles: Union[str, List[str]]):
+def require_role(roles: Union[str, list[str]]):
     """
     Decorator to require specific JWT roles for an endpoint.
 
@@ -112,8 +120,16 @@ def require_role(roles: Union[str, List[str]]):
         roles = [roles]
 
     def decorator(func: Callable) -> Callable:
+        """
+        The actual decorator that takes the function to be wrapped.
+        """
+
         @functools.wraps(func)
         def wrapper(request, *args, **kwargs):
+            """
+            The wrapper function that executes the role check before
+            calling the original decorated function.
+            """
             # Get roles from request
             jwt_roles = getattr(request, "jwt_roles", [])
             user = getattr(request, "user", None)
@@ -136,9 +152,7 @@ def require_role(roles: Union[str, List[str]]):
                 f"jwt_roles={jwt_roles} "
                 f"user_role={getattr(user, 'role', None)}"
             )
-            raise PermissionDeniedError(
-                f"Required role: {', '.join(roles)}"
-            )
+            raise PermissionDeniedError(f"Required role: {', '.join(roles)}")
 
         return wrapper
 
@@ -184,6 +198,18 @@ def require_tenant_permission(permission: str):
     """
 
     def resource_id_getter(request):
+        """
+        Retrieves the tenant ID from the current request context.
+
+        Args:
+            request: The current HttpRequest object.
+
+        Returns:
+            The ID of the current tenant as a string.
+
+        Raises:
+            PermissionDeniedError: If no tenant context is found.
+        """
         tenant = get_current_tenant()
         if not tenant:
             raise PermissionDeniedError("Tenant context required")

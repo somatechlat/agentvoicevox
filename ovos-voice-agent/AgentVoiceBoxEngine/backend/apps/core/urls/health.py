@@ -5,6 +5,7 @@ Endpoints:
 - /health/         - Liveness probe (always returns 200 if app is running)
 - /health/ready/   - Readiness probe (checks DB, Redis, Temporal)
 """
+
 from django.urls import path
 
 from apps.core.views.health import liveness_check, readiness_check

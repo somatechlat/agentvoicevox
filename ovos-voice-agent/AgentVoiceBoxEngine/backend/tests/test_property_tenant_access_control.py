@@ -81,6 +81,7 @@ class TestTenantAccessControl:
 
         # Create middleware with a dummy response handler
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = TenantMiddleware(get_response=get_response)
@@ -124,6 +125,7 @@ class TestTenantAccessControl:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = TenantMiddleware(get_response=get_response)
@@ -170,6 +172,7 @@ class TestTenantAccessControl:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = TenantMiddleware(get_response=get_response)
@@ -209,6 +212,7 @@ class TestTenantAccessControl:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = TenantMiddleware(get_response=get_response)
@@ -237,6 +241,7 @@ class TestTenantAccessControl:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = TenantMiddleware(get_response=get_response)
@@ -287,6 +292,7 @@ class TestTenantExemptPaths:
         request = factory.get(path)
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = TenantMiddleware(get_response=get_response)
@@ -324,6 +330,7 @@ class TestTenantExemptPaths:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = TenantMiddleware(get_response=get_response)
@@ -368,6 +375,7 @@ class TestTenantStatusTransitions:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = TenantMiddleware(get_response=get_response)
@@ -396,6 +404,7 @@ class TestTenantStatusTransitions:
         factory = RequestFactory()
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = TenantMiddleware(get_response=get_response)
@@ -440,6 +449,7 @@ class TestTenantStatusTransitions:
         factory = RequestFactory()
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = TenantMiddleware(get_response=get_response)

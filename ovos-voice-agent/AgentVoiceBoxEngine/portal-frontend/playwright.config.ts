@@ -33,8 +33,8 @@ export default defineConfig({
     timeout: 10000,
   },
   use: {
-    // Default to Docker cluster port 25007, fallback to dev server 3000
-    baseURL: process.env.E2E_BASE_URL || 'http://localhost:25007',
+    // Default to Docker cluster port 65013 per port policy (65000-65099)
+    baseURL: process.env.E2E_BASE_URL || 'http://localhost:65013',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'on-first-retry',
@@ -75,10 +75,10 @@ export default defineConfig({
       use: { ...devices['iPad (gen 7)'] },
     },
   ],
-  // Web server configuration (optional - for local dev)
+  // Web server configuration (Vite dev server on port 28100)
   webServer: process.env.CI ? undefined : {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
+    command: 'bun run dev',
+    url: 'http://localhost:28100',
     reuseExistingServer: true,
     timeout: 120000,
   },

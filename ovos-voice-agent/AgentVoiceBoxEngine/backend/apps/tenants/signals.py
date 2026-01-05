@@ -3,6 +3,7 @@ Tenant signals.
 
 Handles tenant-related signal processing.
 """
+
 import logging
 
 logger = logging.getLogger(__name__)

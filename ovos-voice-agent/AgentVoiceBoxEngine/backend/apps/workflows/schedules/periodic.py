@@ -6,9 +6,10 @@ Defines schedules for:
 - Billing sync (every 15 minutes)
 - Metrics aggregation (every 5 minutes)
 """
+
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, Dict, List
+from typing import Any
 
 
 @dataclass
@@ -20,7 +21,7 @@ class WorkflowSchedule:
     workflow_id_prefix: str
     task_queue: str
     interval: timedelta
-    args: List[Any]
+    args: list[Any]
     description: str
 
 
@@ -31,14 +32,16 @@ CLEANUP_SCHEDULE = WorkflowSchedule(
     workflow_id_prefix="cleanup",
     task_queue="default",
     interval=timedelta(hours=1),
-    args=[{
-        "cleanup_sessions": True,
-        "cleanup_audit_logs": True,
-        "cleanup_files": True,
-        "aggregate_metrics": False,  # Handled by separate schedule
-        "session_max_age_hours": 24,
-        "audit_retention_days": 90,
-    }],
+    args=[
+        {
+            "cleanup_sessions": True,
+            "cleanup_audit_logs": True,
+            "cleanup_files": True,
+            "aggregate_metrics": False,  # Handled by separate schedule
+            "session_max_age_hours": 24,
+            "audit_retention_days": 90,
+        }
+    ],
     description="Cleanup expired sessions and archive old audit logs",
 )
 
@@ -50,10 +53,12 @@ BILLING_SYNC_SCHEDULE = WorkflowSchedule(
     workflow_id_prefix="billing-sync",
     task_queue="billing",
     interval=timedelta(minutes=15),
-    args=[{
-        "tenant_id": None,  # All tenants
-        "sync_window_minutes": 15,
-    }],
+    args=[
+        {
+            "tenant_id": None,  # All tenants
+            "sync_window_minutes": 15,
+        }
+    ],
     description="Sync usage to Lago billing system",
 )
 
@@ -70,7 +75,7 @@ METRICS_AGGREGATION_SCHEDULE = WorkflowSchedule(
 )
 
 
-def get_all_schedules() -> List[WorkflowSchedule]:
+def get_all_schedules() -> list[WorkflowSchedule]:
     """Get all defined workflow schedules."""
     return [
         CLEANUP_SCHEDULE,
@@ -79,7 +84,7 @@ def get_all_schedules() -> List[WorkflowSchedule]:
     ]
 
 
-async def create_schedules(client) -> Dict[str, Any]:
+async def create_schedules(client) -> dict[str, Any]:
     """
     Create all workflow schedules in Temporal.
 
@@ -120,7 +125,7 @@ async def create_schedules(client) -> Dict[str, Any]:
                     action=ScheduleActionStartWorkflow(
                         schedule.workflow_type,
                         *schedule.args,
-                        id=f"{schedule.workflow_id_prefix}-{{{{.ScheduleTime.Format \"20060102-150405\"}}}}",
+                        id=f'{schedule.workflow_id_prefix}-{{{{.ScheduleTime.Format "20060102-150405"}}}}',
                         task_queue=schedule.task_queue,
                     ),
                     spec=ScheduleSpec(
@@ -149,7 +154,7 @@ async def create_schedules(client) -> Dict[str, Any]:
     return results
 
 
-async def delete_schedules(client) -> Dict[str, Any]:
+async def delete_schedules(client) -> dict[str, Any]:
     """
     Delete all workflow schedules from Temporal.
 

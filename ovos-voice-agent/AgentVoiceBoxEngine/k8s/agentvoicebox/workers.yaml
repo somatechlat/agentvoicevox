@@ -1,0 +1,161 @@
+# ==========================================================================
+# WORKERS - LLM, STT, TTS
+# ==========================================================================
+
+# ==========================================================================
+# LLM WORKER (2GB)
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-llm-config
+  namespace: agentvoicebox
+data:
+  REDIS_URL: "redis://redis.shared-services.svc.cluster.local:6379/4"
+  GROQ_API_BASE: "https://api.groq.com/openai/v1"
+  OPENAI_API_BASE: "https://api.openai.com/v1"
+  LLM_DEFAULT_PROVIDER: "groq"
+  LLM_DEFAULT_MODEL: "llama-3.3-70b-versatile"
+  LLM_MAX_CONTEXT_TOKENS: "8192"
+  LOG_LEVEL: "INFO"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: worker-llm-secret
+  namespace: agentvoicebox
+type: Opaque
+stringData:
+  GROQ_API_KEY: ""
+  OPENAI_API_KEY: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-llm
+  namespace: agentvoicebox
+  labels:
+    app: worker-llm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-llm
+  template:
+    metadata:
+      labels:
+        app: worker-llm
+    spec:
+      containers:
+        - name: worker-llm
+          image: avb-worker-llm:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: worker-llm-config
+            - secretRef:
+                name: worker-llm-secret
+          resources:
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+
+---
+# ==========================================================================
+# STT WORKER (1.5GB)
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-stt-config
+  namespace: agentvoicebox
+data:
+  REDIS_URL: "redis://redis.shared-services.svc.cluster.local:6379/5"
+  STT_ENGINE: "faster-whisper"
+  WHISPER_MODEL: "base"
+  WHISPER_DEVICE: "cpu"
+  WHISPER_COMPUTE_TYPE: "int8"
+  LOG_LEVEL: "INFO"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-stt
+  namespace: agentvoicebox
+  labels:
+    app: worker-stt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-stt
+  template:
+    metadata:
+      labels:
+        app: worker-stt
+    spec:
+      containers:
+        - name: worker-stt
+          image: avb-worker-stt:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: worker-stt-config
+          resources:
+            limits:
+              memory: "1536Mi"
+              cpu: "1000m"
+            requests:
+              memory: "768Mi"
+              cpu: "500m"
+
+---
+# ==========================================================================
+# TTS WORKER (1GB)
+# ==========================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: worker-tts-config
+  namespace: agentvoicebox
+data:
+  REDIS_URL: "redis://redis.shared-services.svc.cluster.local:6379/6"
+  TTS_ENGINE: "kokoro"
+  KOKORO_VOICE: "af_heart"
+  KOKORO_SPEED: "1.0"
+  LOG_LEVEL: "INFO"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-tts
+  namespace: agentvoicebox
+  labels:
+    app: worker-tts
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-tts
+  template:
+    metadata:
+      labels:
+        app: worker-tts
+    spec:
+      containers:
+        - name: worker-tts
+          image: avb-worker-tts:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: worker-tts-config
+          resources:
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+            requests:
+              memory: "512Mi"
+              cpu: "250m"

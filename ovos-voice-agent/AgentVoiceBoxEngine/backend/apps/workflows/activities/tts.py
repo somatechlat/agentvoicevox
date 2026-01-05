@@ -1,11 +1,17 @@
 """
-Text-to-Speech (TTS) activities for Temporal workflows.
+Text-to-Speech (TTS) Workflow Activities
+========================================
 
-Handles audio synthesis via Kokoro or external TTS services.
+This module defines a set of Temporal Workflow Activities specifically designed
+for Text-to-Speech (TTS) processing within voice processing pipelines. These
+activities handle the conversion of text into spoken audio, primarily using
+the `kokoro` TTS engine, and include utilities for managing available voices
+and validating input text.
 """
+
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from temporalio import activity
 
@@ -14,7 +20,18 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SynthesisRequest:
-    """Request for text-to-speech synthesis."""
+    """
+    Defines the parameters for requesting text-to-speech synthesis.
+
+    Attributes:
+        tenant_id (str): The ID of the tenant initiating the request.
+        session_id (str): A unique identifier for the current session or interaction.
+        text (str): The text content to be synthesized into speech.
+        voice_id (str): The identifier of the TTS voice to use (e.g., 'af_heart').
+        language (str): The language code for synthesis (e.g., 'en-us').
+        speed (float): The speech speed multiplier (1.0 is normal).
+        output_format (str): The desired audio output format (e.g., 'wav').
+    """
 
     tenant_id: str
     session_id: str
@@ -27,7 +44,17 @@ class SynthesisRequest:
 
 @dataclass
 class SynthesisResult:
-    """Result of text-to-speech synthesis."""
+    """
+    Represents the structured result of text-to-speech synthesis.
+
+    Attributes:
+        audio_data (bytes): The raw audio data of the synthesized speech.
+        audio_format (str): The format of the returned audio data.
+        duration_seconds (float): The duration of the synthesized audio in seconds.
+        sample_rate (int): The sample rate of the audio.
+        processing_time_ms (float): The time taken for synthesis in milliseconds.
+        character_count (int): The number of characters in the original text.
+    """
 
     audio_data: bytes
     audio_format: str
@@ -39,7 +66,16 @@ class SynthesisResult:
 
 @dataclass
 class VoiceInfo:
-    """Information about an available voice."""
+    """
+    Provides descriptive information about an available TTS voice.
+
+    Attributes:
+        voice_id (str): The unique identifier for the voice.
+        name (str): A human-readable name for the voice.
+        language (str): The language code of the voice.
+        gender (str): The perceived gender of the voice.
+        description (str): A brief description of the voice's characteristics.
+    """
 
     voice_id: str
     name: str
@@ -50,12 +86,10 @@ class VoiceInfo:
 
 class TTSActivities:
     """
-    Text-to-Speech activities for voice processing workflows.
+    A collection of Temporal Workflow Activities for Text-to-Speech (TTS) operations.
 
-    Activities:
-    - synthesize_speech: Convert text to audio
-    - list_voices: Get available voices
-    - validate_text: Validate text for synthesis
+    These activities are designed to be executed within a Temporal workflow,
+    providing robust and fault-tolerant audio generation capabilities.
     """
 
     @activity.defn(name="tts_synthesize_speech")
@@ -64,71 +98,73 @@ class TTSActivities:
         request: SynthesisRequest,
     ) -> SynthesisResult:
         """
-        Synthesize speech from text using Kokoro TTS.
+        Synthesizes speech from text using the Kokoro TTS engine.
+
+        This activity converts input text into audio bytes, handling the
+        interaction with the Kokoro engine and necessary audio processing
+        (e.g., combining segments, converting to WAV format).
 
         Args:
-            request: SynthesisRequest with text and voice config
+            request: A `SynthesisRequest` object containing text and synthesis parameters.
 
         Returns:
-            SynthesisResult with audio data and metadata
+            A `SynthesisResult` object with the synthesized audio data and metadata.
 
         Raises:
-            Exception: If synthesis fails
+            Exception: If the speech synthesis process fails.
         """
+        import io
+        import numpy as np  # Used for efficient audio array manipulation.
         import time
+        import wave  # Python's built-in WAV file writer.
 
-        start_time = time.time()
+        start_time = time.time()  # Record start time for latency calculation.
 
         try:
-            # Import Kokoro TTS
+            # Local import of Kokoro TTS to avoid module-level dependency.
             from kokoro import KPipeline
 
-            # Initialize pipeline for the language
-            lang_code = request.language.split("-")[0]  # e.g., "en" from "en-us"
+            # Initialize Kokoro pipeline for the specified language.
+            lang_code = request.language.split("-")[
+                0
+            ]  # Extract base language from locale (e.g., "en" from "en-us").
             pipeline = KPipeline(lang_code=lang_code)
 
-            # Generate audio
             audio_segments = []
-            total_duration = 0.0
-
-            for _, _, audio in pipeline(
+            # Iterate through generated audio segments from Kokoro.
+            for _, _, audio_np_array in pipeline(
                 request.text,
                 voice=request.voice_id,
                 speed=request.speed,
             ):
-                audio_segments.append(audio)
+                audio_segments.append(audio_np_array)
 
-            # Combine audio segments
-            import numpy as np
-
+            # Combine all audio segments into a single NumPy array.
             if audio_segments:
-                combined_audio = np.concatenate(audio_segments)
+                combined_audio_float = np.concatenate(audio_segments)
             else:
-                combined_audio = np.array([], dtype=np.float32)
+                combined_audio_float = np.array([], dtype=np.float32)
 
-            # Convert to WAV bytes
-            import io
-            import wave
+            # Convert the float audio data to 16-bit WAV bytes.
+            sample_rate = 24000  # Kokoro's default sample rate.
+            audio_bytes_buffer = io.BytesIO()
 
-            sample_rate = 24000  # Kokoro default
-            audio_bytes = io.BytesIO()
+            with wave.open(audio_bytes_buffer, "wb") as wav_file:
+                wav_file.setnchannels(1)  # Mono audio.
+                wav_file.setsampwidth(2)  # 16-bit audio.
+                wav_file.setframerate(sample_rate)
 
-            with wave.open(audio_bytes, "wb") as wav:
-                wav.setnchannels(1)
-                wav.setsampwidth(2)  # 16-bit
-                wav.setframerate(sample_rate)
+                # Scale float32 audio to int16 range (-32768 to 32767).
+                audio_int16 = (combined_audio_float * 32767).astype(np.int16)
+                wav_file.writeframes(audio_int16.tobytes())
 
-                # Convert float32 to int16
-                audio_int16 = (combined_audio * 32767).astype(np.int16)
-                wav.writeframes(audio_int16.tobytes())
-
-            audio_data = audio_bytes.getvalue()
-            duration = len(combined_audio) / sample_rate
-            processing_time = (time.time() - start_time) * 1000
+            audio_data = audio_bytes_buffer.getvalue()
+            duration = len(combined_audio_float) / sample_rate
+            processing_time = (time.time() - start_time) * 1000  # Convert to milliseconds.
 
             logger.info(
                 f"Synthesized speech for session {request.session_id}: "
-                f"{len(request.text)} chars, {duration:.2f}s audio"
+                f"{len(request.text)} chars, {duration:.2f}s audio, {processing_time:.0f}ms"
             )
 
             return SynthesisResult(
@@ -141,8 +177,10 @@ class TTSActivities:
             )
 
         except ImportError:
-            # Fallback if Kokoro not available - return empty audio
-            logger.warning("Kokoro TTS not available, returning empty audio")
+            logger.warning(
+                "Kokoro TTS library not available, returning empty audio for session %s.",
+                request.session_id,
+            )
             return SynthesisResult(
                 audio_data=b"",
                 audio_format=request.output_format,
@@ -153,26 +191,28 @@ class TTSActivities:
             )
 
         except Exception as e:
-            logger.error(
-                f"TTS synthesis failed for session {request.session_id}: {e}"
-            )
+            logger.error(f"TTS synthesis failed for session {request.session_id}: {e}")
             raise
 
     @activity.defn(name="tts_list_voices")
     async def list_voices(
         self,
         language: Optional[str] = None,
-    ) -> List[VoiceInfo]:
+    ) -> list[VoiceInfo]:
         """
-        List available TTS voices.
+        Retrieves a list of available TTS voices.
+
+        Currently, this activity provides a hardcoded list of sample voices
+        from the Kokoro TTS engine. It supports optional filtering by language.
 
         Args:
-            language: Optional language filter
+            language: (Optional) A language code (e.g., 'en-us') to filter available voices.
 
         Returns:
-            List of available VoiceInfo
+            A list of `VoiceInfo` objects, describing each available voice.
         """
-        # Kokoro available voices
+        # Hardcoded list of sample Kokoro voices. In a production system, this
+        # would typically be fetched dynamically from the TTS provider's API.
         voices = [
             VoiceInfo(
                 voice_id="af_heart",
@@ -233,8 +273,9 @@ class TTSActivities:
         ]
 
         if language:
-            lang_prefix = language.lower().replace("-", "")[:2]
-            voices = [v for v in voices if v.language.startswith(lang_prefix)]
+            # Filter by the base language code (e.g., 'en' from 'en-us').
+            lang_prefix = language.lower().split("-")[0]
+            voices = [v for v in voices if v.language.lower().startswith(lang_prefix)]
 
         return voices
 
@@ -243,43 +284,48 @@ class TTSActivities:
         self,
         text: str,
         max_length: int = 5000,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
-        Validate text for TTS synthesis.
+        Validates input text for suitability for TTS synthesis.
+
+        Checks for empty text, excessive length, and presence of unsupported
+        control characters. Provides an estimated duration for the synthesized speech.
 
         Args:
-            text: Text to validate
-            max_length: Maximum allowed text length
+            text: The text string to validate.
+            max_length: The maximum allowed character length for the text.
 
         Returns:
-            Dict with validation result
+            A dictionary indicating `valid` status, any `error` message,
+            and estimated metrics (`character_count`, `word_count`, `estimated_duration_seconds`).
         """
         if not text or not text.strip():
             return {
                 "valid": False,
-                "error": "Text is empty",
+                "error": "Text is empty or contains only whitespace.",
             }
 
         if len(text) > max_length:
             return {
                 "valid": False,
-                "error": f"Text too long: {len(text)} chars (max {max_length})",
+                "error": f"Text too long: {len(text)} chars (max {max_length}).",
             }
 
-        # Check for unsupported characters
-        # Most TTS systems handle Unicode well, but check for control chars
-        import unicodedata
+        # Check for unsupported control characters that might interfere with TTS engines.
+        import unicodedata  # Local import.
 
         control_chars = [c for c in text if unicodedata.category(c) == "Cc" and c not in "\n\r\t"]
         if control_chars:
             return {
                 "valid": False,
-                "error": f"Text contains {len(control_chars)} control characters",
+                "error": f"Text contains {len(control_chars)} unsupported control characters.",
             }
 
+        # Provide a very rough estimate for speech duration.
+        # This is a heuristic; actual duration depends on voice, speed, and content.
         return {
             "valid": True,
             "character_count": len(text),
             "word_count": len(text.split()),
-            "estimated_duration_seconds": len(text) / 15,  # ~15 chars/second
+            "estimated_duration_seconds": len(text) / 15,  # Heuristic: approx. 15 chars per second.
         }

@@ -88,7 +88,7 @@ If you have dedicated OVOS devices, the [HiveMind HomeAssistant](https://github.
 
 ### **Setting up HiveMind Integration:**
 
-To integrate your OVOS devices via HiveMind, you'll typically add the HiveMind integration in Home Assistant. This involves providing connection details such as a `name` for the integration, an `access_key`, `password`, `site_id`, `host` (IP address or hostname of your HiveMind server), and the `port` (defaulting to 5678). You may also have options to `allow_self_signed` certificates or enable `legacy_audio` depending on your setup.
+To integrate your OVOS devices via HiveMind, you'll typically add the HiveMind integration in Home Assistant. This involves providing connection details such as a `name` for the integration, an `access_key`, `password`, `site_id`, `host` (IP address or hostname of your HiveMind server), and the `port` (defaulting to 5678). You may also have options to `allow_self_signed` certificates depending on your setup.
 
 ![HiveMind setup in Home Assistant](/assets/blog/OpenVoiceOS-and-Home-Assistant-a-voice-automation-dream-team/hivemind_setup.png)
 

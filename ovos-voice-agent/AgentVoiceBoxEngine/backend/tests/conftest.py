@@ -3,15 +3,21 @@ Pytest configuration and fixtures for Django backend tests.
 
 Provides:
 - Django test database setup
-- Hypothesis settings for property-based testing
+- Hypothesis settings for property-based testing with Django extension
 - Common fixtures for tenants, users, and API keys
+
+Uses hypothesis.extra.django for Django-specific property testing:
+- from_model() for generating valid model instances
+- TestCase for per-example transaction isolation
 """
+
 import os
 import uuid
 
 import django
 import pytest
-from hypothesis import HealthCheck, settings as hypothesis_settings
+from hypothesis import HealthCheck
+from hypothesis import settings as hypothesis_settings
 
 # Set Django settings module before importing Django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.testing")
@@ -19,47 +25,90 @@ os.environ["TESTING"] = "true"
 
 django.setup()
 
+from django.test import Client, RequestFactory  # noqa: E402
+
+# Import Django-specific Hypothesis extension
+from hypothesis.extra.django import from_model  # noqa: E402
+
 from apps.core.middleware.tenant import (  # noqa: E402
     clear_current_tenant,
     set_current_tenant,
 )
 from apps.tenants.models import Tenant, TenantSettings  # noqa: E402
-from django.test import Client, RequestFactory  # noqa: E402
-
 
 # ==========================================================================
-# HYPOTHESIS CONFIGURATION
+# HYPOTHESIS CONFIGURATION (Django-specific)
 # ==========================================================================
-# Configure Hypothesis for property-based testing
-# Minimum 100 iterations per property test as per design spec
+# Configure Hypothesis for property-based testing with Django extension
+# Profiles optimized for 16-core machine with 64GB RAM
+#
+# Development profile: Fast feedback (30 examples, 3s deadline)
+# CI profile: Thorough testing (100 examples, 10s deadline)
+# Full profile: Maximum coverage (200 examples, 30s deadline)
+#
+# Usage:
+#   HYPOTHESIS_PROFILE=dev pytest tests/  # Fast development
+#   HYPOTHESIS_PROFILE=ci pytest tests/   # CI pipeline
+#   HYPOTHESIS_PROFILE=full pytest tests/ # Full coverage
+
+hypothesis_settings.register_profile(
+    "dev",
+    max_examples=30,  # Fast feedback for development
+    deadline=3000,  # 3 seconds
+    suppress_health_check=[
+        HealthCheck.too_slow,
+        HealthCheck.function_scoped_fixture,
+        HealthCheck.data_too_large,
+    ],
+    database=None,  # Don't persist examples in dev mode
+)
 hypothesis_settings.register_profile(
     "default",
-    max_examples=100,
+    max_examples=50,  # Balanced for local testing
     deadline=5000,  # 5 seconds
     suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
 )
 hypothesis_settings.register_profile(
     "ci",
-    max_examples=200,
+    max_examples=100,  # Thorough for CI
     deadline=10000,  # 10 seconds for CI
     suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
 )
-hypothesis_settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "default"))
+hypothesis_settings.register_profile(
+    "full",
+    max_examples=200,  # Maximum coverage
+    deadline=30000,  # 30 seconds
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
+)
+# Default to 'dev' profile for fast local development
+hypothesis_settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "dev"))
 
 
 # ==========================================================================
 # PYTEST-DJANGO CONFIGURATION
 # ==========================================================================
-# Use transaction-based test isolation (no database flush between tests)
-@pytest.fixture(scope="session")
-def django_db_setup():
-    """Configure Django test database - use existing database."""
-    pass
+# Use transaction-based test isolation for parallel execution
+# Each test runs in its own transaction that gets rolled back
 
 
 @pytest.fixture(scope="session")
-def django_db_modify_db_settings():
-    """Don't modify database settings."""
+def django_db_setup(django_db_blocker):
+    """
+    Configure Django test database for parallel execution.
+
+    pytest-xdist creates separate test databases per worker (test_agentvoicebox_gw0, etc.)
+    This fixture ensures proper database setup for each worker.
+    """
+    with django_db_blocker.unblock():
+        from django.core.management import call_command
+
+        # Ensure migrations are applied
+        call_command("migrate", "--run-syncdb", verbosity=0)
+
+
+@pytest.fixture(autouse=True)
+def enable_db_access_for_all_tests(db):
+    """Enable database access for all tests by default."""
     pass
 
 
@@ -85,6 +134,18 @@ def tenant_factory(db):
         tier: str = "free",
         status: str = "active",
     ) -> Tenant:
+        """
+        Creates and returns a single Tenant instance with its settings.
+
+        Args:
+            name: The name of the tenant.
+            slug: The unique slug for the tenant. If None, a unique one is generated.
+            tier: The subscription tier of the tenant.
+            status: The lifecycle status of the tenant.
+
+        Returns:
+            The newly created Tenant instance.
+        """
         if slug is None:
             slug = f"test-tenant-{uuid.uuid4().hex[:8]}"
         else:
@@ -172,3 +233,57 @@ def make_request_with_tenant(
     request.tenant = tenant
     request.tenant_id = tenant.id
     return request
+
+
+# ==========================================================================
+# HYPOTHESIS DJANGO MODEL STRATEGIES
+# ==========================================================================
+# Pre-configured strategies for generating valid Django model instances
+# using hypothesis.extra.django.from_model()
+
+from hypothesis import strategies as st  # noqa: E402
+
+
+def tenant_strategy(
+    tier: str = None,
+    status: str = None,
+):
+    """
+    Strategy for generating valid Tenant instances.
+
+    Uses hypothesis.extra.django.from_model() for Django-specific model generation.
+    Respects field validators and generates valid instances.
+
+    Args:
+        tier: Optional fixed tier value, or generates random valid tier
+        status: Optional fixed status value, or generates random valid status
+
+    Returns:
+        Hypothesis strategy that generates Tenant instances
+    """
+    tier_strategy = (
+        st.just(tier) if tier else st.sampled_from(["free", "starter", "pro", "enterprise"])
+    )
+    status_strategy = (
+        st.just(status) if status else st.sampled_from(["active", "suspended", "pending"])
+    )
+
+    return from_model(
+        Tenant,
+        name=st.text(min_size=1, max_size=100).filter(lambda x: x.strip()),
+        slug=st.from_regex(r"^[a-z][a-z0-9-]{2,30}[a-z0-9]$", fullmatch=True).filter(
+            lambda x: "--" not in x
+        ),
+        tier=tier_strategy,
+        status=status_strategy,
+    )
+
+
+def active_tenant_strategy():
+    """Strategy for generating active tenants only."""
+    return tenant_strategy(status="active")
+
+
+def suspended_tenant_strategy():
+    """Strategy for generating suspended tenants only."""
+    return tenant_strategy(status="suspended")

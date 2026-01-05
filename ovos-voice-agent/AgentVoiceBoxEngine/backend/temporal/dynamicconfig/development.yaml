@@ -1,89 +1,10 @@
-# ==========================================================================
 # Temporal Dynamic Configuration
-# ==========================================================================
-# Configuration for Temporal server behavior
-# ==========================================================================
-
-# Frontend settings
 frontend.enableClientVersionCheck:
   - value: true
     constraints: {}
-
-# History settings
-history.defaultActivityRetryPolicy:
-  - value:
-      InitialIntervalInSeconds: 1
-      MaximumIntervalCoefficient: 100.0
-      BackoffCoefficient: 2.0
-      MaximumAttempts: 3
+history.persistenceMaxQPS:
+  - value: 3000
     constraints: {}
-
-# Matching settings
-matching.numTaskqueueReadPartitions:
-  - value: 5
-    constraints: {}
-
-matching.numTaskqueueWritePartitions:
-  - value: 5
-    constraints: {}
-
-# Worker settings
-worker.enableScheduler:
-  - value: true
-    constraints: {}
-
-# System settings
-system.enableActivityEagerExecution:
-  - value: true
-    constraints: {}
-
-system.enableEagerWorkflowStart:
-  - value: true
-    constraints: {}
-
-# Visibility settings
-system.forceSearchAttributesCacheRefreshOnRead:
-  - value: false
-    constraints: {}
-
-# Archival settings (disabled for development)
-archival.history.state:
-  - value: "disabled"
-    constraints: {}
-
-archival.visibility.state:
-  - value: "disabled"
-    constraints: {}
-
-# Namespace defaults
-limit.maxIDLength:
-  - value: 1000
-    constraints: {}
-
-# Rate limiting
-frontend.rps:
-  - value: 2400
-    constraints: {}
-
-frontend.namespaceRPS:
-  - value: 2400
-    constraints: {}
-
-# Workflow execution limits
-limit.historyCount:
-  - value: 50000
-    constraints: {}
-
-limit.historySize:
-  - value: 52428800  # 50MB
-    constraints: {}
-
-# Task queue settings
-matching.longPollExpirationInterval:
-  - value: "60s"
-    constraints: {}
-
-# Retention
-retention.minRetentionDays:
-  - value: 1
+frontend.persistenceMaxQPS:
+  - value: 3000
     constraints: {}

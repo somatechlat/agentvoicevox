@@ -1,0 +1,113 @@
+[project]
+name = "agentvoicebox-backend"
+version = "1.0.0"
+description = "AgentVoiceBox Django Backend - Enterprise Voice Agent Platform"
+requires-python = ">=3.11"
+
+[tool.black]
+line-length = 100
+target-version = ['py311', 'py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | migrations
+    | __pycache__
+    | \.pytest_cache
+    | \.hypothesis
+)/
+'''
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "migrations",
+    ".pytest_cache",
+    ".hypothesis",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "E402",  # module level import not at top of file
+]
+
+[tool.mypy]
+python_version = "3.12"
+# plugins = ["mypy_django_plugin.main"]  # Enable when running in Docker with all deps
+strict = false
+warn_return_any = false
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = [
+    "migrations/",
+    "__pycache__/",
+    ".pytest_cache/",
+    ".hypothesis/",
+]
+
+# Note: Django ORM type checking requires django-stubs plugin with full Django environment
+# Run mypy in Docker container with all dependencies for full type checking
+# [tool.django-stubs]
+# django_settings_module = "config.settings.base"
+
+[tool.pyright]
+pythonVersion = "3.12"
+pythonPlatform = "Darwin"
+typeCheckingMode = "off"  # Relaxed - Django ORM not fully supported
+include = ["apps", "config", "integrations", "realtime", "tests"]
+exclude = [
+    "**/migrations/**",
+    "**/__pycache__/**",
+    ".pytest_cache",
+    ".hypothesis"
+]
+# All warnings disabled for Django compatibility
+reportGeneralTypeIssues = false
+reportAttributeAccessIssue = false
+reportOperatorIssue = false
+reportIndexIssue = false
+reportMissingImports = false
+reportMissingTypeStubs = false
+reportUnusedImport = false
+reportUnusedVariable = false
+reportPrivateUsage = false
+reportOptionalMemberAccess = false
+reportOptionalSubscript = false
+reportOptionalCall = false
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.testing"
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+markers = [
+    "property: Property-based tests using Hypothesis",
+    "slow: Tests that take a long time to run",
+    "integration: Integration tests requiring external services",
+]

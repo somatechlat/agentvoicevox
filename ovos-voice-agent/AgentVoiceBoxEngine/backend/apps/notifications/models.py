@@ -3,6 +3,7 @@ Notification models.
 
 Stores notifications for users and tenants.
 """
+
 import uuid
 
 from django.db import models
@@ -121,6 +122,8 @@ class Notification(TenantScopedModel):
     all_objects = models.Manager()
 
     class Meta:
+        """Model metadata options."""
+
         db_table = "notifications"
         ordering = ["-created_at"]
         indexes = [
@@ -130,6 +133,7 @@ class Notification(TenantScopedModel):
         ]
 
     def __str__(self) -> str:
+        """Returns a string representation of the notification."""
         return f"{self.type}: {self.title}"
 
     def mark_read(self) -> None:
@@ -231,9 +235,12 @@ class NotificationPreference(TenantScopedModel):
     all_objects = models.Manager()
 
     class Meta:
+        """Model metadata options."""
+
         db_table = "notification_preferences"
 
     def __str__(self) -> str:
+        """Returns a string representation of the notification preferences."""
         return f"Preferences for {self.user.email}"
 
     def should_notify(self, notification_type: str, channel: str) -> bool:

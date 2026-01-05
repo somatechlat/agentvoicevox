@@ -325,17 +325,20 @@ class TestAuditLogQueries:
         )
 
         # Create log for different resource
+        other_resource_id = uuid.uuid4()
         AuditLog.log(
             action="create",
             resource_type=resource_type,
-            resource_id=str(uuid.uuid4()),
+            resource_id=str(other_resource_id),
             actor_id=str(uuid.uuid4()),
             actor_type="user",
             tenant=tenant,
         )
 
-        # Query for specific resource
-        resource_logs = AuditLog.objects.for_resource(resource_type, str(resource_id))
+        # Query for specific resource within this tenant
+        resource_logs = AuditLog.objects.for_tenant(tenant).for_resource(
+            resource_type, str(resource_id)
+        )
         assert resource_logs.count() == 1
         assert resource_logs.first().resource_id == str(resource_id)
 

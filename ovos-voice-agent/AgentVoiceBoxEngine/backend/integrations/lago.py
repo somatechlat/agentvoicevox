@@ -2,16 +2,15 @@
 Lago billing integration client.
 
 Provides usage-based billing via Lago.
-Ported from existing Flask LagoService.
 """
+
 import asyncio
 import logging
-import time
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import httpx
 from django.conf import settings
@@ -68,12 +67,12 @@ class LagoCustomer:
     email: str
     currency: str = "USD"
     timezone: str = "UTC"
-    billing_configuration: Dict[str, Any] = field(default_factory=dict)
-    metadata: List[Dict[str, str]] = field(default_factory=list)
+    billing_configuration: dict[str, Any] = field(default_factory=dict)
+    metadata: list[dict[str, str]] = field(default_factory=list)
     created_at: Optional[datetime] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "LagoCustomer":
+    def from_dict(cls, data: dict[str, Any]) -> "LagoCustomer":
         """Create customer from Lago API response."""
         customer = data.get("customer", data)
         created_at = None
@@ -109,11 +108,20 @@ class LagoSubscription:
     created_at: Optional[datetime] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "LagoSubscription":
+    def from_dict(cls, data: dict[str, Any]) -> "LagoSubscription":
         """Create subscription from Lago API response."""
         sub = data.get("subscription", data)
 
         def parse_dt(val: Optional[str]) -> Optional[datetime]:
+            """
+            Parses an ISO 8601 string from Lago API into a timezone-aware datetime object.
+
+            Args:
+                val: The ISO 8601 string (e.g., "2023-01-01T12:00:00Z").
+
+            Returns:
+                A timezone-aware datetime object, or None if the input is None.
+            """
             if not val:
                 return None
             return datetime.fromisoformat(val.replace("Z", "+00:00"))
@@ -151,11 +159,20 @@ class LagoInvoice:
     file_url: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "LagoInvoice":
+    def from_dict(cls, data: dict[str, Any]) -> "LagoInvoice":
         """Create invoice from Lago API response."""
         inv = data.get("invoice", data)
 
         def parse_dt(val: Optional[str]) -> Optional[datetime]:
+            """
+            Parses an ISO 8601 string from Lago API into a timezone-aware datetime object.
+
+            Args:
+                val: The ISO 8601 string (e.g., "2023-01-01T12:00:00Z").
+
+            Returns:
+                A timezone-aware datetime object, or None if the input is None.
+            """
             if not val:
                 return None
             return datetime.fromisoformat(val.replace("Z", "+00:00"))
@@ -186,10 +203,10 @@ class UsageEvent:
     external_customer_id: str
     code: str
     timestamp: datetime
-    properties: Dict[str, Any] = field(default_factory=dict)
+    properties: dict[str, Any] = field(default_factory=dict)
     external_subscription_id: Optional[str] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to Lago API format."""
         data = {
             "transaction_id": self.transaction_id,
@@ -237,7 +254,7 @@ class LagoClient:
             )
         return self._client
 
-    def _headers(self) -> Dict[str, str]:
+    def _headers(self) -> dict[str, str]:
         """Get API request headers."""
         return {
             "Authorization": f"Bearer {self.api_key}",
@@ -279,7 +296,7 @@ class LagoClient:
         email: str,
         currency: str = "USD",
         timezone: str = "UTC",
-        metadata: Optional[List[Dict[str, str]]] = None,
+        metadata: Optional[list[dict[str, str]]] = None,
     ) -> LagoCustomer:
         """Create a new customer in Lago."""
         customer_data = {
@@ -315,10 +332,10 @@ class LagoClient:
         external_id: str,
         name: Optional[str] = None,
         email: Optional[str] = None,
-        metadata: Optional[List[Dict[str, str]]] = None,
+        metadata: Optional[list[dict[str, str]]] = None,
     ) -> LagoCustomer:
         """Update customer attributes."""
-        update_data: Dict[str, Any] = {"customer": {"external_id": external_id}}
+        update_data: dict[str, Any] = {"customer": {"external_id": external_id}}
 
         if name is not None:
             update_data["customer"]["name"] = name
@@ -388,7 +405,7 @@ class LagoClient:
         plan_code: Optional[Union[str, PlanCode]] = None,
     ) -> LagoSubscription:
         """Update subscription (upgrade/downgrade plan)."""
-        update_data: Dict[str, Any] = {"subscription": {}}
+        update_data: dict[str, Any] = {"subscription": {}}
 
         if plan_code is not None:
             if isinstance(plan_code, PlanCode):
@@ -419,9 +436,9 @@ class LagoClient:
         status: Optional[InvoiceStatus] = None,
         page: int = 1,
         per_page: int = 20,
-    ) -> List[LagoInvoice]:
+    ) -> list[LagoInvoice]:
         """List invoices with optional filtering."""
-        params: Dict[str, Any] = {"page": page, "per_page": per_page}
+        params: dict[str, Any] = {"page": page, "per_page": per_page}
 
         if external_customer_id:
             params["external_customer_id"] = external_customer_id
@@ -453,7 +470,7 @@ class LagoClient:
         self,
         external_customer_id: str,
         code: Union[str, MetricCode],
-        properties: Optional[Dict[str, Any]] = None,
+        properties: Optional[dict[str, Any]] = None,
         transaction_id: Optional[str] = None,
         timestamp: Optional[datetime] = None,
     ) -> bool:
@@ -465,7 +482,7 @@ class LagoClient:
             transaction_id = f"evt_{uuid.uuid4().hex}"
 
         if timestamp is None:
-            timestamp = datetime.now(timezone.utc)
+            timestamp = datetime.now(UTC)
 
         event = UsageEvent(
             transaction_id=transaction_id,
@@ -486,7 +503,7 @@ class LagoClient:
         self,
         external_customer_id: str,
         code: Union[str, MetricCode],
-        properties: Optional[Dict[str, Any]] = None,
+        properties: Optional[dict[str, Any]] = None,
         transaction_id: Optional[str] = None,
         timestamp: Optional[datetime] = None,
     ) -> bool:
@@ -498,7 +515,7 @@ class LagoClient:
             transaction_id = f"evt_{uuid.uuid4().hex}"
 
         if timestamp is None:
-            timestamp = datetime.now(timezone.utc)
+            timestamp = datetime.now(UTC)
 
         event_data = {
             "event": {
@@ -544,9 +561,7 @@ class LagoClient:
             properties={"duration_minutes": duration_minutes},
         )
 
-    def track_llm_tokens(
-        self, tenant_id: str, input_tokens: int, output_tokens: int
-    ) -> bool:
+    def track_llm_tokens(self, tenant_id: str, input_tokens: int, output_tokens: int) -> bool:
         """Track LLM token usage for billing."""
         success = self.queue_usage_event(
             external_customer_id=tenant_id,

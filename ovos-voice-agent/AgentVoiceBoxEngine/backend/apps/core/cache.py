@@ -7,7 +7,8 @@ Provides tenant-prefixed cache operations for complete data isolation.
 """
 
 import functools
-from typing import Any, Callable, Optional, TypeVar, Union
+from collections.abc import Callable
+from typing import Any, Optional, TypeVar, Union
 
 from django.core.cache import cache
 
@@ -214,8 +215,11 @@ def cached(
     """
 
     def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        """The decorator that wraps the function."""
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> T:
+            """The wrapper that implements the caching logic."""
             # Build cache key from template
             cache_key = key.format(**kwargs)
 

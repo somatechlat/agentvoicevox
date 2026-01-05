@@ -1,19 +1,22 @@
 """
-User service layer.
+User Service Layer
+==================
 
-Contains all business logic for user operations.
+This module contains all the business logic for user-related operations. It
+provides a clear separation between the API endpoints and the data models,
+handling user creation, updates, role changes, and synchronization with the
+external identity provider (Keycloak).
 """
-from typing import Any, Dict, List, Optional, Tuple
+
+from typing import Any, Optional
 from uuid import UUID
 
 from django.db import transaction
 from django.db.models import Q, QuerySet
-from django.utils import timezone
 
 from apps.core.exceptions import (
     ConflictError,
     NotFoundError,
-    TenantLimitExceededError,
     ValidationError,
 )
 from apps.tenants.models import Tenant
@@ -23,15 +26,21 @@ from .models import User
 
 
 class UserService:
-    """Service class for user operations."""
+    """A service class encapsulating all business logic for User operations."""
 
     @staticmethod
     def get_by_id(user_id: UUID) -> User:
         """
-        Get user by ID.
+        Retrieves a single user by their primary key (ID).
+
+        Args:
+            user_id: The UUID of the user to retrieve.
+
+        Returns:
+            The User instance.
 
         Raises:
-            NotFoundError: If user not found
+            NotFoundError: If a user with the specified ID does not exist.
         """
         try:
             return User.objects.select_related("tenant").get(id=user_id)
@@ -41,20 +50,27 @@ class UserService:
     @staticmethod
     def get_by_keycloak_id(keycloak_id: str) -> Optional[User]:
         """
-        Get user by Keycloak ID.
+        Retrieves a user by their unique Keycloak ID.
+
+        Args:
+            keycloak_id: The Keycloak 'sub' claim for the user.
 
         Returns:
-            User or None if not found
+            The User instance if found, otherwise None.
         """
         return User.objects.get_by_keycloak_id(keycloak_id)
 
     @staticmethod
     def get_by_email_and_tenant(email: str, tenant: Tenant) -> Optional[User]:
         """
-        Get user by email within a tenant.
+        Retrieves a user by their email address within a specific tenant.
+
+        Args:
+            email: The user's email address.
+            tenant: The tenant to scope the search to.
 
         Returns:
-            User or None if not found
+            The User instance if found, otherwise None.
         """
         return User.objects.get_by_email_and_tenant(email, tenant)
 
@@ -66,16 +82,25 @@ class UserService:
         search: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[QuerySet, int]:
+    ) -> tuple[QuerySet, int]:
         """
-        List users for a tenant with filtering and pagination.
+        Provides a paginated and filterable list of users for a specific tenant.
+
+        Args:
+            tenant: The tenant whose users are to be listed.
+            role: (Optional) Filter users by their role.
+            is_active: (Optional) Filter users by their active status.
+            search: (Optional) A search term to filter users by email, first name, or last name.
+            page: The page number for pagination.
+            page_size: The number of items per page.
 
         Returns:
-            Tuple of (queryset, total_count)
+            A tuple containing:
+            - A queryset of User instances for the requested page.
+            - An integer representing the total count of users matching the filters.
         """
         qs = User.objects.filter(tenant=tenant).select_related("tenant")
 
-        # Apply filters
         if role:
             qs = qs.filter(role=role)
         if is_active is not None:
@@ -87,14 +112,11 @@ class UserService:
                 | Q(last_name__icontains=search)
             )
 
-        # Get total count before pagination
         total = qs.count()
-
-        # Apply pagination
         offset = (page - 1) * page_size
-        qs = qs[offset : offset + page_size]
+        paginated_qs = qs[offset : offset + page_size]
 
-        return qs, total
+        return paginated_qs, total
 
     @staticmethod
     @transaction.atomic
@@ -107,26 +129,36 @@ class UserService:
         keycloak_id: Optional[str] = None,
     ) -> User:
         """
-        Create a new user within a tenant.
+        Creates a new user within a tenant, enforcing tenant-level limits.
+
+        This method is transactional and ensures that a user is not created if
+        it would exceed the tenant's user limit.
+
+        Args:
+            tenant: The tenant the user will belong to.
+            email: The new user's email address.
+            role: The user's role within the tenant (e.g., 'admin', 'viewer').
+            first_name: (Optional) The user's first name.
+            last_name: (Optional) The user's last name.
+            keycloak_id: (Optional) The user's Keycloak ID.
+
+        Returns:
+            The newly created User instance.
 
         Raises:
-            ConflictError: If email already exists in tenant
-            TenantLimitExceededError: If tenant user limit reached
-            ValidationError: If role is invalid
+            ConflictError: If a user with the same email already exists in the tenant.
+            TenantLimitExceededError: If adding this user would exceed the tenant's user limit.
+            ValidationError: If the provided role is invalid.
         """
-        # Validate role
         if role not in User.Role.values:
             raise ValidationError(f"Invalid role: {role}")
 
-        # Check tenant user limit
-        current_count = User.objects.filter(tenant=tenant, is_active=True).count()
-        TenantService.enforce_limit(tenant, "users", current_count)
+        # Enforce tenant user limit before creating the new user.
+        TenantService.enforce_limit(tenant, "users")
 
-        # Check for duplicate email in tenant
         if User.objects.filter(email=email, tenant=tenant).exists():
             raise ConflictError(f"User with email '{email}' already exists in this tenant")
 
-        # Create user
         user = User.objects.create_user(
             email=email,
             tenant=tenant,
@@ -135,7 +167,6 @@ class UserService:
             last_name=last_name,
             keycloak_id=keycloak_id,
         )
-
         return user
 
     @staticmethod
@@ -147,208 +178,138 @@ class UserService:
         first_name: str = "",
         last_name: str = "",
         role: Optional[str] = None,
-    ) -> Tuple[User, bool]:
+    ) -> tuple[User, bool]:
         """
-        Create or update user from Keycloak authentication.
+        Creates a new user or updates an existing one based on Keycloak data.
+
+        This implements a Just-In-Time (JIT) provisioning strategy. When a user
+        logs in via SSO, this service is called to ensure a corresponding local
+        user record exists and is up-to-date.
+
+        Args:
+            keycloak_id: The user's unique ID from Keycloak.
+            email: The user's email from Keycloak.
+            tenant: The tenant the user belongs to.
+            first_name: The user's first name from Keycloak.
+            last_name: The user's last name from Keycloak.
+            role: (Optional) The user's role, determined from JWT claims.
 
         Returns:
-            Tuple of (user, created)
+            A tuple containing:
+            - The User instance (either newly created or updated).
+            - A boolean indicating if the user was created (`True`) or updated (`False`).
         """
         user = User.objects.get_by_keycloak_id(keycloak_id)
+        created = False
 
         if user:
-            # Update existing user
+            # Update fields for the existing user if they have changed.
             user.email = email
             user.first_name = first_name or user.first_name
             user.last_name = last_name or user.last_name
             if role and role in User.Role.values:
                 user.role = role
             user.save()
-            return user, False
+        else:
+            # If the user does not exist, create them.
+            user = UserService.create_user(
+                tenant=tenant,
+                email=email,
+                role=role or "viewer",
+                first_name=first_name,
+                last_name=last_name,
+                keycloak_id=keycloak_id,
+            )
+            created = True
 
-        # Create new user
-        user = UserService.create_user(
-            tenant=tenant,
-            email=email,
-            role=role or "viewer",
-            first_name=first_name,
-            last_name=last_name,
-            keycloak_id=keycloak_id,
-        )
-        return user, True
+        return user, created
 
     @staticmethod
     @transaction.atomic
     def update_user(
-        user_id: UUID,
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
-        role: Optional[str] = None,
-        is_active: Optional[bool] = None,
-        preferences: Optional[Dict[str, Any]] = None,
+        user_id: UUID, **kwargs: Any
     ) -> User:
         """
-        Update user details.
+        Updates an existing user's details.
+
+        This method performs a partial update based on the provided keyword arguments.
+
+        Args:
+            user_id: The ID of the user to update.
+            **kwargs: Keyword arguments corresponding to User model fields
+                      (e.g., `first_name`, `last_name`, `role`, `is_active`).
+
+        Returns:
+            The updated User instance.
 
         Raises:
-            NotFoundError: If user not found
-            ValidationError: If role is invalid
+            NotFoundError: If the user is not found.
+            ValidationError: If an invalid role is provided.
         """
         user = UserService.get_by_id(user_id)
+        update_fields = ["updated_at"]
 
-        if first_name is not None:
-            user.first_name = first_name
-        if last_name is not None:
-            user.last_name = last_name
-        if role is not None:
-            if role not in User.Role.values:
-                raise ValidationError(f"Invalid role: {role}")
-            user.role = role
-        if is_active is not None:
-            user.is_active = is_active
-        if preferences is not None:
-            user.preferences.update(preferences)
+        for key, value in kwargs.items():
+            if value is not None:
+                # Special validation for the role field.
+                if key == "role" and value not in User.Role.values:
+                    raise ValidationError(f"Invalid role: {value}")
+                setattr(user, key, value)
+                update_fields.append(key)
 
-        user.save()
-        return user
-
-    @staticmethod
-    @transaction.atomic
-    def change_role(user_id: UUID, new_role: str) -> User:
-        """
-        Change user role.
-
-        Raises:
-            NotFoundError: If user not found
-            ValidationError: If role is invalid
-        """
-        if new_role not in User.Role.values:
-            raise ValidationError(f"Invalid role: {new_role}")
-
-        user = UserService.get_by_id(user_id)
-        user.change_role(new_role)
-        return user
-
-    @staticmethod
-    @transaction.atomic
-    def deactivate_user(user_id: UUID) -> User:
-        """
-        Deactivate a user.
-
-        Raises:
-            NotFoundError: If user not found
-        """
-        user = UserService.get_by_id(user_id)
-        user.deactivate()
-        return user
-
-    @staticmethod
-    @transaction.atomic
-    def activate_user(user_id: UUID) -> User:
-        """
-        Activate a user.
-
-        Raises:
-            NotFoundError: If user not found
-        """
-        user = UserService.get_by_id(user_id)
-        user.activate()
+        user.save(update_fields=update_fields)
         return user
 
     @staticmethod
     @transaction.atomic
     def delete_user(user_id: UUID) -> None:
         """
-        Delete a user permanently.
+        Permanently deletes a user from the database.
+
+        Args:
+            user_id: The ID of the user to delete.
 
         Raises:
-            NotFoundError: If user not found
+            NotFoundError: If the user is not found.
         """
         user = UserService.get_by_id(user_id)
+        # In a real-world scenario, this might also trigger a call to delete
+        # the user from the external identity provider (Keycloak).
         user.delete()
 
     @staticmethod
-    def update_last_login(user_id: UUID) -> User:
-        """
-        Update user's last login timestamp.
-
-        Raises:
-            NotFoundError: If user not found
-        """
-        user = UserService.get_by_id(user_id)
-        user.update_last_login()
-        return user
-
-    @staticmethod
-    def update_preferences(user_id: UUID, preferences: Dict[str, Any]) -> User:
-        """
-        Update user preferences.
-
-        Raises:
-            NotFoundError: If user not found
-        """
-        user = UserService.get_by_id(user_id)
-        user.update_preferences(preferences)
-        return user
-
-    @staticmethod
-    def get_users_by_role(tenant: Tenant, role: str) -> QuerySet:
-        """
-        Get all users with a specific role in a tenant.
-        """
-        return User.objects.filter(tenant=tenant, role=role, is_active=True)
-
-    @staticmethod
-    def get_admins(tenant: Tenant) -> QuerySet:
-        """
-        Get all admin users in a tenant.
-        """
-        return User.objects.filter(
-            tenant=tenant,
-            role__in=[User.Role.SYSADMIN, User.Role.ADMIN],
-            is_active=True,
-        )
-
-    @staticmethod
-    def count_active_users(tenant: Tenant) -> int:
-        """
-        Count active users in a tenant.
-        """
-        return User.objects.filter(tenant=tenant, is_active=True).count()
-
-    @staticmethod
     @transaction.atomic
-    def sync_from_jwt(jwt_data: Dict[str, Any]) -> Optional[User]:
+    def sync_from_jwt(jwt_data: dict[str, Any]) -> Optional[User]:
         """
-        Sync user from JWT claims.
+        Synchronizes a user's data from a Keycloak JWT upon login.
 
-        Creates or updates user based on Keycloak JWT data.
+        This is the primary entry point for JIT provisioning. It extracts user
+        and tenant information from the JWT, determines the user's role, and then
+        calls `create_or_update_from_keycloak` to sync the local database.
 
         Args:
-            jwt_data: Dictionary with user_id, tenant_id, email, first_name, last_name, roles
+            jwt_data: A dictionary of claims from the decoded JWT.
 
         Returns:
-            User instance or None if tenant not found
+            The synchronized User instance, or None if essential data is missing
+            from the JWT or the tenant does not exist.
         """
-        keycloak_id = jwt_data.get("user_id")
+        keycloak_id = jwt_data.get("sub")  # 'sub' is the standard claim for user ID
         tenant_id = jwt_data.get("tenant_id")
         email = jwt_data.get("email")
 
-        if not keycloak_id or not email:
+        if not keycloak_id or not email or not tenant_id:
             return None
 
-        # Get tenant
-        if tenant_id:
-            try:
-                tenant = Tenant.objects.get(id=tenant_id)
-            except Tenant.DoesNotExist:
-                return None
-        else:
+        try:
+            tenant = Tenant.objects.get(id=tenant_id)
+        except Tenant.DoesNotExist:
             return None
 
-        # Determine role from JWT roles
+        # Map roles from the JWT to the internal Role enumeration.
+        # This assumes the JWT contains a 'roles' claim, which is a list of strings.
         jwt_roles = jwt_data.get("roles", [])
-        role = "viewer"  # Default role
+        role = "viewer"  # Assign 'viewer' as the default, least-privileged role.
         if "sysadmin" in jwt_roles:
             role = "sysadmin"
         elif "admin" in jwt_roles:
@@ -364,13 +325,67 @@ class UserService:
             keycloak_id=keycloak_id,
             email=email,
             tenant=tenant,
-            first_name=jwt_data.get("first_name", ""),
-            last_name=jwt_data.get("last_name", ""),
+            first_name=jwt_data.get("given_name", ""),
+            last_name=jwt_data.get("family_name", ""),
             role=role,
         )
 
-        # Update last login
-        if not created:
-            user.update_last_login()
-
+        user.update_last_login()
         return user
+
+    # The following methods are thin wrappers around model methods or simple queries.
+    # They are included to provide a consistent service-layer interface.
+
+    @staticmethod
+    def change_role(user_id: UUID, new_role: str) -> User:
+        """Changes a user's role. Delegates to the model method."""
+        user = UserService.get_by_id(user_id)
+        user.change_role(new_role)
+        return user
+
+    @staticmethod
+    def deactivate_user(user_id: UUID) -> User:
+        """Deactivates a user. Delegates to the model method."""
+        user = UserService.get_by_id(user_id)
+        user.deactivate()
+        return user
+
+    @staticmethod
+    def activate_user(user_id: UUID) -> User:
+        """Activates a user. Delegates to the model method."""
+        user = UserService.get_by_id(user_id)
+        user.activate()
+        return user
+
+    @staticmethod
+    def update_last_login(user_id: UUID) -> User:
+        """Updates a user's last login time. Delegates to the model method."""
+        user = UserService.get_by_id(user_id)
+        user.update_last_login()
+        return user
+
+    @staticmethod
+    def update_preferences(user_id: UUID, preferences: dict[str, Any]) -> User:
+        """Updates a user's preferences. Delegates to the model method."""
+        user = UserService.get_by_id(user_id)
+        user.update_preferences(preferences)
+        return user
+
+    @staticmethod
+    def get_users_by_role(tenant: Tenant, role: str) -> QuerySet:
+        """Returns a queryset of all active users with a specific role in a tenant."""
+        return User.objects.filter(tenant=tenant, role=role, is_active=True)
+
+    @staticmethod
+    def get_admins(tenant: Tenant) -> QuerySet:
+        """Returns a queryset of all admin-level users in a tenant."""
+        return User.objects.filter(
+            tenant=tenant,
+            role__in=[User.Role.SYSADMIN, User.Role.ADMIN],
+            is_active=True,
+        )
+
+    @staticmethod
+    def count_active_users(tenant: Tenant) -> int:
+        """Counts the number of active users in a tenant."""
+        return User.objects.filter(tenant=tenant, is_active=True).count()

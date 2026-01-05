@@ -40,7 +40,10 @@
         "description": "System-wide administrator with cross-tenant access",
         "composite": true,
         "composites": {
-          "realm": ["tenant_admin", "billing_admin"]
+          "realm": [
+            "tenant_admin",
+            "billing_admin"
+          ]
         }
       },
       {
@@ -48,7 +51,13 @@
         "description": "Full tenant access, user management, settings",
         "composite": true,
         "composites": {
-          "realm": ["agent_admin", "supervisor", "operator", "agent_user", "viewer"]
+          "realm": [
+            "agent_admin",
+            "supervisor",
+            "operator",
+            "agent_user",
+            "viewer"
+          ]
         }
       },
       {
@@ -56,7 +65,12 @@
         "description": "Agent configuration and persona management",
         "composite": true,
         "composites": {
-          "realm": ["supervisor", "operator", "agent_user", "viewer"]
+          "realm": [
+            "supervisor",
+            "operator",
+            "agent_user",
+            "viewer"
+          ]
         }
       },
       {
@@ -64,7 +78,11 @@
         "description": "Monitor sessions, view analytics, manage operators",
         "composite": true,
         "composites": {
-          "realm": ["operator", "agent_user", "viewer"]
+          "realm": [
+            "operator",
+            "agent_user",
+            "viewer"
+          ]
         }
       },
       {
@@ -72,7 +90,10 @@
         "description": "Handle live sessions, view assigned conversations",
         "composite": true,
         "composites": {
-          "realm": ["agent_user", "viewer"]
+          "realm": [
+            "agent_user",
+            "viewer"
+          ]
         }
       },
       {
@@ -80,7 +101,9 @@
         "description": "Interact with agents, view own conversations",
         "composite": true,
         "composites": {
-          "realm": ["viewer"]
+          "realm": [
+            "viewer"
+          ]
         }
       },
       {
@@ -96,7 +119,9 @@
         "description": "Legacy role - mapped to agent_admin",
         "composite": true,
         "composites": {
-          "realm": ["agent_admin"]
+          "realm": [
+            "agent_admin"
+          ]
         }
       }
     ],
@@ -136,35 +161,51 @@
   "groups": [
     {
       "name": "SaaS Administrators",
-      "realmRoles": ["saas_admin"]
+      "realmRoles": [
+        "saas_admin"
+      ]
     },
     {
       "name": "Tenant Administrators",
-      "realmRoles": ["tenant_admin"]
+      "realmRoles": [
+        "tenant_admin"
+      ]
     },
     {
       "name": "Agent Administrators",
-      "realmRoles": ["agent_admin"]
+      "realmRoles": [
+        "agent_admin"
+      ]
     },
     {
       "name": "Supervisors",
-      "realmRoles": ["supervisor"]
+      "realmRoles": [
+        "supervisor"
+      ]
     },
     {
       "name": "Operators",
-      "realmRoles": ["operator"]
+      "realmRoles": [
+        "operator"
+      ]
     },
     {
       "name": "Agent Users",
-      "realmRoles": ["agent_user"]
+      "realmRoles": [
+        "agent_user"
+      ]
     },
     {
       "name": "Viewers",
-      "realmRoles": ["viewer"]
+      "realmRoles": [
+        "viewer"
+      ]
     },
     {
       "name": "Billing Administrators",
-      "realmRoles": ["billing_admin"]
+      "realmRoles": [
+        "billing_admin"
+      ]
     }
   ],
   "clients": [
@@ -174,7 +215,7 @@
       "description": "Backend API client for AgentVoiceBox services",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "${KEYCLOAK_API_CLIENT_SECRET:-change-me-in-production}",
+      "secret": "${KEYCLOAK_API_CLIENT_SECRET}",
       "publicClient": false,
       "bearerOnly": false,
       "standardFlowEnabled": true,
@@ -184,15 +225,15 @@
       "authorizationServicesEnabled": true,
       "protocol": "openid-connect",
       "redirectUris": [
-        "http://localhost:25000/*",
-        "http://localhost:25007/*",
-        "https://localhost:25080/*",
+        "http://localhost:65000/*",
+        "http://localhost:65013/*",
+        "https://localhost:65010/*",
         "https://*.agentvoicebox.com/*"
       ],
       "webOrigins": [
-        "http://localhost:25000",
-        "http://localhost:25007",
-        "https://localhost:25080",
+        "http://localhost:65000",
+        "http://localhost:65013",
+        "https://localhost:65010",
         "https://*.agentvoicebox.com"
       ],
       "defaultClientScopes": [
@@ -241,22 +282,26 @@
       ]
     },
     {
-      "clientId": "agentvoicebox-portal",
+      "clientId": "portal-frontend",
       "name": "AgentVoiceBox Customer Portal",
       "description": "Frontend SPA for customer self-service",
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "protocol": "openid-connect",
       "redirectUris": [
-        "http://localhost:25007/*",
+        "http://localhost:65027/*",
+        "http://localhost:65013/*",
+        "https://localhost:65010/*",
         "https://localhost:25080/*",
         "https://portal.agentvoicebox.com/*"
       ],
       "webOrigins": [
-        "http://localhost:25007",
+        "http://localhost:65027",
+        "http://localhost:65013",
+        "https://localhost:65010",
         "https://localhost:25080",
         "https://portal.agentvoicebox.com"
       ],
@@ -307,7 +352,168 @@
     "email",
     "roles"
   ],
+  "defaultOptionalClientScopes": [
+    "offline_access"
+  ],
   "clientScopes": [
+    {
+      "name": "openid",
+      "description": "OpenID Connect scope",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": []
+    },
+    {
+      "name": "profile",
+      "description": "OpenID Connect built-in scope: profile",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "${profileScopeConsentText}"
+      },
+      "protocolMappers": [
+        {
+          "name": "full name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-full-name-mapper",
+          "consentRequired": false,
+          "config": {
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "name",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "given name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "firstName",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "given_name",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "family name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "lastName",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "family_name",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "username",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "username",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "preferred_username",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "nickname",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "nickname",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "nickname",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "picture",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "picture",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "picture",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "updated at",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "updatedAt",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "updated_at",
+            "jsonType.label": "long"
+          }
+        }
+      ]
+    },
+    {
+      "name": "email",
+      "description": "OpenID Connect built-in scope: email",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "true",
+        "consent.screen.text": "${emailScopeConsentText}"
+      },
+      "protocolMappers": [
+        {
+          "name": "email",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "email",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "email",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "email verified",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "emailVerified",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "email_verified",
+            "jsonType.label": "boolean"
+          }
+        }
+      ]
+    },
     {
       "name": "roles",
       "description": "OpenID Connect scope for user roles",
@@ -346,6 +552,15 @@
           }
         }
       ]
+    },
+    {
+      "name": "offline_access",
+      "description": "OpenID Connect built-in scope: offline_access",
+      "protocol": "openid-connect",
+      "attributes": {
+        "consent.screen.text": "${offlineAccessScopeConsentText}",
+        "display.on.consent.screen": "true"
+      }
     }
   ],
   "users": [
@@ -359,13 +574,17 @@
       "credentials": [
         {
           "type": "password",
-          "value": "saasadmin123",
+          "value": "${KEYCLOAK_PASSWORD_SAAS_ADMIN}",
           "temporary": true
         }
       ],
-      "realmRoles": ["saas_admin"],
+      "realmRoles": [
+        "saas_admin"
+      ],
       "attributes": {
-        "tenant_id": ["00000000-0000-0000-0000-000000000000"]
+        "tenant_id": [
+          "00000000-0000-0000-0000-000000000000"
+        ]
       }
     },
     {
@@ -378,13 +597,17 @@
       "credentials": [
         {
           "type": "password",
-          "value": "admin123",
+          "value": "${KEYCLOAK_PASSWORD_TENANT_ADMIN}",
           "temporary": true
         }
       ],
-      "realmRoles": ["tenant_admin"],
+      "realmRoles": [
+        "tenant_admin"
+      ],
       "attributes": {
-        "tenant_id": ["00000000-0000-0000-0000-000000000001"]
+        "tenant_id": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
       }
     },
     {
@@ -397,13 +620,17 @@
       "credentials": [
         {
           "type": "password",
-          "value": "agentadmin123",
+          "value": "${KEYCLOAK_PASSWORD_AGENT_ADMIN}",
           "temporary": true
         }
       ],
-      "realmRoles": ["agent_admin"],
+      "realmRoles": [
+        "agent_admin"
+      ],
       "attributes": {
-        "tenant_id": ["00000000-0000-0000-0000-000000000001"]
+        "tenant_id": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
       }
     },
     {
@@ -416,13 +643,17 @@
       "credentials": [
         {
           "type": "password",
-          "value": "supervisor123",
+          "value": "${KEYCLOAK_PASSWORD_SUPERVISOR}",
           "temporary": true
         }
       ],
-      "realmRoles": ["supervisor"],
+      "realmRoles": [
+        "supervisor"
+      ],
       "attributes": {
-        "tenant_id": ["00000000-0000-0000-0000-000000000001"]
+        "tenant_id": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
       }
     },
     {
@@ -435,13 +666,17 @@
       "credentials": [
         {
           "type": "password",
-          "value": "operator123",
+          "value": "${KEYCLOAK_PASSWORD_OPERATOR}",
           "temporary": true
         }
       ],
-      "realmRoles": ["operator"],
+      "realmRoles": [
+        "operator"
+      ],
       "attributes": {
-        "tenant_id": ["00000000-0000-0000-0000-000000000001"]
+        "tenant_id": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
       }
     },
     {
@@ -454,13 +689,17 @@
       "credentials": [
         {
           "type": "password",
-          "value": "dev123",
+          "value": "${KEYCLOAK_PASSWORD_AGENT_DEV}",
           "temporary": true
         }
       ],
-      "realmRoles": ["agent_admin"],
+      "realmRoles": [
+        "agent_admin"
+      ],
       "attributes": {
-        "tenant_id": ["00000000-0000-0000-0000-000000000001"]
+        "tenant_id": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
       }
     },
     {
@@ -473,13 +712,17 @@
       "credentials": [
         {
           "type": "password",
-          "value": "demo123",
+          "value": "${KEYCLOAK_PASSWORD_AGENT_DEMO}",
           "temporary": false
         }
       ],
-      "realmRoles": ["tenant_admin"],
+      "realmRoles": [
+        "tenant_admin"
+      ],
       "attributes": {
-        "tenant_id": ["00000000-0000-0000-0000-000000000002"]
+        "tenant_id": [
+          "00000000-0000-0000-0000-000000000002"
+        ]
       }
     },
     {
@@ -492,13 +735,17 @@
       "credentials": [
         {
           "type": "password",
-          "value": "billing123",
+          "value": "${KEYCLOAK_PASSWORD_BILLING_ADMIN}",
           "temporary": true
         }
       ],
-      "realmRoles": ["billing_admin"],
+      "realmRoles": [
+        "billing_admin"
+      ],
       "attributes": {
-        "tenant_id": ["00000000-0000-0000-0000-000000000001"]
+        "tenant_id": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
       }
     }
   ],
@@ -507,7 +754,7 @@
       "alias": "google",
       "displayName": "Google",
       "providerId": "google",
-      "enabled": false,
+      "enabled": true,
       "updateProfileFirstLoginMode": "on",
       "trustEmail": true,
       "storeToken": false,
@@ -516,8 +763,8 @@
       "linkOnly": false,
       "firstBrokerLoginFlowAlias": "first broker login",
       "config": {
-        "clientId": "${GOOGLE_CLIENT_ID:-google-client-id-placeholder}",
-        "clientSecret": "${GOOGLE_CLIENT_SECRET:-google-client-secret-placeholder}",
+        "clientId": "${GOOGLE_CLIENT_ID}",
+        "clientSecret": "${GOOGLE_CLIENT_SECRET}",
         "defaultScope": "openid profile email",
         "syncMode": "IMPORT",
         "useJwksUrl": "true"
@@ -536,8 +783,8 @@
       "linkOnly": false,
       "firstBrokerLoginFlowAlias": "first broker login",
       "config": {
-        "clientId": "${GITHUB_CLIENT_ID:-github-client-id-placeholder}",
-        "clientSecret": "${GITHUB_CLIENT_SECRET:-github-client-secret-placeholder}",
+        "clientId": "${GITHUB_CLIENT_ID}",
+        "clientSecret": "${GITHUB_CLIENT_SECRET}",
         "defaultScope": "user:email",
         "syncMode": "IMPORT"
       }
@@ -567,7 +814,7 @@
     {
       "name": "google-default-role",
       "identityProviderAlias": "google",
-      "identityProviderMapper": "hardcoded-role-idp-mapper",
+      "identityProviderMapper": "oidc-hardcoded-role-idp-mapper",
       "config": {
         "syncMode": "INHERIT",
         "role": "viewer"
@@ -576,7 +823,7 @@
     {
       "name": "github-default-role",
       "identityProviderAlias": "github",
-      "identityProviderMapper": "hardcoded-role-idp-mapper",
+      "identityProviderMapper": "oidc-hardcoded-role-idp-mapper",
       "config": {
         "syncMode": "INHERIT",
         "role": "viewer"
@@ -585,7 +832,9 @@
   ],
   "smtpServer": {},
   "eventsEnabled": true,
-  "eventsListeners": ["jboss-logging"],
+  "eventsListeners": [
+    "jboss-logging"
+  ],
   "enabledEventTypes": [
     "LOGIN",
     "LOGIN_ERROR",

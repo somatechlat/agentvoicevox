@@ -1,0 +1,146 @@
+# ==========================================================================
+# AgentVoiceBox Tiltfile - Kubernetes / Minikube
+# ==========================================================================
+# 
+# PREREQUISITES:
+#   minikube start --memory=7680 --cpus=4 --driver=docker
+#   eval $(minikube docker-env)
+#
+# RUN:
+#   tilt up
+#
+# PORTS (via port-forward):
+#   PostgreSQL:      65004
+#   Redis:           65005
+#   Keycloak:        65006
+#   Django API:      65020
+#   Portal Frontend: 65027
+#
+# RAM Budget (~6GB available in Minikube):
+#   PostgreSQL:      1GB
+#   Redis:           512MB  
+#   Keycloak:        2GB
+#   Django API:      1GB
+#   Portal Frontend: 256MB
+#   Buffer:          ~1.2GB
+# ==========================================================================
+
+# Allow Minikube's Kubernetes context
+allow_k8s_contexts(['minikube'])
+
+# ============================================================================
+# SHARED SERVICES (Infrastructure)
+# ============================================================================
+
+# Namespaces first
+k8s_yaml('./k8s/namespaces.yaml')
+
+# PostgreSQL
+k8s_yaml('./k8s/shared/postgres.yaml')
+k8s_resource('postgres', 
+  labels=['shared-infra'],
+  port_forwards=['65004:5432']
+)
+
+# Redis
+k8s_yaml('./k8s/shared/redis.yaml')
+k8s_resource('redis', 
+  labels=['shared-infra'],
+  port_forwards=['65005:6379'],
+  resource_deps=['postgres']
+)
+
+# Keycloak Realm ConfigMap (from JSON file)
+local_resource(
+  'keycloak-realm-config',
+  cmd='kubectl create configmap keycloak-realm --from-file=agentvoicebox-realm.json=./keycloak/realms/agentvoicebox-realm.json -n shared-services --dry-run=client -o yaml | kubectl apply -f -',
+  labels=['shared-infra'],
+  resource_deps=['postgres']
+)
+
+# Keycloak
+k8s_yaml('./k8s/shared/keycloak.yaml')
+k8s_resource('keycloak',
+  labels=['shared-infra'],
+  port_forwards=['65006:8080'],
+  resource_deps=['postgres', 'keycloak-realm-config']
+)
+
+# ============================================================================
+# AGENTVOICEBOX APPLICATION
+# ============================================================================
+
+# Django API Build - uses backend directory
+docker_build('avb-django-api', './backend',
+  dockerfile='./backend/Dockerfile',
+  live_update=[
+    sync('./backend/apps', '/app/apps'),
+    sync('./backend/config', '/app/config'),
+  ]
+)
+
+k8s_yaml('./k8s/agentvoicebox/django-api.yaml')
+k8s_resource('django-api',
+  labels=['backend'],
+  port_forwards=['65020:8000'],
+  resource_deps=['postgres', 'redis', 'keycloak']
+)
+
+# Portal Frontend Build
+docker_build('avb-portal-frontend', './portal-frontend',
+  dockerfile='./portal-frontend/Dockerfile',
+  live_update=[
+    sync('./portal-frontend/src', '/app/src'),
+    run('bun run build', trigger='./portal-frontend/src'),
+  ]
+)
+
+k8s_yaml('./k8s/agentvoicebox/portal-frontend.yaml')
+k8s_resource('portal-frontend',
+  labels=['frontend'],
+  port_forwards=['65027:65027'],
+  resource_deps=['django-api']
+)
+
+# ============================================================================
+# WORKERS (Disabled for now - enable when needed)
+# ============================================================================
+# Uncomment these when worker Dockerfiles are in correct locations
+
+# docker_build('avb-worker-llm', './workers',
+#   dockerfile='./workers/Dockerfile.llm'
+# )
+# docker_build('avb-worker-stt', './workers',
+#   dockerfile='./workers/Dockerfile.stt'
+# )
+# docker_build('avb-worker-tts', './workers',
+#   dockerfile='./workers/Dockerfile.tts'
+# )
+
+# k8s_yaml('./k8s/agentvoicebox/workers.yaml')
+# k8s_resource('worker-llm', labels=['workers'], resource_deps=['redis'])
+# k8s_resource('worker-stt', labels=['workers'], resource_deps=['redis'])
+# k8s_resource('worker-tts', labels=['workers'], resource_deps=['redis'])
+
+# ============================================================================
+# LOCAL DEVELOPMENT (Optional - run frontend locally for faster iteration)
+# ============================================================================
+
+local_resource(
+  'frontend-dev-local',
+  serve_cmd='cd portal-frontend && bun run dev',
+  allow_parallel=True,
+  labels=['local-dev'],
+  auto_init=False  # Start manually if needed
+)
+
+# ============================================================================
+# SERVICE URLs (for reference)
+# ============================================================================
+# After `tilt up`, access services at:
+#   - Keycloak Admin:    http://localhost:65006/admin (admin/adminpassword123)
+#   - Django API:        http://localhost:65020/api/v2/
+#   - Portal Frontend:   http://localhost:65027/
+#   - PostgreSQL:        localhost:65004 (shared_admin/shared_secure_2024)
+#   - Redis:             localhost:65005
+# ============================================================================

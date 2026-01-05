@@ -1,0 +1,39 @@
+{
+  "include": [
+    "apps",
+    "config",
+    "integrations",
+    "realtime",
+    "tests"
+  ],
+  "exclude": [
+    "**/migrations/**",
+    "**/__pycache__/**",
+    ".pytest_cache",
+    ".hypothesis"
+  ],
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Darwin",
+  "typeCheckingMode": "off",
+  "reportGeneralTypeIssues": false,
+  "reportAttributeAccessIssue": false,
+  "reportOperatorIssue": false,
+  "reportIndexIssue": false,
+  "reportMissingImports": false,
+  "reportMissingTypeStubs": false,
+  "reportUnusedImport": false,
+  "reportUnusedVariable": false,
+  "reportPrivateUsage": false,
+  "reportOptionalMemberAccess": false,
+  "reportOptionalSubscript": false,
+  "reportOptionalCall": false,
+  "stubPath": "",
+  "extraPaths": ["."],
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": ["."],
+      "pythonVersion": "3.12"
+    }
+  ]
+}

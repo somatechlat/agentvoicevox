@@ -36,7 +36,7 @@ Policies are housed under `voice/` package with the following entrypoints:
 - `voice/tool` – authorize tool usage with actor/tenant metadata.
 - `voice/audio` – optional content moderation pipeline for outbound audio.
 
-OPA will run as a sidecar. Flask requests include contextual headers
+OPA will run as a sidecar. Django requests include contextual headers
 (`X-Actor`, `X-Tenant`, `X-Scopes`) and JSON payloads for evaluation. Kafka consumers may also
 consult OPA to validate tool invocations before execution.
 
@@ -52,8 +52,8 @@ consult OPA to validate tool invocations before execution.
 
 ## Deployment Notes
 
-- Gateway served via Gunicorn or uWSGI with `wsgi.py`. For WebSocket/WebRTC, prefer Hypercorn
-  (ASGI) or Flask-Sock, keeping compatibility with existing infrastructure.
+- Gateway served via Gunicorn with `config.asgi:application` for ASGI/Channels.
+  For WebSocket/WebRTC, keep Django Channels as the primary transport.
 - Kafka/Postgres/OPA endpoints are read from environment variables; a `settings.example.env` helper is
   provided.
 - Secrets should be injected via secret management (Vault, AWS SM) rather than `.env` in production.

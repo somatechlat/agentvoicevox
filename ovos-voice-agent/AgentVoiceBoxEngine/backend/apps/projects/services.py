@@ -1,9 +1,13 @@
 """
-Project service layer.
+Project Service Layer
+=====================
 
-Contains all business logic for project operations.
+This module contains all the business logic for project-related operations.
+It enforces business rules such as tenant resource limits and ensures that
+database operations are performed atomically.
 """
-from typing import Any, Dict, List, Optional, Tuple
+
+from typing import Any, Optional
 from uuid import UUID
 
 from django.db import transaction
@@ -12,7 +16,6 @@ from django.db.models import Q, QuerySet
 from apps.core.exceptions import (
     ConflictError,
     NotFoundError,
-    TenantLimitExceededError,
 )
 from apps.tenants.models import Tenant
 from apps.tenants.services import TenantService
@@ -22,15 +25,21 @@ from .models import Project
 
 
 class ProjectService:
-    """Service class for project operations."""
+    """A service class encapsulating all business logic for Project operations."""
 
     @staticmethod
     def get_by_id(project_id: UUID) -> Project:
         """
-        Get project by ID.
+        Retrieves a single project by its primary key (ID).
+
+        Args:
+            project_id: The UUID of the project to retrieve.
+
+        Returns:
+            The Project instance.
 
         Raises:
-            NotFoundError: If project not found
+            NotFoundError: If a project with the specified ID does not exist.
         """
         try:
             return Project.objects.select_related("tenant", "created_by").get(id=project_id)
@@ -40,10 +49,18 @@ class ProjectService:
     @staticmethod
     def get_by_slug(slug: str) -> Project:
         """
-        Get project by slug within current tenant.
+        Retrieves a project by its slug, scoped to the current user's tenant.
+
+        Note: This uses the default tenant-scoped manager.
+
+        Args:
+            slug: The URL-friendly slug of the project.
+
+        Returns:
+            The Project instance.
 
         Raises:
-            NotFoundError: If project not found
+            NotFoundError: If a project with the specified slug does not exist in the current tenant.
         """
         try:
             return Project.objects.select_related("tenant", "created_by").get(slug=slug)
@@ -57,34 +74,45 @@ class ProjectService:
         search: Optional[str] = None,
         page: int = 1,
         page_size: int = 20,
-    ) -> Tuple[QuerySet, int]:
+    ) -> tuple[QuerySet, int]:
         """
-        List projects with filtering and pagination.
+        Provides a paginated and filterable list of projects.
+
+        If a `tenant` is provided, it lists projects for that specific tenant
+        (admin use). If `tenant` is None, it uses the default tenant-scoped
+        manager to list projects for the current user's tenant.
+
+        Args:
+            tenant: (Optional) The tenant for which to list projects.
+            is_active: (Optional) Filter projects by their active status.
+            search: (Optional) A search term to filter projects by name or slug.
+            page: The page number for pagination.
+            page_size: The number of items per page.
 
         Returns:
-            Tuple of (queryset, total_count)
+            A tuple containing:
+            - A queryset of Project instances for the requested page.
+            - An integer representing the total count of matching projects.
         """
         if tenant:
+            # Use the unscoped manager for explicit tenant filtering (admin action).
             qs = Project.all_objects.filter(tenant=tenant)
         else:
+            # Use the default tenant-scoped manager.
             qs = Project.objects.all()
 
         qs = qs.select_related("tenant", "created_by")
 
-        # Apply filters
         if is_active is not None:
             qs = qs.filter(is_active=is_active)
         if search:
             qs = qs.filter(Q(name__icontains=search) | Q(slug__icontains=search))
 
-        # Get total count before pagination
         total = qs.count()
-
-        # Apply pagination
         offset = (page - 1) * page_size
-        qs = qs[offset : offset + page_size]
+        paginated_qs = qs[offset : offset + page_size]
 
-        return qs, total
+        return paginated_qs, total
 
     @staticmethod
     @transaction.atomic
@@ -94,24 +122,35 @@ class ProjectService:
         slug: str,
         created_by: User,
         description: str = "",
-        **kwargs,
+        **kwargs: Any,
     ) -> Project:
         """
-        Create a new project.
+        Creates a new project within a tenant, enforcing tenant-level limits.
+
+        This method is transactional and ensures a project is not created if it
+        would exceed the tenant's project limit. It also uses `**kwargs` to allow
+        setting any additional `Project` model fields during creation.
+
+        Args:
+            tenant: The tenant the project will belong to.
+            name: The name of the new project.
+            slug: The URL-friendly slug for the new project.
+            created_by: The user creating the project.
+            description: (Optional) A description for the project.
+            **kwargs: Additional keyword arguments corresponding to `Project` model fields.
+
+        Returns:
+            The newly created Project instance.
 
         Raises:
-            ConflictError: If slug already exists in tenant
-            TenantLimitExceededError: If tenant project limit reached
+            ConflictError: If a project with the same slug already exists in the tenant.
+            TenantLimitExceededError: If adding this project would exceed the tenant's project limit.
         """
-        # Check tenant project limit
-        current_count = Project.all_objects.filter(tenant=tenant).count()
-        TenantService.enforce_limit(tenant, "projects", current_count)
+        TenantService.enforce_limit(tenant, "projects")
 
-        # Check for duplicate slug in tenant
         if Project.all_objects.filter(tenant=tenant, slug=slug).exists():
-            raise ConflictError(f"Project with slug '{slug}' already exists")
+            raise ConflictError(f"Project with slug '{slug}' already exists in this tenant.")
 
-        # Create project
         project = Project(
             tenant=tenant,
             name=name,
@@ -120,7 +159,7 @@ class ProjectService:
             created_by=created_by,
         )
 
-        # Apply optional fields
+        # Apply any optional fields from kwargs.
         for field, value in kwargs.items():
             if hasattr(project, field) and value is not None:
                 setattr(project, field, value)
@@ -130,17 +169,28 @@ class ProjectService:
 
     @staticmethod
     @transaction.atomic
-    def update_project(project_id: UUID, **kwargs) -> Project:
+    def update_project(project_id: UUID, **kwargs: Any) -> Project:
         """
-        Update project details.
+        Updates an existing project's details.
+
+        This method performs a partial update based on the provided keyword arguments.
+        It can update any field on the `Project` model.
+
+        Args:
+            project_id: The ID of the project to update.
+            **kwargs: Key-value pairs of fields to update.
+
+        Returns:
+            The updated Project instance.
 
         Raises:
-            NotFoundError: If project not found
+            NotFoundError: If the project is not found.
         """
         project = ProjectService.get_by_id(project_id)
 
         for field, value in kwargs.items():
-            if hasattr(project, field) and value is not None:
+            # Ensure we don't try to set a protected attribute.
+            if hasattr(project, field) and not field.startswith("_"):
                 setattr(project, field, value)
 
         project.save()
@@ -148,12 +198,19 @@ class ProjectService:
 
     @staticmethod
     @transaction.atomic
-    def update_voice_config(project_id: UUID, config: Dict[str, Any]) -> Project:
+    def update_voice_config(project_id: UUID, config: dict[str, Any]) -> Project:
         """
-        Update project voice configuration.
+        Updates a project's voice configuration from a dictionary.
 
-        Raises:
-            NotFoundError: If project not found
+        This is a convenience method that delegates to the `update_voice_config`
+        method on the Project model instance.
+
+        Args:
+            project_id: The ID of the project to update.
+            config: A dictionary containing the new voice configuration values.
+
+        Returns:
+            The updated Project instance.
         """
         project = ProjectService.get_by_id(project_id)
         project.update_voice_config(config)
@@ -162,12 +219,7 @@ class ProjectService:
     @staticmethod
     @transaction.atomic
     def deactivate_project(project_id: UUID) -> Project:
-        """
-        Deactivate a project.
-
-        Raises:
-            NotFoundError: If project not found
-        """
+        """Deactivates a project. Delegates to the model method."""
         project = ProjectService.get_by_id(project_id)
         project.deactivate()
         return project
@@ -175,12 +227,7 @@ class ProjectService:
     @staticmethod
     @transaction.atomic
     def activate_project(project_id: UUID) -> Project:
-        """
-        Activate a project.
-
-        Raises:
-            NotFoundError: If project not found
-        """
+        """Activates a project. Delegates to the model method."""
         project = ProjectService.get_by_id(project_id)
         project.activate()
         return project
@@ -189,24 +236,31 @@ class ProjectService:
     @transaction.atomic
     def delete_project(project_id: UUID) -> None:
         """
-        Delete a project permanently.
+        Permanently deletes a project from the database.
 
-        Raises:
-            NotFoundError: If project not found
+        Args:
+            project_id: The ID of the project to delete.
         """
         project = ProjectService.get_by_id(project_id)
         project.delete()
 
     @staticmethod
-    def get_project_stats(project_id: UUID) -> Dict[str, Any]:
+    def get_project_stats(project_id: UUID) -> dict[str, Any]:
         """
-        Get project statistics.
+        Gathers and returns usage statistics for a given project.
+
+        This is useful for dashboards to show activity related to a project,
+        such as API key and session counts.
+
+        Args:
+            project_id: The ID of the project for which to gather stats.
 
         Returns:
-            Dictionary with project stats
+            A dictionary containing project usage statistics.
         """
         project = ProjectService.get_by_id(project_id)
 
+        # Import locally to avoid circular dependency issues at the module level.
         from apps.api_keys.models import APIKey
         from apps.sessions.models import Session
 
@@ -215,28 +269,16 @@ class ProjectService:
             "name": project.name,
             "is_active": project.is_active,
             "api_keys": {
-                "total": APIKey.all_objects.filter(
-                    tenant=project.tenant,
-                    project=project,
-                ).count(),
-                "active": APIKey.all_objects.filter(
-                    tenant=project.tenant,
-                    project=project,
-                    revoked_at__isnull=True,
-                ).count(),
+                "total": APIKey.all_objects.filter(project=project).count(),
+                "active": APIKey.all_objects.filter(project=project, revoked_at__isnull=True).count(),
             },
             "sessions": {
                 "total": Session.all_objects.filter(project=project).count(),
-                "active": Session.all_objects.filter(
-                    project=project,
-                    status="active",
-                ).count(),
+                "active": Session.all_objects.filter(project=project, status="active").count(),
             },
         }
 
     @staticmethod
     def count_active_projects(tenant: Tenant) -> int:
-        """
-        Count active projects in a tenant.
-        """
+        """Counts the number of active projects in a tenant."""
         return Project.all_objects.filter(tenant=tenant, is_active=True).count()

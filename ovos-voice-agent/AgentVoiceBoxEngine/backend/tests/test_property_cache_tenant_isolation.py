@@ -317,6 +317,7 @@ class TestCacheGetOrSet:
             call_count = 0
 
             def default_func():
+                """A dummy function that should not be called if the cache is hit."""
                 nonlocal call_count
                 call_count += 1
                 return value + 100

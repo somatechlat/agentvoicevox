@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { authenticateAsTenantAdmin } from './auth.setup';
 
 /**
  * Error Handling E2E Tests
@@ -14,6 +15,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Network Error Handling', () => {
   test('should show error state when API fails', async ({ page }) => {
+    await authenticateAsTenantAdmin(page);
     // Intercept API calls and return error
     await page.route('**/api/**', route => {
       route.fulfill({
@@ -104,7 +106,7 @@ test.describe('API Error Responses', () => {
   });
 
   test('should handle 404 Not Found', async ({ page }) => {
-    await page.route('**/api/v1/sessions/*', route => {
+    await page.route('**/api/v2/sessions/*', route => {
       route.fulfill({
         status: 404,
         body: JSON.stringify({ error: 'Not Found' }),
@@ -118,7 +120,7 @@ test.describe('API Error Responses', () => {
   });
 
   test('should handle 422 Validation Error', async ({ page }) => {
-    await page.route('**/api/v1/keys', route => {
+    await page.route('**/api/v2/keys', route => {
       if (route.request().method() === 'POST') {
         route.fulfill({
           status: 422,
@@ -259,7 +261,7 @@ test.describe('Loading States', () => {
   });
 
   test('should show loading state on button click', async ({ page }) => {
-    await page.route('**/api/v1/keys', async route => {
+    await page.route('**/api/v2/keys', async route => {
       if (route.request().method() === 'POST') {
         await new Promise(resolve => setTimeout(resolve, 2000));
         route.fulfill({
@@ -348,7 +350,7 @@ test.describe('Session Expiration', () => {
 
 test.describe('Empty States', () => {
   test('should show empty state when no API keys', async ({ page }) => {
-    await page.route('**/api/v1/keys', route => {
+    await page.route('**/api/v2/keys', route => {
       route.fulfill({
         status: 200,
         body: JSON.stringify([]),
@@ -364,7 +366,7 @@ test.describe('Empty States', () => {
   });
 
   test('should show empty state when no sessions', async ({ page }) => {
-    await page.route('**/api/v1/sessions', route => {
+    await page.route('**/api/v2/sessions', route => {
       route.fulfill({
         status: 200,
         body: JSON.stringify({ sessions: [] }),
@@ -380,7 +382,7 @@ test.describe('Empty States', () => {
   });
 
   test('should show empty state when no projects', async ({ page }) => {
-    await page.route('**/api/v1/projects', route => {
+    await page.route('**/api/v2/projects', route => {
       route.fulfill({
         status: 200,
         body: JSON.stringify([]),
@@ -658,7 +660,7 @@ test.describe('Property 7: Form Validation Feedback', () => {
   test('validation should happen before API call', async ({ page }) => {
     let apiCalled = false;
     
-    await page.route('**/api/v1/keys', route => {
+    await page.route('**/api/v2/keys', route => {
       apiCalled = true;
       route.continue();
     });

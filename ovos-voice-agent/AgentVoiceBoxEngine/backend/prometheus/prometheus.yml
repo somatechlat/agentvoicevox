@@ -1,120 +1,28 @@
-# ==========================================================================
-# Prometheus Configuration for AgentVoiceBox
-# ==========================================================================
-
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
-  external_labels:
-    monitor: 'agentvoicebox'
 
-# Alertmanager configuration
 alerting:
-  alertmanagers:
-    - static_configs:
-        - targets: []
+  alertmanagers: []
 
-# Rule files
 rule_files:
   - /etc/prometheus/alerts/*.yml
 
-# Scrape configurations
 scrape_configs:
-  # ==========================================================================
-  # Prometheus self-monitoring
-  # ==========================================================================
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
 
-  # ==========================================================================
-  # Django Backend
-  # ==========================================================================
-  - job_name: 'avb-backend'
-    metrics_path: '/metrics'
+  - job_name: 'backend'
     static_configs:
       - targets: ['backend:8000']
-        labels:
-          service: 'backend'
-          component: 'api'
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: instance
-        regex: '([^:]+):\d+'
-        replacement: '${1}'
+    metrics_path: /metrics
 
-  # ==========================================================================
-  # Temporal Worker
-  # ==========================================================================
-  - job_name: 'avb-temporal-worker'
-    metrics_path: '/metrics'
-    static_configs:
-      - targets: ['temporal-worker:8000']
-        labels:
-          service: 'temporal-worker'
-          component: 'worker'
-
-  # ==========================================================================
-  # Temporal Server
-  # ==========================================================================
-  - job_name: 'temporal'
-    static_configs:
-      - targets: ['temporal:7233']
-        labels:
-          service: 'temporal'
-          component: 'server'
-
-  # ==========================================================================
-  # PostgreSQL (via postgres_exporter if deployed)
-  # ==========================================================================
-  - job_name: 'postgres'
-    static_configs:
-      - targets: ['postgres-exporter:9187']
-        labels:
-          service: 'postgres'
-          component: 'database'
-
-  # ==========================================================================
-  # Redis
-  # ==========================================================================
-  - job_name: 'redis'
-    static_configs:
-      - targets: ['redis-exporter:9121']
-        labels:
-          service: 'redis'
-          component: 'cache'
-
-  # ==========================================================================
-  # Keycloak
-  # ==========================================================================
   - job_name: 'keycloak'
-    metrics_path: '/metrics'
     static_configs:
       - targets: ['keycloak:8080']
-        labels:
-          service: 'keycloak'
-          component: 'auth'
+    metrics_path: /metrics
 
-  # ==========================================================================
-  # Vault
-  # ==========================================================================
-  - job_name: 'vault'
-    metrics_path: '/v1/sys/metrics'
-    params:
-      format: ['prometheus']
-    bearer_token_file: /etc/prometheus/vault-token
+  - job_name: 'redis'
     static_configs:
-      - targets: ['vault:8200']
-        labels:
-          service: 'vault'
-          component: 'secrets'
-
-  # ==========================================================================
-  # Nginx
-  # ==========================================================================
-  - job_name: 'nginx'
-    static_configs:
-      - targets: ['nginx-exporter:9113']
-        labels:
-          service: 'nginx'
-          component: 'proxy'
+      - targets: ['redis:6379']

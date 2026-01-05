@@ -1,17 +1,25 @@
 /**
  * Admin API Service - Connects to Portal API & Lago
  * Endpoints: Users, Billing, Audit, Monitoring, System Config
- * Portal API URL: http://localhost:25001
- * Lago URL: http://localhost:25005
+ * Portal API URL: configured via NEXT_PUBLIC_API_URL
+ * Lago URL: configured via NEXT_PUBLIC_LAGO_URL
  */
 
 import { apiClient, ApiResponse } from './api-client';
 
+const requireEnv = (name: string): string => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+};
+
 // API URLs
-const PORTAL_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:25001';
-const LAGO_API_URL = process.env.NEXT_PUBLIC_LAGO_URL || 'http://localhost:25005';
-const PROMETHEUS_URL = process.env.NEXT_PUBLIC_PROMETHEUS_URL || 'http://localhost:25008';
-const KEYCLOAK_URL = process.env.NEXT_PUBLIC_KEYCLOAK_URL || 'http://localhost:25004';
+const PORTAL_API_URL = requireEnv('NEXT_PUBLIC_API_URL');
+const LAGO_API_URL = requireEnv('NEXT_PUBLIC_LAGO_URL');
+const PROMETHEUS_URL = requireEnv('NEXT_PUBLIC_PROMETHEUS_URL');
+const KEYCLOAK_URL = requireEnv('NEXT_PUBLIC_KEYCLOAK_URL');
 
 // Create API clients
 const portalClient = new (apiClient.constructor as typeof import('./api-client').ApiClient)(PORTAL_API_URL);
@@ -169,47 +177,47 @@ export const usersApi = {
     if (params?.search) query.set('search', params.search);
     if (params?.tenant_id) query.set('tenant_id', params.tenant_id);
     
-    return portalClient.get(`/v1/admin/users?${query}`);
+    return portalClient.get(`/api/v2/admin/users?${query}`);
   },
 
   async get(userId: string): Promise<ApiResponse<AdminUser>> {
-    return portalClient.get(`/v1/admin/users/${userId}`);
+    return portalClient.get(`/api/v2/admin/users/${userId}`);
   },
 
   async create(data: CreateUserRequest): Promise<ApiResponse<AdminUser>> {
-    return portalClient.post('/v1/admin/users', data);
+    return portalClient.post('/api/v2/admin/users', data);
   },
 
   async update(userId: string, data: Partial<AdminUser>): Promise<ApiResponse<AdminUser>> {
-    return portalClient.patch(`/v1/admin/users/${userId}`, data);
+    return portalClient.patch(`/api/v2/admin/users/${userId}`, data);
   },
 
   async delete(userId: string): Promise<ApiResponse<void>> {
-    return portalClient.delete(`/v1/admin/users/${userId}`);
+    return portalClient.delete(`/api/v2/admin/users/${userId}`);
   },
 
   async deactivate(userId: string): Promise<ApiResponse<{ user: AdminUser; message: string }>> {
-    return portalClient.post(`/v1/admin/users/${userId}/deactivate`, {});
+    return portalClient.post(`/api/v2/admin/users/${userId}/deactivate`, {});
   },
 
   async activate(userId: string): Promise<ApiResponse<{ user: AdminUser; message: string }>> {
-    return portalClient.post(`/v1/admin/users/${userId}/activate`, {});
+    return portalClient.post(`/api/v2/admin/users/${userId}/activate`, {});
   },
 
   async getRoles(userId: string): Promise<ApiResponse<{ roles: string[] }>> {
-    return portalClient.get(`/v1/admin/users/${userId}/roles`);
+    return portalClient.get(`/api/v2/admin/users/${userId}/roles`);
   },
 
   async assignRoles(userId: string, roles: string[]): Promise<ApiResponse<{ roles: string[] }>> {
-    return portalClient.post(`/v1/admin/users/${userId}/roles`, { roles });
+    return portalClient.post(`/api/v2/admin/users/${userId}/roles`, { roles });
   },
 
   async removeRoles(userId: string, roles: string[]): Promise<ApiResponse<{ roles: string[] }>> {
-    return portalClient.delete(`/v1/admin/users/${userId}/roles`);
+    return portalClient.delete(`/api/v2/admin/users/${userId}/roles`);
   },
 
   async resetPassword(userId: string, password: string, temporary?: boolean): Promise<ApiResponse<{ message: string }>> {
-    return portalClient.post(`/v1/admin/users/${userId}/reset-password`, { password, temporary });
+    return portalClient.post(`/api/v2/admin/users/${userId}/reset-password`, { password, temporary });
   },
 };
 
@@ -220,11 +228,11 @@ export const usersApi = {
 export const billingApi = {
   // Customers
   async listCustomers(page?: number, perPage?: number): Promise<ApiResponse<{ customers: LagoCustomer[] }>> {
-    return portalClient.get(`/v1/admin/billing/customers?page=${page || 1}&per_page=${perPage || 20}`);
+    return portalClient.get(`/api/v2/admin/billing/customers?page=${page || 1}&per_page=${perPage || 20}`);
   },
 
   async getCustomer(externalId: string): Promise<ApiResponse<LagoCustomer>> {
-    return portalClient.get(`/v1/admin/billing/customers/${externalId}`);
+    return portalClient.get(`/api/v2/admin/billing/customers/${externalId}`);
   },
 
   async createCustomer(data: {
@@ -233,7 +241,7 @@ export const billingApi = {
     email: string;
     currency?: string;
   }): Promise<ApiResponse<LagoCustomer>> {
-    return portalClient.post('/v1/admin/billing/customers', data);
+    return portalClient.post('/api/v2/admin/billing/customers', data);
   },
 
   // Subscriptions
@@ -246,7 +254,7 @@ export const billingApi = {
     if (params?.external_customer_id) query.set('external_customer_id', params.external_customer_id);
     if (params?.page) query.set('page', params.page.toString());
     
-    return portalClient.get(`/v1/admin/billing/subscriptions?${query}`);
+    return portalClient.get(`/api/v2/admin/billing/subscriptions?${query}`);
   },
 
   async createSubscription(data: {
@@ -254,11 +262,11 @@ export const billingApi = {
     plan_code: string;
     name?: string;
   }): Promise<ApiResponse<LagoSubscription>> {
-    return portalClient.post('/v1/admin/billing/subscriptions', data);
+    return portalClient.post('/api/v2/admin/billing/subscriptions', data);
   },
 
   async terminateSubscription(externalId: string): Promise<ApiResponse<LagoSubscription>> {
-    return portalClient.delete(`/v1/admin/billing/subscriptions/${externalId}`);
+    return portalClient.delete(`/api/v2/admin/billing/subscriptions/${externalId}`);
   },
 
   // Invoices
@@ -272,24 +280,24 @@ export const billingApi = {
     if (params?.status) query.set('status', params.status);
     if (params?.page) query.set('page', params.page.toString());
     
-    return portalClient.get(`/v1/admin/billing/invoices?${query}`);
+    return portalClient.get(`/api/v2/admin/billing/invoices?${query}`);
   },
 
   async getInvoice(lagoId: string): Promise<ApiResponse<LagoInvoice>> {
-    return portalClient.get(`/v1/admin/billing/invoices/${lagoId}`);
+    return portalClient.get(`/api/v2/admin/billing/invoices/${lagoId}`);
   },
 
   async downloadInvoice(lagoId: string): Promise<ApiResponse<{ file_url: string }>> {
-    return portalClient.post(`/v1/admin/billing/invoices/${lagoId}/download`, {});
+    return portalClient.post(`/api/v2/admin/billing/invoices/${lagoId}/download`, {});
   },
 
   // Plans
   async listPlans(): Promise<ApiResponse<{ plans: LagoPlan[] }>> {
-    return portalClient.get('/v1/admin/billing/plans');
+    return portalClient.get('/api/v2/admin/billing/plans');
   },
 
   async getPlan(code: string): Promise<ApiResponse<LagoPlan>> {
-    return portalClient.get(`/v1/admin/billing/plans/${code}`);
+    return portalClient.get(`/api/v2/admin/billing/plans/${code}`);
   },
 
   async createPlan(data: {
@@ -300,16 +308,16 @@ export const billingApi = {
     interval: string;
     description?: string;
   }): Promise<ApiResponse<LagoPlan>> {
-    return portalClient.post('/v1/admin/billing/plans', data);
+    return portalClient.post('/api/v2/admin/billing/plans', data);
   },
 
   async updatePlan(code: string, data: Partial<LagoPlan>): Promise<ApiResponse<LagoPlan>> {
-    return portalClient.put(`/v1/admin/billing/plans/${code}`, data);
+    return portalClient.put(`/api/v2/admin/billing/plans/${code}`, data);
   },
 
   // Usage
   async sendUsageEvent(event: UsageEvent): Promise<ApiResponse<void>> {
-    return portalClient.post('/v1/admin/billing/events', event);
+    return portalClient.post('/api/v2/admin/billing/events', event);
   },
 
   // Revenue metrics
@@ -321,7 +329,7 @@ export const billingApi = {
     pending_invoices: number;
     failed_payments: number;
   }>> {
-    return portalClient.get('/v1/admin/billing/metrics');
+    return portalClient.get('/api/v2/admin/billing/metrics');
   },
 
   // Refunds
@@ -329,7 +337,7 @@ export const billingApi = {
     amount_cents: number;
     reason: string;
   }): Promise<ApiResponse<{ refund_id: string; status: string }>> {
-    return portalClient.post(`/v1/admin/billing/invoices/${invoiceId}/refund`, data);
+    return portalClient.post(`/api/v2/admin/billing/invoices/${invoiceId}/refund`, data);
   },
 
   // Credits
@@ -338,7 +346,7 @@ export const billingApi = {
     reason: string;
     expires_at?: string;
   }): Promise<ApiResponse<{ credit_id: string }>> {
-    return portalClient.post(`/v1/admin/billing/customers/${customerId}/credits`, data);
+    return portalClient.post(`/api/v2/admin/billing/customers/${customerId}/credits`, data);
   },
 };
 
@@ -362,7 +370,7 @@ export const auditApi = {
       if (value) query.set(key, value.toString());
     });
     
-    return portalClient.get(`/v1/admin/audit?${query}`);
+    return portalClient.get(`/api/v2/admin/audit?${query}`);
   },
 
   async export(params: {
@@ -375,7 +383,7 @@ export const auditApi = {
     if (params.start_date) query.set('start_date', params.start_date);
     if (params.end_date) query.set('end_date', params.end_date);
     
-    const response = await fetch(`${PORTAL_API_URL}/v1/admin/audit/export?${query}`);
+    const response = await fetch(`${PORTAL_API_URL}/api/v2/admin/audit/export?${query}`);
     return response.blob();
   },
 };
@@ -386,15 +394,15 @@ export const auditApi = {
 
 export const monitoringApi = {
   async getServiceStatuses(): Promise<ApiResponse<ServiceStatus[]>> {
-    return portalClient.get('/v1/admin/monitoring/services');
+    return portalClient.get('/api/v2/admin/monitoring/services');
   },
 
   async getSystemMetrics(): Promise<ApiResponse<SystemMetrics>> {
-    return portalClient.get('/v1/admin/monitoring/metrics');
+    return portalClient.get('/api/v2/admin/monitoring/metrics');
   },
 
   async getQueueMetrics(): Promise<ApiResponse<QueueMetrics[]>> {
-    return portalClient.get('/v1/admin/monitoring/queues');
+    return portalClient.get('/api/v2/admin/monitoring/queues');
   },
 
   async getDatabaseMetrics(): Promise<ApiResponse<{
@@ -403,7 +411,7 @@ export const monitoringApi = {
     query_latency_ms: number;
     replication_lag_ms?: number;
   }>> {
-    return portalClient.get('/v1/admin/monitoring/database');
+    return portalClient.get('/api/v2/admin/monitoring/database');
   },
 
   async getErrorLogs(params?: {
@@ -424,18 +432,18 @@ export const monitoringApi = {
       if (value) query.set(key, value.toString());
     });
     
-    return portalClient.get(`/v1/admin/monitoring/errors?${query}`);
+    return portalClient.get(`/api/v2/admin/monitoring/errors?${query}`);
   },
 
   // Prometheus metrics
   async getPrometheusMetrics(): Promise<string> {
-    const response = await fetch(`${PROMETHEUS_URL}/api/v1/query?query=up`);
+    const response = await fetch(`${PROMETHEUS_URL}/api/api/v2/query?query=up`);
     return response.text();
   },
 
   // Grafana dashboard URL
   getGrafanaUrl(): string {
-    return process.env.NEXT_PUBLIC_GRAFANA_URL || 'http://localhost:25009';
+    return requireEnv('NEXT_PUBLIC_GRAFANA_URL');
   },
 };
 
@@ -450,25 +458,25 @@ export const configApi = {
     security: { rate_limits: { requests_per_minute: number; tokens_per_minute: number } };
     observability: { log_level: string; enable_tracing: boolean };
   }>> {
-    return portalClient.get('/v1/admin/config');
+    return portalClient.get('/api/v2/admin/config');
   },
 
   async update(config: Record<string, unknown>): Promise<ApiResponse<void>> {
-    return portalClient.put('/v1/admin/config', config);
+    return portalClient.put('/api/v2/admin/config', config);
   },
 
   async getRateLimits(): Promise<ApiResponse<{
     requests_per_minute: number;
     tokens_per_minute: number;
   }>> {
-    return portalClient.get('/v1/admin/config/rate-limits');
+    return portalClient.get('/api/v2/admin/config/rate-limits');
   },
 
   async updateRateLimits(limits: {
     requests_per_minute?: number;
     tokens_per_minute?: number;
   }): Promise<ApiResponse<void>> {
-    return portalClient.put('/v1/admin/config/rate-limits', limits);
+    return portalClient.put('/api/v2/admin/config/rate-limits', limits);
   },
 };
 

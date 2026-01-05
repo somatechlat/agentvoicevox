@@ -3,6 +3,7 @@ Notification services.
 
 Business logic for notification management and delivery.
 """
+
 from datetime import time
 from typing import Any, Optional
 from uuid import UUID

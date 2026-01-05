@@ -1,439 +1,363 @@
 /**
  * Authentication Service
- * Connects to Keycloak for OIDC authentication
- * Implements Requirements 2.1, 2.2, 2.3, 2.4
+ * 
+ * USES EXISTING INFRASTRUCTURE:
+ * - jwt-utils.ts for token parsing and validation
+ * - api-client.ts for HTTP requests (when needed)
+ * 
+ * Handles Keycloak OAuth2/OIDC:
+ * - Login (redirect to Keycloak)
+ * - Token exchange and storage
+ * - Token refresh
+ * - Logout
  */
 
+import { decodeJWT, isJWTExpired, getJWTTimeToExpiry, extractUserFromJWT, JWTClaims } from './jwt-utils';
 import { apiClient } from './api-client';
 
-// Types matching backend UserContext
-export interface User {
-  id: string;
-  tenantId: string;
-  email: string;
-  username: string;
-  roles: string[];
-  permissions: string[];
-  mfaEnabled?: boolean;
+interface KeycloakConfig {
+  url: string;
+  realm: string;
+  clientId: string;
 }
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-  rememberMe?: boolean;
-}
-
-export interface AuthResult {
-  success: boolean;
-  user?: User;
-  accessToken?: string;
-  refreshToken?: string;
-  expiresAt?: number;
-  error?: string;
-  requiresMfa?: boolean;
-  mfaToken?: string;
-}
-
-export interface MfaVerifyRequest {
-  mfaToken: string;
-  code: string;
-}
-
-export interface TokenPair {
+interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+  idToken?: string;
   expiresAt: number;
 }
 
-// Customer portal roles
-export type CustomerRole = 'owner' | 'admin' | 'developer' | 'billing' | 'viewer';
-
-// Admin portal roles
-export type AdminRole = 'super_admin' | 'tenant_admin' | 'support_agent' | 'billing_admin' | 'viewer';
-
-// Permission types
-export type Permission =
-  | 'team:manage' | 'team:view'
-  | 'api_keys:create' | 'api_keys:rotate' | 'api_keys:revoke' | 'api_keys:view'
-  | 'billing:manage' | 'billing:view'
-  | 'usage:view'
-  | 'settings:manage'
-  | 'tenant:manage' | 'tenant:view' | 'tenant:delete'
-  | 'impersonate:user'
-  | 'system:configure';
-
-// Role to permissions mapping
-const ROLE_PERMISSIONS: Record<string, Permission[]> = {
-  owner: [
-    'team:manage', 'team:view',
-    'api_keys:create', 'api_keys:rotate', 'api_keys:revoke', 'api_keys:view',
-    'billing:manage', 'billing:view',
-    'usage:view',
-    'settings:manage',
-  ],
-  admin: [
-    'team:manage', 'team:view',
-    'api_keys:create', 'api_keys:rotate', 'api_keys:revoke', 'api_keys:view',
-    'billing:view',
-    'usage:view',
-  ],
-  developer: [
-    'api_keys:create', 'api_keys:rotate', 'api_keys:view',
-    'usage:view',
-  ],
-  billing: [
-    'billing:manage', 'billing:view',
-  ],
-  viewer: [
-    'usage:view',
-  ],
-  super_admin: [
-    'tenant:manage', 'tenant:view', 'tenant:delete',
-    'impersonate:user',
-    'system:configure',
-    'billing:manage', 'billing:view',
-  ],
-  tenant_admin: [
-    'tenant:manage', 'tenant:view',
-  ],
-  support_agent: [
-    'tenant:view',
-    'impersonate:user',
-  ],
-  billing_admin: [
-    'billing:manage', 'billing:view',
-  ],
-};
-
 // Storage keys
-const ACCESS_TOKEN_KEY = 'agentvoicebox_access_token';
-const REFRESH_TOKEN_KEY = 'agentvoicebox_refresh_token';
-const USER_KEY = 'agentvoicebox_user';
-const EXPIRES_AT_KEY = 'agentvoicebox_expires_at';
+const STORAGE_KEYS = {
+  TOKENS: 'auth_tokens',
+  STATE: 'auth_state',
+  REDIRECT_URI: 'auth_redirect_uri'
+} as const;
 
 class AuthService {
-  private user: User | null = null;
-  private accessToken: string | null = null;
-  private refreshToken: string | null = null;
-  private expiresAt: number | null = null;
-  private refreshPromise: Promise<boolean> | null = null;
+  private config: KeycloakConfig = {
+    url: 'http://localhost:65006',  // SHARED Keycloak on shared-services
+    realm: 'agentvoicebox',
+    clientId: 'portal-frontend'
+  };
 
-  constructor() {
-    // Initialize from storage on client side
-    if (typeof window !== 'undefined') {
-      this.loadFromStorage();
-    }
-  }
+  private tokens: AuthTokens | null = null;
+  private refreshTimer: number | null = null;
 
-  private loadFromStorage(): void {
-    try {
-      const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
-      const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-      const userJson = localStorage.getItem(USER_KEY);
-      const expiresAt = localStorage.getItem(EXPIRES_AT_KEY);
+  /**
+   * Initialize authentication - check for existing session or handle callback
+   */
+  async init(): Promise<boolean> {
+    // Check if we have tokens in localStorage
+    const stored = localStorage.getItem(STORAGE_KEYS.TOKENS);
+    if (stored) {
+      try {
+        this.tokens = JSON.parse(stored);
 
-      if (accessToken && userJson) {
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
-        this.user = JSON.parse(userJson);
-        this.expiresAt = expiresAt ? parseInt(expiresAt, 10) : null;
+        // Use existing jwt-utils to check token validity
+        if (this.tokens && !isJWTExpired(this.tokens.accessToken)) {
+          // Set token on API client
+          apiClient.setAuthToken(this.tokens.accessToken);
+          this.scheduleTokenRefresh();
+          return true;
+        }
 
-        // Set token in API client
-        apiClient.setAuthToken(accessToken);
+        // Token expired, try to refresh
+        return await this.refreshToken();
+      } catch (e) {
+        console.error('Failed to parse stored tokens:', e);
+        this.clearTokens();
       }
-    } catch (error) {
-      console.error('Failed to load auth from storage:', error);
-      this.clearStorage();
-    }
-  }
-
-  private saveToStorage(): void {
-    if (typeof window === 'undefined') return;
-
-    try {
-      if (this.accessToken) {
-        localStorage.setItem(ACCESS_TOKEN_KEY, this.accessToken);
-      }
-      if (this.refreshToken) {
-        localStorage.setItem(REFRESH_TOKEN_KEY, this.refreshToken);
-      }
-      if (this.user) {
-        localStorage.setItem(USER_KEY, JSON.stringify(this.user));
-      }
-      if (this.expiresAt) {
-        localStorage.setItem(EXPIRES_AT_KEY, this.expiresAt.toString());
-      }
-    } catch (error) {
-      console.error('Failed to save auth to storage:', error);
-    }
-  }
-
-  private clearStorage(): void {
-    if (typeof window === 'undefined') return;
-
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(EXPIRES_AT_KEY);
-  }
-
-  /**
-   * Login with email and password
-   */
-  async login(credentials: LoginCredentials): Promise<AuthResult> {
-    try {
-      const response = await apiClient.post<{
-        access_token: string;
-        refresh_token: string;
-        expires_in: number;
-        user: User;
-        requires_mfa?: boolean;
-        mfa_token?: string;
-      }>('/api/auth/login', {
-        email: credentials.email,
-        password: credentials.password,
-        remember_me: credentials.rememberMe,
-      }, { retry: false });
-
-      const data = response.data;
-
-      // Check if MFA is required
-      if (data.requires_mfa) {
-        return {
-          success: false,
-          requiresMfa: true,
-          mfaToken: data.mfa_token,
-        };
-      }
-
-      // Store tokens and user
-      this.accessToken = data.access_token;
-      this.refreshToken = data.refresh_token;
-      this.user = data.user;
-      this.expiresAt = Date.now() + (data.expires_in * 1000);
-
-      // Set token in API client
-      apiClient.setAuthToken(this.accessToken);
-
-      // Save to storage
-      this.saveToStorage();
-
-      return {
-        success: true,
-        user: this.user,
-        accessToken: this.accessToken,
-        refreshToken: this.refreshToken,
-        expiresAt: this.expiresAt,
-      };
-    } catch (error) {
-      const message = (error as { message?: string }).message || 'Login failed';
-      return {
-        success: false,
-        error: message,
-      };
-    }
-  }
-
-  /**
-   * Verify MFA code
-   */
-  async verifyMfa(request: MfaVerifyRequest): Promise<AuthResult> {
-    try {
-      const response = await apiClient.post<{
-        access_token: string;
-        refresh_token: string;
-        expires_in: number;
-        user: User;
-      }>('/api/auth/mfa/verify', {
-        mfa_token: request.mfaToken,
-        code: request.code,
-      }, { retry: false });
-
-      const data = response.data;
-
-      // Store tokens and user
-      this.accessToken = data.access_token;
-      this.refreshToken = data.refresh_token;
-      this.user = data.user;
-      this.expiresAt = Date.now() + (data.expires_in * 1000);
-
-      // Set token in API client
-      apiClient.setAuthToken(this.accessToken);
-
-      // Save to storage
-      this.saveToStorage();
-
-      return {
-        success: true,
-        user: this.user,
-        accessToken: this.accessToken,
-        refreshToken: this.refreshToken,
-        expiresAt: this.expiresAt,
-      };
-    } catch (error) {
-      const message = (error as { message?: string }).message || 'MFA verification failed';
-      return {
-        success: false,
-        error: message,
-      };
-    }
-  }
-
-  /**
-   * Logout and clear session
-   */
-  async logout(): Promise<void> {
-    try {
-      if (this.accessToken) {
-        await apiClient.post('/api/auth/logout', {}, { retry: false });
-      }
-    } catch (error) {
-      console.error('Logout API call failed:', error);
-    } finally {
-      this.accessToken = null;
-      this.refreshToken = null;
-      this.user = null;
-      this.expiresAt = null;
-      apiClient.clearAuthToken();
-      this.clearStorage();
-    }
-  }
-
-  /**
-   * Refresh access token
-   */
-  async refreshAccessToken(): Promise<boolean> {
-    // Prevent concurrent refresh calls
-    if (this.refreshPromise) {
-      return this.refreshPromise;
     }
 
-    if (!this.refreshToken) {
-      return false;
-    }
+    // Check if we're returning from Keycloak with auth code
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
 
-    this.refreshPromise = this._doRefresh();
-    const result = await this.refreshPromise;
-    this.refreshPromise = null;
-    return result;
-  }
-
-  private async _doRefresh(): Promise<boolean> {
-    try {
-      const response = await apiClient.post<{
-        access_token: string;
-        refresh_token: string;
-        expires_in: number;
-      }>('/api/auth/refresh', {
-        refresh_token: this.refreshToken,
-      }, { retry: false });
-
-      const data = response.data;
-
-      this.accessToken = data.access_token;
-      this.refreshToken = data.refresh_token;
-      this.expiresAt = Date.now() + (data.expires_in * 1000);
-
-      apiClient.setAuthToken(this.accessToken);
-      this.saveToStorage();
-
-      return true;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      await this.logout();
-      return false;
-    }
-  }
-
-  /**
-   * Get current user
-   */
-  getCurrentUser(): User | null {
-    return this.user;
-  }
-
-  /**
-   * Check if user is authenticated
-   */
-  isAuthenticated(): boolean {
-    return !!this.accessToken && !!this.user;
-  }
-
-  /**
-   * Check if token is expired or about to expire
-   */
-  isTokenExpired(bufferMs: number = 60000): boolean {
-    if (!this.expiresAt) return true;
-    return Date.now() >= (this.expiresAt - bufferMs);
-  }
-
-  /**
-   * Check if user has a specific role
-   */
-  hasRole(role: string): boolean {
-    return this.user?.roles.includes(role) ?? false;
-  }
-
-  /**
-   * Check if user has a specific permission
-   */
-  hasPermission(permission: Permission): boolean {
-    if (!this.user) return false;
-
-    // Check direct permissions
-    if (this.user.permissions.includes(permission)) {
-      return true;
-    }
-
-    // Check role-based permissions
-    for (const role of this.user.roles) {
-      const rolePermissions = ROLE_PERMISSIONS[role];
-      if (rolePermissions?.includes(permission)) {
-        return true;
-      }
+    if (code) {
+      return await this.handleCallback(code);
     }
 
     return false;
   }
 
   /**
-   * Get all effective permissions for current user
+   * Redirect to Keycloak login page
    */
-  getEffectivePermissions(): Permission[] {
-    if (!this.user) return [];
+  login(redirectUri?: string): void {
+    const callbackUri = `${window.location.origin}/auth/callback`;
+    const state = this.generateState();
 
-    const permissions = new Set<Permission>(this.user.permissions as Permission[]);
+    // Store state for CSRF protection
+    localStorage.setItem(STORAGE_KEYS.STATE, state);
 
-    // Add role-based permissions
-    for (const role of this.user.roles) {
-      const rolePermissions = ROLE_PERMISSIONS[role];
-      if (rolePermissions) {
-        rolePermissions.forEach(p => permissions.add(p));
+    // Store intended destination
+    if (redirectUri) {
+      localStorage.setItem(STORAGE_KEYS.REDIRECT_URI, redirectUri);
+    }
+
+    const params = new URLSearchParams({
+      client_id: this.config.clientId,
+      redirect_uri: callbackUri,
+      response_type: 'code',
+      scope: 'openid profile email',
+      state: state
+    });
+
+    const loginUrl = `${this.config.url}/realms/${this.config.realm}/protocol/openid-connect/auth?${params}`;
+    window.location.href = loginUrl;
+  }
+
+  /**
+   * Handle callback from Keycloak - exchange code for tokens
+   */
+  private async handleCallback(code: string): Promise<boolean> {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const state = urlParams.get('state');
+      const storedState = localStorage.getItem(STORAGE_KEYS.STATE);
+
+      // CSRF protection
+      if (state !== storedState) {
+        console.error('State mismatch - potential CSRF attack');
+        return false;
+      }
+
+      const redirectUri = `${window.location.origin}/auth/callback`;
+
+      // Exchange code for tokens
+      const response = await fetch(
+        `${this.config.url}/realms/${this.config.realm}/protocol/openid-connect/token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            code: code,
+            client_id: this.config.clientId,
+            redirect_uri: redirectUri
+          })
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Token exchange failed:', response.status);
+        return false;
+      }
+
+      const data = await response.json();
+
+      // Store tokens
+      this.tokens = {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        idToken: data.id_token,
+        expiresAt: Date.now() + (data.expires_in * 1000)
+      };
+
+      localStorage.setItem(STORAGE_KEYS.TOKENS, JSON.stringify(this.tokens));
+      localStorage.removeItem(STORAGE_KEYS.STATE);
+
+      // Set token on API client for all subsequent requests
+      apiClient.setAuthToken(this.tokens.accessToken);
+
+      // Schedule token refresh
+      this.scheduleTokenRefresh();
+
+      // Clean URL and redirect
+      const intendedUri = localStorage.getItem(STORAGE_KEYS.REDIRECT_URI) || '/admin/setup';
+      localStorage.removeItem(STORAGE_KEYS.REDIRECT_URI);
+
+      window.history.replaceState({}, document.title, intendedUri);
+      window.location.href = intendedUri;
+
+      return true;
+    } catch (error) {
+      console.error('Authentication callback error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Refresh access token using refresh token
+   */
+  async refreshToken(): Promise<boolean> {
+    if (!this.tokens?.refreshToken) {
+      return false;
+    }
+
+    try {
+      const response = await fetch(
+        `${this.config.url}/realms/${this.config.realm}/protocol/openid-connect/token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: this.tokens.refreshToken,
+            client_id: this.config.clientId
+          })
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Token refresh failed:', response.status);
+        this.logout(false); // Don't redirect to Keycloak, just clear local state
+        return false;
+      }
+
+      const data = await response.json();
+
+      this.tokens = {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        idToken: data.id_token,
+        expiresAt: Date.now() + (data.expires_in * 1000)
+      };
+
+      localStorage.setItem(STORAGE_KEYS.TOKENS, JSON.stringify(this.tokens));
+
+      // Update API client with new token
+      apiClient.setAuthToken(this.tokens.accessToken);
+
+      // Reschedule refresh
+      this.scheduleTokenRefresh();
+
+      return true;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      this.logout(false);
+      return false;
+    }
+  }
+
+  /**
+   * Schedule automatic token refresh before expiry
+   */
+  private scheduleTokenRefresh(): void {
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+    }
+
+    if (!this.tokens) return;
+
+    // Use jwt-utils to get time to expiry
+    const timeToExpiry = getJWTTimeToExpiry(this.tokens.accessToken);
+
+    // Refresh 60 seconds before expiry
+    const refreshIn = Math.max(0, timeToExpiry - 60000);
+
+    if (refreshIn > 0) {
+      this.refreshTimer = window.setTimeout(() => {
+        this.refreshToken();
+      }, refreshIn);
+    }
+  }
+
+  /**
+   * Logout user
+   */
+  logout(redirectToKeycloak: boolean = true): void {
+    // Clear refresh timer
+    if (this.refreshTimer) {
+      clearTimeout(this.refreshTimer);
+      this.refreshTimer = null;
+    }
+
+    // Clear API client token
+    apiClient.clearAuthToken();
+
+    // Store ID token for logout
+    const idToken = this.tokens?.idToken;
+
+    // Clear local storage
+    this.clearTokens();
+
+    if (redirectToKeycloak && idToken) {
+      // Redirect to Keycloak logout
+      const redirectUri = `${window.location.origin}/`;
+      const logoutUrl = `${this.config.url}/realms/${this.config.realm}/protocol/openid-connect/logout?id_token_hint=${idToken}&post_logout_redirect_uri=${encodeURIComponent(redirectUri)}`;
+      window.location.href = logoutUrl;
+    } else {
+      // Just redirect to login
+      window.location.href = '/';
+    }
+  }
+
+  /**
+   * Clear tokens from memory and storage
+   */
+  private clearTokens(): void {
+    this.tokens = null;
+    localStorage.removeItem(STORAGE_KEYS.TOKENS);
+    localStorage.removeItem(STORAGE_KEYS.STATE);
+    localStorage.removeItem(STORAGE_KEYS.REDIRECT_URI);
+  }
+
+  /**
+   * Get current access token (auto-refresh if needed)
+   */
+  async getAccessToken(): Promise<string | null> {
+    if (!this.tokens) {
+      return null;
+    }
+
+    // Use jwt-utils to check expiry
+    if (isJWTExpired(this.tokens.accessToken, 60)) {
+      const refreshed = await this.refreshToken();
+      if (!refreshed) {
+        return null;
       }
     }
 
-    return Array.from(permissions);
+    return this.tokens.accessToken;
   }
 
   /**
-   * Check if user is admin (customer portal)
+   * Check if user is authenticated
    */
-  isAdmin(): boolean {
-    return this.hasRole('owner') || this.hasRole('admin');
+  isAuthenticated(): boolean {
+    if (!this.tokens) {
+      return false;
+    }
+
+    return !isJWTExpired(this.tokens.accessToken);
   }
 
   /**
-   * Check if user is platform admin (admin portal)
+   * Get current user info from JWT claims (using jwt-utils)
    */
-  isPlatformAdmin(): boolean {
-    return this.hasRole('super_admin') || this.hasRole('tenant_admin');
+  getCurrentUser() {
+    if (!this.tokens) {
+      return null;
+    }
+
+    return extractUserFromJWT(this.tokens.accessToken);
   }
 
   /**
-   * Get access token (for manual API calls)
+   * Get raw JWT claims (using jwt-utils)
    */
-  getAccessToken(): string | null {
-    return this.accessToken;
+  getTokenClaims(): JWTClaims | null {
+    if (!this.tokens) {
+      return null;
+    }
+
+    return decodeJWT(this.tokens.accessToken);
+  }
+
+  /**
+   * Generate random state for CSRF protection
+   */
+  private generateState(): string {
+    return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
   }
 }
 

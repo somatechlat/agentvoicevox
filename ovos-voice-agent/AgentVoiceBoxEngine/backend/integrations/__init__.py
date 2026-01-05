@@ -9,6 +9,7 @@ Contains clients for:
 - Vault (secrets)
 - Temporal (workflows)
 """
+
 from integrations.kafka import KafkaClient, KafkaEvent, kafka_client
 from integrations.opa import OPAClient, PolicyDecision, opa_client
 

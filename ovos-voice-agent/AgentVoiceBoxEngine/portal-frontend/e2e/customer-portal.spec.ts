@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { authenticateAsTenantAdmin } from './auth.setup';
 
 /**
  * Customer Portal E2E Tests
@@ -17,6 +18,7 @@ import { test, expect, Page } from '@playwright/test';
 
 test.describe('Customer Portal - Dashboard', () => {
   test.beforeEach(async ({ page }) => {
+    await authenticateAsTenantAdmin(page);
     await page.goto('/dashboard');
   });
 

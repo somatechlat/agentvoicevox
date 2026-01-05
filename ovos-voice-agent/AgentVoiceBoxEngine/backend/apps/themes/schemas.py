@@ -1,8 +1,9 @@
 """
 Pydantic schemas for theme management API.
 """
+
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 from uuid import UUID
 
 from ninja import Schema
@@ -100,7 +101,7 @@ class ThemeOut(Schema):
 class ThemeListOut(Schema):
     """Schema for paginated theme list."""
 
-    items: List[ThemeOut]
+    items: list[ThemeOut]
     total: int
     page: int
     page_size: int
@@ -115,4 +116,4 @@ class ThemeCSSOut(Schema):
 class ThemeCSSVariablesOut(Schema):
     """Schema for theme CSS variables output."""
 
-    variables: Dict[str, str]
+    variables: dict[str, str]

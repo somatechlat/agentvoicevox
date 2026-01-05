@@ -61,6 +61,19 @@ def api_key_factory(tenant_factory, user_factory):
         expires_in_days: int = None,
         revoked: bool = False,
     ):
+        """
+        Creates and returns a single APIKey instance.
+
+        Args:
+            tenant: The tenant to associate the key with.
+            name: The name of the API key.
+            scopes: A list of scopes for the key.
+            expires_in_days: The number of days until the key expires.
+            revoked: Whether the key should be created in a revoked state.
+
+        Returns:
+            A tuple containing the APIKey instance and the full key string.
+        """
         if tenant is None:
             tenant = tenant_factory()
 
@@ -102,6 +115,17 @@ def user_factory(db):
         email: str = None,
         keycloak_id: str = None,
     ):
+        """
+        Creates and returns a single User instance.
+
+        Args:
+            tenant: The tenant to associate the user with.
+            email: The user's email address.
+            keycloak_id: The user's Keycloak ID.
+
+        Returns:
+            The newly created User instance.
+        """
         if email is None:
             email = f"test-{uuid.uuid4().hex[:8]}@example.com"
         if keycloak_id is None:
@@ -176,6 +200,7 @@ class TestAPIKeyAuthentication:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)
@@ -214,6 +239,7 @@ class TestAPIKeyAuthentication:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)
@@ -244,6 +270,7 @@ class TestAPIKeyAuthentication:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)
@@ -275,6 +302,7 @@ class TestAPIKeyAuthentication:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)
@@ -304,6 +332,7 @@ class TestAPIKeyAuthentication:
         )
 
         def get_response(req):
+            """A dummy response handler for middleware tests."""
             return HttpResponse("OK", status=200)
 
         middleware = KeycloakAuthenticationMiddleware(get_response=get_response)

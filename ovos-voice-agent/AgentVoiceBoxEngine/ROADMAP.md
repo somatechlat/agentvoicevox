@@ -1,6 +1,7 @@
 # VoiceEngine Parity Roadmap
 
-This roadmap hardens the VoiceEngine control plane so it can act as a drop-in replacement for the OpenAI
+This roadmap hardens the VoiceEngine control plane and describes future OpenAI-compatibility work.
+The current, implemented API surface is Django `/api/v2` with Channels WebSockets under `/ws/v2`.
 Realtime API while remaining fully aligned with OVOS architecture and enterprise deployment needs. Capacity
 is unconstrained, so Sprints A–C execute in parallel with shared acceptance checkpoints.
 
@@ -52,7 +53,7 @@ is unconstrained, so Sprints A–C execute in parallel with shared acceptance ch
 ## Cross-Cutting Workstreams
 
 - **Security**: Rotate keys automatically, store secrets in Vault-compatible backend, add audit logging for PII.
-- **Data layer**: Add Alembic migrations, connection pooling, and backfill scripts for legacy session data.
+- **Data layer**: Add Django migrations, connection pooling, and backfill scripts for session data.
 - **Docs & Enablement**: Maintain living architecture diagrams, API reference, and onboarding flows in `/docs`.
 - **Deployment**: Produce Docker/Compose definitions (`VoiceEngine-*` services), enforce image scans, generate
   Makefile automation for lint/test/package, and provide Terraform/Kubernetes manifests as stretch goals.

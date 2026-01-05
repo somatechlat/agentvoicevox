@@ -210,7 +210,7 @@ class TestTenantContextExtraction:
         from apps.core.middleware.tenant import TenantMiddleware
 
         tenant = tenant_factory(slug=slug)
-        
+
         # Use the actual tenant slug (which includes UUID suffix)
         actual_slug = tenant.slug
 

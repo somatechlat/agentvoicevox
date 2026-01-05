@@ -1,226 +1,246 @@
 """
-Session models for voice agent sessions.
+Voice Interaction Session and Event Models
+===========================================
 
-Sessions track voice interactions and their metrics.
+This module defines the core data models for tracking voice interaction sessions
+(`Session`) and logging detailed events within those sessions (`SessionEvent`).
+These models are fundamental for understanding user engagement, performance
+analysis, and debugging of the voice agent.
 """
+
 import uuid
 
 from django.db import models
 from django.utils import timezone
 
+from apps.api_keys.models import APIKey
+from apps.projects.models import Project
 from apps.tenants.models import TenantScopedManager, TenantScopedModel
+from apps.users.models import User
 
 
 class SessionManager(TenantScopedManager):
-    """Manager for Session model."""
+    """
+    Custom manager for the Session model.
+
+    Inherits from `TenantScopedManager` to ensure all queries are filtered
+    by the current tenant. Provides helper methods for common session queries.
+    """
 
     def active(self):
-        """Return only active sessions."""
+        """Returns a queryset containing only sessions with an 'ACTIVE' status."""
         return self.filter(status=Session.Status.ACTIVE)
 
     def completed(self):
-        """Return completed sessions."""
+        """Returns a queryset containing only sessions with a 'COMPLETED' status."""
         return self.filter(status=Session.Status.COMPLETED)
 
 
 class Session(TenantScopedModel):
     """
-    Voice agent session.
+    Represents a single voice interaction session.
 
-    Tracks a single voice interaction session with metrics.
+    A session tracks the entire lifecycle of an interaction, from creation to
+    termination, including associated project, API key, user, configuration,
+    and various usage metrics.
     """
 
     class Status(models.TextChoices):
-        """Session status."""
-        CREATED = "created", "Created"
-        ACTIVE = "active", "Active"
-        COMPLETED = "completed", "Completed"
-        ERROR = "error", "Error"
-        TERMINATED = "terminated", "Terminated"
+        """Defines the lifecycle status of a voice session."""
 
-    # Primary key
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
+        CREATED = "created", "Created"  # Session initiated but not yet active.
+        ACTIVE = "active", "Active"  # Session is currently in progress.
+        COMPLETED = "completed", "Completed"  # Session ended normally.
+        ERROR = "error", "Error"  # Session ended due to an error.
+        TERMINATED = "terminated", "Terminated"  # Session ended by client or system.
 
-    # Associations
+    # --- Core Identification ---
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # --- Associations ---
     project = models.ForeignKey(
-        "projects.Project",
-        on_delete=models.CASCADE,
+        Project,
+        on_delete=models.CASCADE,  # If the project is deleted, delete its sessions.
         related_name="sessions",
-        help_text="Associated project",
+        help_text="The project this session belongs to. All sessions are tied to a project.",
     )
     api_key = models.ForeignKey(
-        "api_keys.APIKey",
-        on_delete=models.SET_NULL,
+        APIKey,
+        on_delete=models.SET_NULL,  # If API key is deleted, keep session but nullify association.
         null=True,
         blank=True,
         related_name="sessions",
-        help_text="API key used to create session",
+        help_text="The API key used to initiate this session, if any.",
     )
     user = models.ForeignKey(
-        "users.User",
-        on_delete=models.SET_NULL,
+        User,
+        on_delete=models.SET_NULL,  # If user is deleted, keep session but nullify association.
         null=True,
         blank=True,
         related_name="sessions",
-        help_text="User who created session (if authenticated)",
+        help_text="The user who initiated this session, if authenticated.",
     )
 
-    # Status
+    # --- Session State and Configuration ---
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
         default=Status.CREATED,
-        help_text="Session status",
+        db_index=True,
+        help_text="The current status of the session.",
     )
-
-    # Configuration snapshot
     config = models.JSONField(
         default=dict,
-        help_text="Session configuration snapshot",
+        help_text="A snapshot of the project's voice configuration at the session start. This ensures session results are tied to the exact config used.",
     )
 
-    # Client info
+    # --- Client Information ---
     client_ip = models.GenericIPAddressField(
-        null=True,
-        blank=True,
-        help_text="Client IP address",
+        null=True, blank=True, help_text="The IP address of the client initiating the session."
     )
     user_agent = models.TextField(
-        blank=True,
-        help_text="Client user agent",
+        blank=True, help_text="The User-Agent string from the client application."
     )
 
-    # Metrics
+    # --- Usage Metrics ---
     duration_seconds = models.FloatField(
-        default=0,
-        help_text="Session duration in seconds",
+        default=0, help_text="The total duration of the session in seconds."
     )
     input_tokens = models.PositiveIntegerField(
-        default=0,
-        help_text="Total input tokens (LLM)",
+        default=0, help_text="Total number of input tokens processed by the LLM during the session."
     )
     output_tokens = models.PositiveIntegerField(
         default=0,
-        help_text="Total output tokens (LLM)",
+        help_text="Total number of output tokens generated by the LLM during the session.",
     )
     audio_input_seconds = models.FloatField(
-        default=0,
-        help_text="Total audio input duration in seconds",
+        default=0, help_text="Total duration of user audio input in seconds."
     )
     audio_output_seconds = models.FloatField(
-        default=0,
-        help_text="Total audio output duration in seconds",
+        default=0, help_text="Total duration of synthesized audio output in seconds."
     )
     turn_count = models.PositiveIntegerField(
-        default=0,
-        help_text="Number of conversation turns",
+        default=0, help_text="The number of conversational turns taken during the session."
     )
 
-    # Error tracking
+    # --- Error Tracking ---
     error_code = models.CharField(
         max_length=100,
         blank=True,
-        help_text="Error code if session ended in error",
+        help_text="A code indicating the type of error if the session ended with an error.",
     )
     error_message = models.TextField(
         blank=True,
-        help_text="Error message if session ended in error",
+        help_text="A detailed message describing the error if the session ended with an error.",
     )
 
-    # Metadata
+    # --- Additional Metadata ---
     metadata = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Additional session metadata",
+        help_text="A flexible JSON field for storing additional, unstructured session metadata.",
     )
 
-    # Timestamps
+    # --- Timestamps ---
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     started_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="When session became active",
+        null=True, blank=True, help_text="Timestamp when the session became 'ACTIVE'."
     )
     terminated_at = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="When session was terminated",
+        help_text="Timestamp when the session officially ended (completed, error, terminated).",
     )
 
-    # Manager
+    # --- Django Manager ---
     objects = SessionManager()
 
     class Meta:
+        """Model metadata options."""
+
         db_table = "sessions"
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["status"]),
             models.Index(fields=["project"]),
             models.Index(fields=["api_key"]),
-            models.Index(fields=["created_at"]),
             models.Index(fields=["tenant", "status"]),
             models.Index(fields=["tenant", "created_at"]),
         ]
 
     def __str__(self) -> str:
-        return f"Session {self.id} ({self.status})"
+        """Returns a string representation of the session."""
+        return f"Session {self.id} (Project: {self.project.name if self.project else 'N/A'}, Status: {self.status})"
 
     def start(self) -> None:
-        """Start the session."""
+        """
+        Transitions the session status from 'CREATED' to 'ACTIVE' and sets the `started_at` timestamp.
+        """
         self.status = self.Status.ACTIVE
         self.started_at = timezone.now()
         self.save(update_fields=["status", "started_at", "updated_at"])
 
     def complete(self) -> None:
-        """Complete the session normally."""
+        """
+        Marks the session as 'COMPLETED' (normal termination) and calculates its duration.
+        Sets the `terminated_at` timestamp.
+        """
         self.status = self.Status.COMPLETED
         self.terminated_at = timezone.now()
         if self.started_at:
             self.duration_seconds = (self.terminated_at - self.started_at).total_seconds()
-        self.save(update_fields=[
-            "status",
-            "terminated_at",
-            "duration_seconds",
-            "updated_at",
-        ])
+        self.save(
+            update_fields=[
+                "status",
+                "terminated_at",
+                "duration_seconds",
+                "updated_at",
+            ]
+        )
 
     def terminate(self, reason: str = "") -> None:
-        """Terminate the session."""
+        """
+        Transitions the session status to 'TERMINATED' (abnormal termination) and calculates its duration.
+        Allows for an optional termination reason to be stored in metadata.
+        """
         self.status = self.Status.TERMINATED
         self.terminated_at = timezone.now()
         if self.started_at:
             self.duration_seconds = (self.terminated_at - self.started_at).total_seconds()
         if reason:
             self.metadata["termination_reason"] = reason
-        self.save(update_fields=[
-            "status",
-            "terminated_at",
-            "duration_seconds",
-            "metadata",
-            "updated_at",
-        ])
+        self.save(
+            update_fields=[
+                "status",
+                "terminated_at",
+                "duration_seconds",
+                "metadata",
+                "updated_at",
+            ]
+        )
 
     def set_error(self, error_code: str, error_message: str) -> None:
-        """Set session to error state."""
+        """
+        Marks the session as 'ERROR' and records the specific error details.
+        Also calculates the session duration up to the error.
+        """
         self.status = self.Status.ERROR
         self.error_code = error_code
         self.error_message = error_message
         self.terminated_at = timezone.now()
         if self.started_at:
             self.duration_seconds = (self.terminated_at - self.started_at).total_seconds()
-        self.save(update_fields=[
-            "status",
-            "error_code",
-            "error_message",
-            "terminated_at",
-            "duration_seconds",
-            "updated_at",
-        ])
+        self.save(
+            update_fields=[
+                "status",
+                "error_code",
+                "error_message",
+                "terminated_at",
+                "duration_seconds",
+                "updated_at",
+            ]
+        )
 
     def update_metrics(
         self,
@@ -230,93 +250,101 @@ class Session(TenantScopedModel):
         audio_output_seconds: float = 0,
         increment_turns: bool = False,
     ) -> None:
-        """Update session metrics."""
+        """
+        Updates various usage metrics for the session.
+
+        This method is designed to be called incrementally during an active session
+        to aggregate usage statistics.
+        """
         self.input_tokens += input_tokens
         self.output_tokens += output_tokens
         self.audio_input_seconds += audio_input_seconds
         self.audio_output_seconds += audio_output_seconds
         if increment_turns:
             self.turn_count += 1
-        self.save(update_fields=[
-            "input_tokens",
-            "output_tokens",
-            "audio_input_seconds",
-            "audio_output_seconds",
-            "turn_count",
-            "updated_at",
-        ])
+        self.save(
+            update_fields=[
+                "input_tokens",
+                "output_tokens",
+                "audio_input_seconds",
+                "audio_output_seconds",
+                "turn_count",
+                "updated_at",
+            ]
+        )
 
     @property
     def is_active(self) -> bool:
-        """Check if session is active."""
+        """Returns True if the session's status is 'ACTIVE'."""
         return self.status == self.Status.ACTIVE
 
     @property
     def total_tokens(self) -> int:
-        """Get total tokens used."""
+        """Calculates the sum of input and output tokens for the session."""
         return self.input_tokens + self.output_tokens
 
     @property
     def total_audio_seconds(self) -> float:
-        """Get total audio duration."""
+        """Calculates the sum of audio input and output duration for the session."""
         return self.audio_input_seconds + self.audio_output_seconds
 
 
 class SessionEvent(models.Model):
     """
-    Session event log.
+    Logs individual events that occur within a voice interaction session.
 
-    Tracks individual events within a session.
+    This model provides a detailed chronological record of session activities,
+    which is invaluable for auditing, debugging, and advanced analytics.
     """
 
     class EventType(models.TextChoices):
-        """Event types."""
+        """Defines the types of events that can be logged within a session."""
+
         SESSION_CREATED = "session.created", "Session Created"
         SESSION_STARTED = "session.started", "Session Started"
         SESSION_COMPLETED = "session.completed", "Session Completed"
         SESSION_ERROR = "session.error", "Session Error"
         SESSION_TERMINATED = "session.terminated", "Session Terminated"
-        AUDIO_INPUT = "audio.input", "Audio Input"
-        AUDIO_OUTPUT = "audio.output", "Audio Output"
-        TRANSCRIPTION = "transcription", "Transcription"
-        LLM_REQUEST = "llm.request", "LLM Request"
-        LLM_RESPONSE = "llm.response", "LLM Response"
-        TTS_REQUEST = "tts.request", "TTS Request"
-        TTS_RESPONSE = "tts.response", "TTS Response"
-        TURN_START = "turn.start", "Turn Start"
-        TURN_END = "turn.end", "Turn End"
-        ERROR = "error", "Error"
+        AUDIO_INPUT = "audio.input", "Audio Input"  # User's speech segment.
+        AUDIO_OUTPUT = "audio.output", "Audio Output"  # Agent's spoken response.
+        TRANSCRIPTION = "transcription", "Transcription"  # STT transcription result.
+        LLM_REQUEST = "llm.request", "LLM Request"  # Query sent to the LLM.
+        LLM_RESPONSE = "llm.response", "LLM Response"  # Response received from the LLM.
+        TTS_REQUEST = "tts.request", "TTS Request"  # Request to the TTS engine.
+        TTS_RESPONSE = "tts.response", "TTS Response"  # Audio bytes received from TTS.
+        TURN_START = "turn.start", "Turn Start"  # Beginning of a new conversational turn.
+        TURN_END = "turn.end", "Turn End"  # End of a conversational turn.
+        ERROR = "error", "Error"  # Any general error during the session.
 
-    # Primary key
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
+    # --- Core Identification ---
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Session association
+    # --- Session Association ---
     session = models.ForeignKey(
         Session,
-        on_delete=models.CASCADE,
+        on_delete=models.CASCADE,  # If the session is deleted, delete its events.
         related_name="events",
-        help_text="Associated session",
+        help_text="The session to which this event belongs.",
     )
 
-    # Event data
+    # --- Event Data ---
     event_type = models.CharField(
         max_length=50,
         choices=EventType.choices,
-        help_text="Event type",
+        db_index=True,
+        help_text="The type of event that occurred.",
     )
     data = models.JSONField(
         default=dict,
-        help_text="Event data",
+        help_text="A flexible JSON field for storing event-specific details (e.g., transcription text, LLM prompt/response).",
     )
 
-    # Timestamp
-    created_at = models.DateTimeField(auto_now_add=True)
+    # --- Timestamps ---
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
+        """Model metadata options."""
+
         db_table = "session_events"
         ordering = ["created_at"]
         indexes = [
@@ -325,4 +353,5 @@ class SessionEvent(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.event_type} @ {self.created_at}"
+        """Returns a string representation of the session event."""
+        return f"{self.event_type} for Session {self.session_id} @ {self.created_at.isoformat()}"

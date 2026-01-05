@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from asgiref.sync import sync_to_async
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
@@ -34,6 +35,7 @@ class MockJWTClaims:
     roles: list = None
 
     def __post_init__(self):
+        """Ensures roles is a list if not provided."""
         if self.roles is None:
             self.roles = []
 
@@ -42,8 +44,15 @@ class MockJWTClaims:
 # STRATEGIES FOR PROPERTY-BASED TESTING
 # ==========================================================================
 
-# Valid JWT token strategy (mock tokens)
-token_strategy = st.text(min_size=20, max_size=100).filter(str.strip)
+# Valid JWT token strategy (mock tokens - exclude query string special chars)
+token_strategy = st.text(
+    alphabet=st.characters(
+        blacklist_characters="\x00&=?#",  # Exclude NUL and query string delimiters
+        whitelist_categories=("L", "N"),  # Letters and numbers only
+    ),
+    min_size=20,
+    max_size=100,
+).filter(str.strip)
 
 
 # ==========================================================================
@@ -90,8 +99,8 @@ class TestWebSocketAuthentication:
         """
         from realtime.consumers.base import BaseConsumer
 
-        # Create real tenant
-        tenant = tenant_factory()
+        # Create real tenant using sync_to_async for async context
+        tenant = await sync_to_async(tenant_factory)()
 
         # Create mock claims (used to set up scope context)
         _ = MockJWTClaims(
@@ -164,6 +173,7 @@ class TestWebSocketAuthentication:
         close_code = None
 
         async def mock_close(code=1000):
+            """A mock close function to capture the close code."""
             nonlocal close_code
             close_code = code
 
@@ -202,6 +212,7 @@ class TestWebSocketAuthentication:
         close_code = None
 
         async def mock_close(code=1000):
+            """A mock close function to capture the close code."""
             nonlocal close_code
             close_code = code
 
@@ -230,7 +241,6 @@ class TestWebSocketTenantValidation:
     """
 
     @pytest.mark.property
-    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     async def test_suspended_tenant_closes_with_4003(self, suspended_tenant):
         """
         Property: Suspended tenant closes connection with 4003.
@@ -252,6 +262,7 @@ class TestWebSocketTenantValidation:
         close_code = None
 
         async def mock_close(code=1000):
+            """A mock close function to capture the close code."""
             nonlocal close_code
             close_code = code
 
@@ -298,6 +309,7 @@ class TestWebSocketTenantValidation:
         close_code = None
 
         async def mock_close(code=1000):
+            """A mock close function to capture the close code."""
             nonlocal close_code
             close_code = code
 
@@ -344,6 +356,7 @@ class TestWebSocketHeartbeat:
         sent_messages = []
 
         async def mock_send_json(data):
+            """A mock send_json function to capture sent messages."""
             sent_messages.append(data)
 
         consumer.send_json = mock_send_json
@@ -373,6 +386,7 @@ class TestWebSocketHeartbeat:
         sent_messages = []
 
         async def mock_send_json(data):
+            """A mock send_json function to capture sent messages."""
             sent_messages.append(data)
 
         consumer.send_json = mock_send_json

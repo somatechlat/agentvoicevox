@@ -1,11 +1,3 @@
-# ==========================================================================
-# AgentVoiceBox Docker Compose Configuration
-# ==========================================================================
-# Production-ready multi-service deployment
-# Total memory budget: ~15GB
-# Port range: 65000-65099
-# ==========================================================================
-
 x-logging: &default-logging
   driver: "json-file"
   options:
@@ -19,140 +11,32 @@ x-healthcheck-defaults: &healthcheck-defaults
   start_period: 40s
 
 services:
-  # ==========================================================================
-  # DJANGO BACKEND
-  # ==========================================================================
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: production
-    container_name: agentvoicebox_backend
-    environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.development
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DJANGO_DEBUG=true
-      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
-      # Database
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=agentvoicebox
-      - DB_USER=agentvoicebox
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_CONN_MAX_AGE=60
-      # Redis
-      - REDIS_URL=redis://redis:6379/0
-      - REDIS_CACHE_DB=1
-      - REDIS_SESSION_DB=2
-      - REDIS_CHANNEL_DB=3
-      # Keycloak
-      - KEYCLOAK_URL=http://keycloak:8080
-      - KEYCLOAK_REALM=agentvoicebox
-      - KEYCLOAK_CLIENT_ID=agentvoicebox-backend
-      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
-
-      # Temporal
-      - TEMPORAL_HOST=temporal:7233
-      - TEMPORAL_NAMESPACE=agentvoicebox
-      - TEMPORAL_TASK_QUEUE=default
-      # Vault
-      - VAULT_ADDR=http://vault:8200
-      - VAULT_ROLE_ID=${VAULT_ROLE_ID}
-      - VAULT_SECRET_ID=${VAULT_SECRET_ID}
-      - VAULT_MOUNT_POINT=secret
-      - VAULT_FAIL_FAST=${VAULT_FAIL_FAST:-false}
-      # OPA
-      - OPA_URL=${OPA_URL:-http://opa:8181}
-      - OPA_DECISION_PATH=/v1/data/agentvoicebox/allow
-      - OPA_TIMEOUT_SECONDS=3
-      - OPA_ENABLED=${OPA_ENABLED:-false}
-      # Kafka
-      - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
-      - KAFKA_CONSUMER_GROUP=agentvoicebox-backend
-      - KAFKA_ENABLED=${KAFKA_ENABLED:-false}
-      - KAFKA_SECURITY_PROTOCOL=PLAINTEXT
-      # Lago
-      - LAGO_API_URL=http://lago:3000
-      - LAGO_API_KEY=${LAGO_API_KEY}
-      - LAGO_WEBHOOK_SECRET=${LAGO_WEBHOOK_SECRET}
-      # Observability
-      - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
-      - PROMETHEUS_ENABLED=true
-      # CORS
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
-      - CORS_ALLOW_CREDENTIALS=true
-    ports:
-      - "65000:8000"
-    volumes:
-      - ./apps:/app/apps  # Mount apps for live editing
-      - ./config:/app/config  # Mount config for live editing
-      - ./realtime:/app/realtime  # Mount realtime module
-      - ./integrations:/app/integrations  # Mount integrations
-      - ./tests:/app/tests  # Mount tests
-      - agentvoicebox_backend_static:/app/staticfiles
-      - agentvoicebox_backend_media:/app/media
-      - agentvoicebox_backend_logs:/app/logs
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: "2.0"
-        reservations:
-          memory: 512M
-          cpus: "0.5"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      keycloak:
-        condition: service_healthy
-      vault:
-        condition: service_healthy
-    networks:
-      - agentvoicebox-network
-    logging: *default-logging
-    restart: unless-stopped
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
-      start_period: 60s
-
-  # ==========================================================================
-  # TEMPORAL WORKFLOW ORCHESTRATION
-  # ==========================================================================
   temporal:
     image: temporalio/auto-setup:1.24.2
     container_name: agentvoicebox_temporal
+    hostname: temporal
+    env_file:
+      - ../settings.docker.env
     environment:
-      - DB=postgres12
-      - DB_PORT=5432
-      - POSTGRES_USER=agentvoicebox
-      - POSTGRES_PWD=${DB_PASSWORD}
-      - POSTGRES_SEEDS=postgres
-      - DYNAMIC_CONFIG_FILE_PATH=/etc/temporal/config/dynamicconfig/development.yaml
-      - ENABLE_ES=false
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CLI_ADDRESS=temporal:7233
+      - DB=${TEMPORAL_DB}
+      - DB_PORT=${TEMPORAL_DB_PORT}
+      - POSTGRES_USER=${TEMPORAL_POSTGRES_USER}
+      - POSTGRES_PWD=${TEMPORAL_POSTGRES_PWD}
+      - POSTGRES_SEEDS=${TEMPORAL_POSTGRES_SEEDS}
+      - ENABLE_ES=${TEMPORAL_ENABLE_ES}
+      - TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS}
+      - SKIP_DEFAULT_NAMESPACE_CREATION=${TEMPORAL_SKIP_DEFAULT_NAMESPACE_CREATION}
     ports:
       - "65001:7233"
     volumes:
-      - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig:ro
       - agentvoicebox_temporal_data:/var/lib/temporal
     deploy:
       resources:
         limits:
           memory: 1G
-          cpus: "1.0"
-        reservations:
-          memory: 512M
-          cpus: "0.25"
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks:
       - agentvoicebox-network
+      - shared-network
     logging: *default-logging
     restart: unless-stopped
     healthcheck:
@@ -163,19 +47,17 @@ services:
   temporal-ui:
     image: temporalio/ui:2.26.2
     container_name: agentvoicebox_temporal_ui
+    hostname: temporal-ui
+    env_file:
+      - ../settings.docker.env
     environment:
-      - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+      - TEMPORAL_ADDRESS=${TEMPORAL_ADDRESS}
     ports:
       - "65002:8080"
     deploy:
       resources:
         limits:
           memory: 256M
-          cpus: "0.5"
-        reservations:
-          memory: 128M
-          cpus: "0.1"
     depends_on:
       - temporal
     networks:
@@ -183,322 +65,79 @@ services:
     logging: *default-logging
     restart: unless-stopped
 
-  temporal-worker:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
       target: production
-    container_name: agentvoicebox_temporal_worker
-    command: python manage.py run_temporal_worker
-    environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.production
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=agentvoicebox
-      - DB_USER=agentvoicebox
-      - DB_PASSWORD=${DB_PASSWORD}
-      - REDIS_URL=redis://redis:6379/0
-      - TEMPORAL_HOST=temporal:7233
-      - TEMPORAL_NAMESPACE=agentvoicebox
-      - TEMPORAL_TASK_QUEUE=default
-      - VAULT_ADDR=http://vault:8200
-      - VAULT_ROLE_ID=${VAULT_WORKER_ROLE_ID}
-      - VAULT_SECRET_ID=${VAULT_WORKER_SECRET_ID}
-      - VAULT_FAIL_FAST=${VAULT_FAIL_FAST:-false}
-
-      - LOG_LEVEL=INFO
-      - LOG_FORMAT=json
+    container_name: agentvoicebox_backend
+    hostname: backend
+    env_file:
+      - ../settings.docker.env
+    ports:
+      - "65000:8000"
     volumes:
+      - agentvoicebox_backend_static:/app/staticfiles
+      - agentvoicebox_backend_media:/app/media
       - agentvoicebox_backend_logs:/app/logs
     deploy:
       resources:
         limits:
           memory: 1G
-          cpus: "2.0"
-        reservations:
-          memory: 512M
-          cpus: "0.25"
-    depends_on:
-      - temporal
-      - redis
-      - vault
-      - postgres
     networks:
       - agentvoicebox-network
-    logging: *default-logging
-    restart: unless-stopped
-
-  # ==========================================================================
-  # SECRETS MANAGEMENT
-  # ==========================================================================
-  vault:
-    image: hashicorp/vault:1.15
-    container_name: agentvoicebox_vault
-    cap_add:
-      - IPC_LOCK
-    environment:
-      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_DEV_TOKEN:-devtoken}
-      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
-      VAULT_ADDR: http://127.0.0.1:8200
-    ports:
-      - "65003:8200"
-    volumes:
-      - agentvoicebox_vault_data:/vault/data
-      - ./vault/config:/vault/config:ro
-      - ./vault/policies:/vault/policies:ro
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: "0.5"
-        reservations:
-          memory: 128M
-          cpus: "0.1"
-    networks:
-      - agentvoicebox-network
+      - shared-network
     logging: *default-logging
     restart: unless-stopped
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD", "vault", "status"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      start_period: 60s
 
-  # ==========================================================================
-  # DATABASE
-  # ==========================================================================
-  postgres:
-    image: postgres:16-alpine
-    container_name: agentvoicebox_postgres
-    environment:
-      POSTGRES_DB: agentvoicebox
-      POSTGRES_USER: agentvoicebox
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
-      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
-    command:
-      - "postgres"
-      - "-c"
-      - "max_connections=200"
-      - "-c"
-      - "shared_buffers=512MB"
-      - "-c"
-      - "effective_cache_size=1536MB"
-      - "-c"
-      - "maintenance_work_mem=128MB"
-      - "-c"
-      - "checkpoint_completion_target=0.9"
-      - "-c"
-      - "wal_buffers=16MB"
-      - "-c"
-      - "default_statistics_target=100"
-      - "-c"
-      - "random_page_cost=1.1"
-      - "-c"
-      - "effective_io_concurrency=200"
-      - "-c"
-      - "work_mem=2621kB"
-      - "-c"
-      - "min_wal_size=1GB"
-      - "-c"
-      - "max_wal_size=4GB"
-      - "-c"
-      - "max_worker_processes=4"
-      - "-c"
-      - "max_parallel_workers_per_gather=2"
-      - "-c"
-      - "max_parallel_workers=4"
-      - "-c"
-      - "max_parallel_maintenance_workers=2"
-      - "-c"
-      - "log_statement=mod"
-      - "-c"
-      - "log_duration=on"
-      - "-c"
-      - "log_min_duration_statement=1000"
+  portal-frontend:
+    build:
+      context: ../portal-frontend
+      dockerfile: Dockerfile
+    container_name: agentvoicebox_portal_frontend
+    hostname: portal-frontend
+    env_file:
+      - ../settings.docker.env
     ports:
-      - "65004:5432"
-    volumes:
-      - agentvoicebox_postgres_data:/var/lib/postgresql/data
-      - agentvoicebox_postgres_backups:/backups
-      - ./postgres/init:/docker-entrypoint-initdb.d:ro
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          cpus: "2.0"
-        reservations:
-          memory: 1G
-          cpus: "0.5"
-    networks:
-      - agentvoicebox-network
-    logging: *default-logging
-    restart: unless-stopped
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "pg_isready -U agentvoicebox -d agentvoicebox"]
-
-  # ==========================================================================
-  # CACHE & MESSAGE BROKER
-  # ==========================================================================
-  redis:
-    image: redis:7-alpine
-    container_name: agentvoicebox_redis
-    command:
-      - "redis-server"
-      - "--appendonly"
-      - "yes"
-      - "--appendfsync"
-      - "everysec"
-      - "--maxmemory"
-      - "400mb"
-      - "--maxmemory-policy"
-      - "allkeys-lru"
-      - "--tcp-keepalive"
-      - "300"
-      - "--timeout"
-      - "0"
-      - "--tcp-backlog"
-      - "511"
-      - "--databases"
-      - "16"
-      - "--save"
-      - "900 1"
-      - "--save"
-      - "300 10"
-      - "--save"
-      - "60 10000"
-      - "--loglevel"
-      - "notice"
-    ports:
-      - "65005:6379"
-    volumes:
-      - agentvoicebox_redis_data:/data
+      - "65013:3000"
     deploy:
       resources:
         limits:
           memory: 512M
-          cpus: "1.0"
-        reservations:
-          memory: 256M
-          cpus: "0.25"
-    networks:
-      - agentvoicebox-network
-    logging: *default-logging
-    restart: unless-stopped
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-
-  # ==========================================================================
-  # AUTHENTICATION
-  # ==========================================================================
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0
-    container_name: agentvoicebox_keycloak
-    command:
-      - "start-dev"
-      - "--http-enabled=true"
-      - "--http-port=8080"
-      - "--hostname-strict=false"
-      - "--health-enabled=true"
-      - "--metrics-enabled=true"
-    environment:
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
-      KC_DB_USERNAME: agentvoicebox
-      KC_DB_PASSWORD: ${DB_PASSWORD}
-      KC_HEALTH_ENABLED: "true"
-      KC_METRICS_ENABLED: "true"
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_LOG_LEVEL: INFO
-      JAVA_OPTS_APPEND: "-Xms512m -Xmx1024m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m"
-    ports:
-      - "65006:8080"
-    volumes:
-      - agentvoicebox_keycloak_data:/opt/keycloak/data
-      - ./keycloak/themes:/opt/keycloak/themes:ro
-    deploy:
-      resources:
-        limits:
-          memory: 1536M
-          cpus: "1.5"
-        reservations:
-          memory: 1G
-          cpus: "0.5"
     depends_on:
-      postgres:
+      backend:
         condition: service_healthy
     networks:
       - agentvoicebox-network
+      - shared-network
     logging: *default-logging
     restart: unless-stopped
     healthcheck:
       <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
-      start_period: 120s
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      start_period: 60s
 
-  # ==========================================================================
-  # REVERSE PROXY
-  # ==========================================================================
-  nginx:
-    image: nginx:1.25-alpine
-    container_name: agentvoicebox_nginx
-    ports:
-      - "65009:80"
-      - "65010:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-      - agentvoicebox_backend_static:/var/www/static:ro
-      - agentvoicebox_backend_media:/var/www/media:ro
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: "0.5"
-        reservations:
-          memory: 64M
-          cpus: "0.1"
-    depends_on:
-      - backend
-    networks:
-      - agentvoicebox-network
-    logging: *default-logging
-    restart: unless-stopped
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD", "nginx", "-t"]
-
-  # ==========================================================================
-  # OBSERVABILITY
-  # ==========================================================================
   prometheus:
     image: prom/prometheus:v2.48.0
     container_name: agentvoicebox_prometheus
+    hostname: prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=15d"
-      - "--storage.tsdb.retention.size=1GB"
-      - "--web.enable-lifecycle"
-      - "--web.enable-admin-api"
     ports:
       - "65011:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus/alerts:/etc/prometheus/alerts:ro
       - agentvoicebox_prometheus_data:/prometheus
     deploy:
       resources:
         limits:
           memory: 512M
-          cpus: "0.5"
-        reservations:
-          memory: 256M
-          cpus: "0.1"
     networks:
       - agentvoicebox-network
     logging: *default-logging
@@ -510,28 +149,22 @@ services:
   grafana:
     image: grafana/grafana:10.2.0
     container_name: agentvoicebox_grafana
+    hostname: grafana
+    env_file:
+      - ../settings.docker.env
     environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SERVER_ROOT_URL: "http://localhost:65012"
-      GF_INSTALL_PLUGINS: "grafana-clock-panel,grafana-piechart-panel"
-      GF_DATABASE_TYPE: sqlite3
-      GF_LOG_LEVEL: warn
+      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL}
     ports:
-      - "65012:3000"
+      - "${GRAFANA_PORT}:3000"
     volumes:
       - agentvoicebox_grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     deploy:
       resources:
         limits:
           memory: 512M
-          cpus: "0.5"
-        reservations:
-          memory: 256M
-          cpus: "0.1"
     depends_on:
       - prometheus
     networks:
@@ -542,40 +175,18 @@ services:
       <<: *healthcheck-defaults
       test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health"]
 
-# ==========================================================================
-# NETWORKS
-# ==========================================================================
 networks:
   agentvoicebox-network:
     name: agentvoicebox_network
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.31.0.0/16
+  shared-network:
+    name: shared_services_network
+    external: true
 
-# ==========================================================================
-# PERSISTENT VOLUMES
-# ==========================================================================
 volumes:
-  agentvoicebox_postgres_data:
-    driver: local
-  agentvoicebox_postgres_backups:
-    driver: local
-  agentvoicebox_redis_data:
-    driver: local
-  agentvoicebox_keycloak_data:
-    driver: local
-  agentvoicebox_backend_static:
-    driver: local
-  agentvoicebox_backend_media:
-    driver: local
-  agentvoicebox_backend_logs:
-    driver: local
   agentvoicebox_temporal_data:
-    driver: local
-  agentvoicebox_vault_data:
-    driver: local
+  agentvoicebox_backend_static:
+  agentvoicebox_backend_media:
+  agentvoicebox_backend_logs:
   agentvoicebox_prometheus_data:
-    driver: local
   agentvoicebox_grafana_data:
-    driver: local

@@ -14,10 +14,16 @@ Uses REAL Django middleware - NO MOCKS.
 """
 
 import json
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import patch
 
 import pytest
+from django.http import HttpRequest, HttpResponse
+from django.test import RequestFactory, override_settings
+from hypothesis import HealthCheck, given
+from hypothesis import settings as hypothesis_settings
+from hypothesis import strategies as st
+
 from apps.core.exceptions import (
     AuthenticationError,
     ConflictError,
@@ -29,22 +35,22 @@ from apps.core.exceptions import (
     TokenExpiredError,
     ValidationError,
 )
-from django.http import HttpRequest, HttpResponse
-from django.test import RequestFactory, override_settings
-from hypothesis import HealthCheck, given
-from hypothesis import settings as hypothesis_settings
-from hypothesis import strategies as st
 
 # ==========================================================================
 # STRATEGIES FOR PROPERTY-BASED TESTING
 # ==========================================================================
 
-# Exception message strategy
+# Exception message strategy - generates messages that won't appear in generic error
+# "An unexpected error occurred" - avoid single chars that appear in this message
 exception_message_strategy = st.text(
-    alphabet=st.characters(whitelist_categories=("L", "N", "P", "S")),
-    min_size=1,
+    alphabet=st.characters(
+        whitelist_categories=("L", "N", "P", "S"),
+        # Exclude characters that appear in "An unexpected error occurred"
+        blacklist_characters="Anunexpctdrorcu ",
+    ),
+    min_size=3,  # Minimum 3 chars to avoid false positives
     max_size=200,
-).filter(str.strip)
+).filter(lambda x: x.strip() and len(x.strip()) >= 3)
 
 # Exception type strategy - all known API exceptions
 api_exception_strategy = st.sampled_from(
@@ -83,12 +89,13 @@ def create_failing_view(exception: Exception):
     """Create a view that raises the given exception."""
 
     def view(request: HttpRequest) -> HttpResponse:
+        """A simple view that raises an exception for testing."""
         raise exception
 
     return view
 
 
-def parse_json_response(response: HttpResponse) -> Dict[str, Any]:
+def parse_json_response(response: HttpResponse) -> dict[str, Any]:
     """Parse JSON response body."""
     return json.loads(response.content.decode("utf-8"))
 
@@ -219,7 +226,7 @@ class TestExceptionSanitization:
         self,
         exception_class,
         message: str,
-        details: Dict[str, Any],
+        details: dict[str, Any],
         request_factory: RequestFactory,
     ):
         """
