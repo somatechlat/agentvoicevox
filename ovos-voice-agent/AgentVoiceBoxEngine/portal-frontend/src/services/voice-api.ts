@@ -6,16 +6,14 @@
 
 import { apiClient, ApiResponse } from './api-client';
 
-const requireEnv = (name: string): string => {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
+// Get environment variables from Vite or use defaults
+const getEnv = (name: string, defaultValue: string): string => {
+  const envVar = (import.meta as any).env?.[name];
+  return envVar || defaultValue;
 };
 
 // Gateway base URL
-const GATEWAY_URL = requireEnv('NEXT_PUBLIC_GATEWAY_URL');
+const GATEWAY_URL = getEnv('VITE_GATEWAY_URL', 'http://localhost:65020');
 
 // Create gateway client
 const gatewayClient = new (apiClient.constructor as typeof import('./api-client').ApiClient)(GATEWAY_URL);
@@ -150,7 +148,7 @@ export const sessionsApi = {
     if (params?.tenant_id) query.set('tenant_id', params.tenant_id);
     if (params?.limit) query.set('limit', params.limit.toString());
     if (params?.offset) query.set('offset', params.offset.toString());
-    
+
     return gatewayClient.get(`/v1/realtime/sessions?${query}`);
   },
 
