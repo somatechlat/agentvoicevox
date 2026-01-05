@@ -14,7 +14,7 @@ DEBUG = True
 # ==========================================================================
 # ALLOWED HOSTS (Development)
 # ==========================================================================
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "backend"]
+ALLOWED_HOSTS = ["*"]  # Allow all hosts in development (needed for Kubernetes pod IPs)
 
 # ==========================================================================
 # CORS (Allow all in development)
