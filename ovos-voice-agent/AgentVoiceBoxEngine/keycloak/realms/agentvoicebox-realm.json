@@ -830,7 +830,19 @@
       }
     }
   ],
-  "smtpServer": {},
+  "smtpServer": {
+    "host": "mail.somatech.dev",
+    "port": "465",
+    "from": "saasadmin@somatech.dev",
+    "fromDisplayName": "AgentVoiceBox",
+    "replyTo": "saasadmin@somatech.dev",
+    "replyToDisplayName": "AgentVoiceBox Support",
+    "ssl": "true",
+    "starttls": "false",
+    "auth": "true",
+    "user": "saasadmin@somatech.dev",
+    "password": "${SMTP_PASSWORD}"
+  },
   "eventsEnabled": true,
   "eventsListeners": [
     "jboss-logging"
