@@ -38,6 +38,12 @@ spec:
           envFrom:
             - configMapRef:
                 name: portal-frontend-config
+          volumeMounts:
+            # Mount source for live editing - Vite HMR watches these
+            - name: src-volume
+              mountPath: /app/src
+            - name: public-volume
+              mountPath: /app/public
           resources:
             limits:
               memory: "512Mi"
@@ -57,6 +63,16 @@ spec:
               port: 65027
             initialDelaySeconds: 30
             periodSeconds: 15
+      volumes:
+        # Tilt syncs these directories via live_update
+        - name: src-volume
+          hostPath:
+            path: /hosthome/portal-frontend/src
+            type: DirectoryOrCreate
+        - name: public-volume
+          hostPath:
+            path: /hosthome/portal-frontend/public
+            type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
