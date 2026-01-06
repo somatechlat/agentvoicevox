@@ -101,13 +101,13 @@ k8s_resource('django-api',
 docker_build('avb-portal-frontend', './portal-frontend',
   dockerfile='./portal-frontend/Dockerfile',
   live_update=[
+    # fall_back_on must be first - triggers full rebuild on dependency changes
+    fall_back_on(['./portal-frontend/package.json', './portal-frontend/bun.lock']),
     # Sync source files - Vite HMR handles hot reload automatically
     sync('./portal-frontend/src', '/app/src'),
     sync('./portal-frontend/public', '/app/public'),
     sync('./portal-frontend/index.html', '/app/index.html'),
     sync('./portal-frontend/vite.config.ts', '/app/vite.config.ts'),
-    # Only rebuild when dependencies change
-    fall_back_on(['./portal-frontend/package.json', './portal-frontend/bun.lock']),
   ]
 )
 
