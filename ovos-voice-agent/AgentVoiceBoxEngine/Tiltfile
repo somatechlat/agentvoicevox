@@ -86,12 +86,17 @@ k8s_resource('django-api',
   resource_deps=['postgres', 'redis', 'keycloak']
 )
 
-# Portal Frontend Build
+# Portal Frontend Build - with live sync for Vite HMR
 docker_build('avb-portal-frontend', './portal-frontend',
   dockerfile='./portal-frontend/Dockerfile',
   live_update=[
+    # Sync source files - Vite HMR handles hot reload automatically
     sync('./portal-frontend/src', '/app/src'),
-    run('bun run build', trigger='./portal-frontend/src'),
+    sync('./portal-frontend/public', '/app/public'),
+    sync('./portal-frontend/index.html', '/app/index.html'),
+    sync('./portal-frontend/vite.config.ts', '/app/vite.config.ts'),
+    # Only rebuild when dependencies change
+    fall_back_on(['./portal-frontend/package.json', './portal-frontend/bun.lock']),
   ]
 )
 

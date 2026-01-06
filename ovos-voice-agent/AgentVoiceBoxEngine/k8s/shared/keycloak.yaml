@@ -26,6 +26,7 @@ type: Opaque
 stringData:
   KC_DB_PASSWORD: "shared_secure_2024"
   KEYCLOAK_ADMIN_PASSWORD: "adminpassword123"
+  SMTP_PASSWORD: "saasadmin.2026"
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
