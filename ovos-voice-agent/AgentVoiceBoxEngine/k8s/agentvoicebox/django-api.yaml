@@ -8,9 +8,10 @@ metadata:
   namespace: agentvoicebox
 data:
   # Django Core
-  DJANGO_SETTINGS_MODULE: "config.settings.development"
-  DEBUG: "true"
-  DJANGO_ALLOWED_HOSTS: "*"
+  DJANGO_SETTINGS_MODULE: "config.settings.development" # Use dev module but override with prod settings
+  DEBUG: "False" # PRODUCTION HARDENING
+  # Strict allowed hosts for local cluster & domains
+  DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,django-api,django-api.agentvoicebox,django-api.agentvoicebox.svc,django-api.agentvoicebox.svc.cluster.local,.agentvoicebox.com,.somatech.dev"
   VOICE_AGENT_BASE_URL: "http://localhost:65020"
   VOICE_AGENT_WS_BASE_URL: "ws://localhost:65020"
   # Database
@@ -34,7 +35,8 @@ data:
   KEYCLOAK_REALM: "agentvoicebox"
   KEYCLOAK_CLIENT_ID: "agentvoicebox-api"
   # CORS (allow frontend)
-  CORS_ALLOWED_ORIGINS: "http://localhost:65027,http://localhost:5173,http://localhost:3000"
+  CORS_ALLOW_ALL_ORIGINS: "false"
+  CORS_ALLOWED_ORIGINS: "http://localhost:65027,http://localhost:5173,http://localhost:3000,http://localhost:65020"
   CORS_ALLOW_CREDENTIALS: "true"
   # Rate Limiting
   RATE_LIMIT_DEFAULT: "60"
