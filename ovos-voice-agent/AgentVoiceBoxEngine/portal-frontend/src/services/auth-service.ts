@@ -38,7 +38,8 @@ interface AuthTokens {
 const STORAGE_KEYS = {
   TOKENS: 'auth_tokens',
   STATE: 'auth_state',
-  REDIRECT_URI: 'auth_redirect_uri'
+  REDIRECT_URI: 'auth_redirect_uri',
+  CODE_VERIFIER: 'auth_code_verifier'
 } as const;
 
 class AuthService {
@@ -96,14 +97,19 @@ class AuthService {
   }
 
   /**
-   * Redirect to Keycloak login page
+   * Redirect to Keycloak login page with PKCE
    */
-  login(redirectUri?: string): void {
+  async login(redirectUri?: string): Promise<void> {
     const callbackUri = `${window.location.origin}/auth/callback`;
     const state = this.generateState();
 
-    // Store state for CSRF protection
+    // Generate PKCE code verifier and challenge
+    const codeVerifier = this.generateCodeVerifier();
+    const codeChallenge = await this.generateCodeChallenge(codeVerifier);
+
+    // Store state and code verifier for CSRF protection and PKCE
     localStorage.setItem(STORAGE_KEYS.STATE, state);
+    localStorage.setItem(STORAGE_KEYS.CODE_VERIFIER, codeVerifier);
 
     // Store intended destination
     if (redirectUri) {
@@ -115,11 +121,46 @@ class AuthService {
       redirect_uri: callbackUri,
       response_type: 'code',
       scope: 'openid profile email',
-      state: state
+      state: state,
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256'
     });
 
     const loginUrl = `${this.config.url}/realms/${this.config.realm}/protocol/openid-connect/auth?${params}`;
     window.location.href = loginUrl;
+  }
+
+  /**
+   * Generate a cryptographically random code verifier for PKCE
+   */
+  private generateCodeVerifier(): string {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return this.base64UrlEncode(array);
+  }
+
+  /**
+   * Generate code challenge from code verifier using SHA-256
+   */
+  private async generateCodeChallenge(verifier: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    return this.base64UrlEncode(new Uint8Array(digest));
+  }
+
+  /**
+   * Base64 URL encode (RFC 4648)
+   */
+  private base64UrlEncode(bytes: Uint8Array): string {
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
   }
 
   /**
@@ -138,8 +179,14 @@ class AuthService {
       }
 
       const redirectUri = `${window.location.origin}/auth/callback`;
+      const codeVerifier = localStorage.getItem(STORAGE_KEYS.CODE_VERIFIER);
 
-      // Exchange code for tokens
+      if (!codeVerifier) {
+        console.error('Missing code verifier for PKCE');
+        return false;
+      }
+
+      // Exchange code for tokens with PKCE code_verifier
       const response = await fetch(
         `${this.config.url}/realms/${this.config.realm}/protocol/openid-connect/token`,
         {
@@ -151,7 +198,8 @@ class AuthService {
             grant_type: 'authorization_code',
             code: code,
             client_id: this.config.clientId,
-            redirect_uri: redirectUri
+            redirect_uri: redirectUri,
+            code_verifier: codeVerifier
           })
         }
       );
@@ -173,6 +221,7 @@ class AuthService {
 
       localStorage.setItem(STORAGE_KEYS.TOKENS, JSON.stringify(this.tokens));
       localStorage.removeItem(STORAGE_KEYS.STATE);
+      localStorage.removeItem(STORAGE_KEYS.CODE_VERIFIER);
 
       // Set token on API client for all subsequent requests
       apiClient.setAuthToken(this.tokens.accessToken);
