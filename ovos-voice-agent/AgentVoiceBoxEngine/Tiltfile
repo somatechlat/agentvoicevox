@@ -29,6 +29,17 @@
 allow_k8s_contexts(['minikube'])
 
 # ============================================================================
+# MINIKUBE MOUNT FOR LIVE DEVELOPMENT
+# ============================================================================
+# Mount local directory to Minikube VM for hostPath volumes
+local_resource(
+  'minikube-mount',
+  serve_cmd='minikube mount ./portal-frontend:/hosthome/portal-frontend --uid=1000 --gid=1000',
+  labels=['dev-setup'],
+  auto_init=True
+)
+
+# ============================================================================
 # SHARED SERVICES (Infrastructure)
 # ============================================================================
 
