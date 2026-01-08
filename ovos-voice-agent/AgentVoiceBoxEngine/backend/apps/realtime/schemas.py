@@ -62,7 +62,9 @@ class SessionConfig(Schema):
 
     modalities: list[Literal["text", "audio"]] = ["text", "audio"]
     instructions: Optional[str] = None
-    voice: Literal["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"] = "alloy"
+    voice: Literal[
+        "alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"
+    ] = "alloy"
     input_audio_format: Literal["pcm16", "g711_ulaw", "g711_alaw"] = "pcm16"
     output_audio_format: Literal["pcm16", "g711_ulaw", "g711_alaw"] = "pcm16"
     input_audio_transcription: Optional[InputAudioTranscription] = None
@@ -160,7 +162,9 @@ class FunctionCallOutputItemInput(Schema):
     output: str
 
 
-ConversationItemInput = Union[MessageItemInput, FunctionCallItemInput, FunctionCallOutputItemInput]
+ConversationItemInput = Union[
+    MessageItemInput, FunctionCallItemInput, FunctionCallOutputItemInput
+]
 
 
 class ConversationItemObject(Schema):
@@ -446,7 +450,9 @@ class InputAudioBufferClearedEvent(ServerEvent):
 class InputAudioBufferSpeechStartedEvent(ServerEvent):
     """input_audio_buffer.speech_started event."""
 
-    type: Literal["input_audio_buffer.speech_started"] = "input_audio_buffer.speech_started"
+    type: Literal["input_audio_buffer.speech_started"] = (
+        "input_audio_buffer.speech_started"
+    )
     audio_start_ms: int
     item_id: str
 
@@ -454,7 +460,9 @@ class InputAudioBufferSpeechStartedEvent(ServerEvent):
 class InputAudioBufferSpeechStoppedEvent(ServerEvent):
     """input_audio_buffer.speech_stopped event."""
 
-    type: Literal["input_audio_buffer.speech_stopped"] = "input_audio_buffer.speech_stopped"
+    type: Literal["input_audio_buffer.speech_stopped"] = (
+        "input_audio_buffer.speech_stopped"
+    )
     audio_end_ms: int
     item_id: str
 
@@ -628,7 +636,9 @@ class ResponseFunctionCallArgumentsDeltaEvent(ServerEvent):
 class ResponseFunctionCallArgumentsDoneEvent(ServerEvent):
     """response.function_call_arguments.done event."""
 
-    type: Literal["response.function_call_arguments.done"] = "response.function_call_arguments.done"
+    type: Literal["response.function_call_arguments.done"] = (
+        "response.function_call_arguments.done"
+    )
     response_id: str
     item_id: str
     output_index: int

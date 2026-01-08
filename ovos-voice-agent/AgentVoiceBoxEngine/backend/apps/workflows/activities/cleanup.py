@@ -67,7 +67,9 @@ class CleanupActivities:
             A `CleanupResult` object detailing the outcome of the operation.
         """
         import time
+
         from django.utils import timezone
+
         from apps.sessions.models import Session  # Local import.
 
         start_time = time.time()
@@ -147,7 +149,9 @@ class CleanupActivities:
         import json
         import time
         from pathlib import Path
+
         from django.utils import timezone
+
         from apps.audit.models import AuditLog  # Local import.
 
         start_time = time.time()
@@ -167,7 +171,10 @@ class CleanupActivities:
                 archive_dir.mkdir(parents=True, exist_ok=True)
 
                 # Generate a unique archive filename based on the cutoff date.
-                archive_file = archive_dir / f"audit_{{cutoff_time.strftime('%Y%m%d_%H%M%S')}}.jsonl"
+                archive_file = (
+                    archive_dir
+                    / "audit_{cutoff_time.strftime('%Y%m%d_%H%M%S')}.jsonl"
+                )
 
                 # Stream logs to the JSONL archive file.
                 async for log in old_logs_qs:
@@ -177,7 +184,11 @@ class CleanupActivities:
                                 json.dumps(
                                     {
                                         "id": str(log.id),
-                                        "tenant_id": str(log.tenant_id) if log.tenant_id else None,
+                                        "tenant_id": (
+                                            str(log.tenant_id)
+                                            if log.tenant_id
+                                            else None
+                                        ),
                                         "actor_id": log.actor_id,
                                         "actor_email": log.actor_email,
                                         "action": log.action,
@@ -250,7 +261,10 @@ class CleanupActivities:
         try:
             media_path = Path(media_dir)
             if not media_path.exists():
-                logger.warning("Media directory '%s' does not exist. Skipping orphaned file cleanup.", media_dir)
+                logger.warning(
+                    "Media directory '%s' does not exist. Skipping orphaned file cleanup.",
+                    media_dir,
+                )
                 return CleanupResult(
                     operation="cleanup_orphaned_files",
                     items_processed=0,
@@ -306,8 +320,10 @@ class CleanupActivities:
             A dictionary containing the aggregated metrics.
         """
         import time
+
         from django.db.models import Avg, Sum
         from django.utils import timezone
+
         from apps.sessions.models import Session  # Local import.
         from apps.tenants.models import Tenant  # Local import.
 
@@ -330,16 +346,30 @@ class CleanupActivities:
                 "sessions": {
                     "total": await sessions_qs.acount(),
                     "today": await sessions_qs.filter(created_at__gte=today).acount(),
-                    "this_month": await sessions_qs.filter(created_at__gte=this_month).acount(),
+                    "this_month": await sessions_qs.filter(
+                        created_at__gte=this_month
+                    ).acount(),
                     "active": await sessions_qs.filter(status="active").acount(),
                 },
                 "duration": {
-                    "total_seconds": (await sessions_qs.aaggregate(total=Sum("duration_seconds")))["total"] or 0,
-                    "avg_seconds": (await sessions_qs.aaggregate(avg=Avg("duration_seconds")))["avg"] or 0,
+                    "total_seconds": (
+                        await sessions_qs.aaggregate(total=Sum("duration_seconds"))
+                    )["total"]
+                    or 0,
+                    "avg_seconds": (
+                        await sessions_qs.aaggregate(avg=Avg("duration_seconds"))
+                    )["avg"]
+                    or 0,
                 },
                 "tokens": {
-                    "input_total": (await sessions_qs.aaggregate(total=Sum("input_tokens")))["total"] or 0,
-                    "output_total": (await sessions_qs.aaggregate(total=Sum("output_tokens")))["total"] or 0,
+                    "input_total": (
+                        await sessions_qs.aaggregate(total=Sum("input_tokens"))
+                    )["total"]
+                    or 0,
+                    "output_total": (
+                        await sessions_qs.aaggregate(total=Sum("output_tokens"))
+                    )["total"]
+                    or 0,
                 },
             }
 

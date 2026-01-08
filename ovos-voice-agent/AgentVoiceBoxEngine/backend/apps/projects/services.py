@@ -42,7 +42,9 @@ class ProjectService:
             NotFoundError: If a project with the specified ID does not exist.
         """
         try:
-            return Project.objects.select_related("tenant", "created_by").get(id=project_id)
+            return Project.objects.select_related("tenant", "created_by").get(
+                id=project_id
+            )
         except Project.DoesNotExist:
             raise NotFoundError(f"Project {project_id} not found")
 
@@ -149,7 +151,9 @@ class ProjectService:
         TenantService.enforce_limit(tenant, "projects")
 
         if Project.all_objects.filter(tenant=tenant, slug=slug).exists():
-            raise ConflictError(f"Project with slug '{slug}' already exists in this tenant.")
+            raise ConflictError(
+                f"Project with slug '{slug}' already exists in this tenant."
+            )
 
         project = Project(
             tenant=tenant,
@@ -270,11 +274,15 @@ class ProjectService:
             "is_active": project.is_active,
             "api_keys": {
                 "total": APIKey.all_objects.filter(project=project).count(),
-                "active": APIKey.all_objects.filter(project=project, revoked_at__isnull=True).count(),
+                "active": APIKey.all_objects.filter(
+                    project=project, revoked_at__isnull=True
+                ).count(),
             },
             "sessions": {
                 "total": Session.all_objects.filter(project=project).count(),
-                "active": Session.all_objects.filter(project=project, status="active").count(),
+                "active": Session.all_objects.filter(
+                    project=project, status="active"
+                ).count(),
             },
         }
 

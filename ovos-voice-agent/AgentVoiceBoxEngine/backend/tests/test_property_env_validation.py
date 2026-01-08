@@ -77,6 +77,7 @@ class TestEnvironmentValidation:
         os.environ.clear()
         os.environ.update(valid_env)
         try:
+
             class TestSettings(BaseSettings):
                 """A Pydantic settings class for testing environment variable validation."""
 
@@ -177,6 +178,7 @@ class TestEnvironmentValidation:
         os.environ.clear()
         os.environ.update(valid_env)
         try:
+
             class TestSettings(BaseSettings):
                 """A Pydantic settings class for testing environment variable validation."""
 
@@ -214,6 +216,7 @@ class TestEnvironmentValidation:
         os.environ.clear()
         os.environ.update(valid_env)
         try:
+
             class TestSettings(BaseSettings):
                 """A Pydantic settings class for testing environment variable validation."""
 
@@ -249,6 +252,7 @@ class TestEnvironmentValidation:
         os.environ.clear()
         os.environ.update(valid_env)
         try:
+
             class TestSettings(BaseSettings):
                 """A Pydantic settings class for testing environment variable validation."""
 
@@ -282,7 +286,9 @@ class TestEnvironmentValidation:
     @pytest.mark.property
     @given(
         invalid_level=st.text(
-            alphabet=st.characters(blacklist_categories=("Cs",), blacklist_characters="\x00"),
+            alphabet=st.characters(
+                blacklist_categories=("Cs",), blacklist_characters="\x00"
+            ),
             min_size=1,
             max_size=20,
         ).filter(

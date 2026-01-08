@@ -34,7 +34,9 @@ class ThemeService:
 
         total = qs.count()
         offset = (page - 1) * page_size
-        themes = list(qs.order_by("-is_default", "-created_at")[offset : offset + page_size])
+        themes = list(
+            qs.order_by("-is_default", "-created_at")[offset : offset + page_size]
+        )
 
         return themes, total
 
@@ -59,7 +61,9 @@ class ThemeService:
     def create_theme(tenant: Tenant, data: dict) -> Theme:
         """Create a new theme."""
         if data.get("is_default"):
-            Theme.objects.filter(tenant=tenant, is_default=True).update(is_default=False)
+            Theme.objects.filter(tenant=tenant, is_default=True).update(
+                is_default=False
+            )
 
         theme = Theme.objects.create(tenant=tenant, **data)
         return theme
@@ -69,7 +73,9 @@ class ThemeService:
     def update_theme(theme: Theme, data: dict) -> Theme:
         """Update a theme."""
         if data.get("is_default") and not theme.is_default:
-            Theme.objects.filter(tenant=theme.tenant, is_default=True).update(is_default=False)
+            Theme.objects.filter(tenant=theme.tenant, is_default=True).update(
+                is_default=False
+            )
 
         for key, value in data.items():
             if value is not None:

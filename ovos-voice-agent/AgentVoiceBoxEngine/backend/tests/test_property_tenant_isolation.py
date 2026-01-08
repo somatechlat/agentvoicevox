@@ -103,7 +103,9 @@ class TestTenantContextExtraction:
     @pytest.mark.property
     @given(jwt_uuid=st.uuids(), header_uuid=st.uuids())
     @settings(max_examples=100)
-    def test_jwt_takes_priority_over_header(self, jwt_uuid: uuid.UUID, header_uuid: uuid.UUID):
+    def test_jwt_takes_priority_over_header(
+        self, jwt_uuid: uuid.UUID, header_uuid: uuid.UUID
+    ):
         """
         Property: JWT tenant ID takes priority over X-Tenant-ID header.
 

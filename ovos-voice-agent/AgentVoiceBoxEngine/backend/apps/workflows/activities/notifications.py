@@ -201,9 +201,10 @@ class NotificationActivities:
             )
 
         # Local imports.
-        from apps.users.models import User
         from django.conf import settings
         from django.core.mail import send_mail
+
+        from apps.users.models import User
 
         try:
             user = await User.objects.aget(id=request.user_id)
@@ -244,6 +245,7 @@ class NotificationActivities:
         """
         # Local imports.
         import httpx
+
         from apps.tenants.models import TenantSettings
 
         try:
@@ -290,7 +292,9 @@ class NotificationActivities:
                     error=f"Webhook call failed with status {response.status_code}.",
                 )
 
-        logger.info(f"Sent webhook notification to {webhook_url} for tenant {request.tenant_id}.")
+        logger.info(
+            f"Sent webhook notification to {webhook_url} for tenant {request.tenant_id}."
+        )
 
         return NotificationResult(
             success=True,

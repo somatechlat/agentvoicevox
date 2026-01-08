@@ -14,24 +14,55 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="voicepersona",
             name="solvers",
-            field=models.JSONField(blank=True, default=list, help_text="List of solver plugin identifiers"),
+            field=models.JSONField(
+                blank=True, default=list, help_text="List of solver plugin identifiers"
+            ),
         ),
         migrations.AddField(
             model_name="voicepersona",
             name="usage_count",
-            field=models.PositiveIntegerField(default=0, help_text="Number of times this persona was used"),
+            field=models.PositiveIntegerField(
+                default=0, help_text="Number of times this persona was used"
+            ),
         ),
         migrations.CreateModel(
             name="CustomVoice",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ("name", models.CharField(help_text="Custom voice name", max_length=255)),
-                ("language", models.CharField(default="en", help_text="Language code", max_length=10)),
-                ("quality", models.CharField(default="balanced", help_text="Requested training quality", max_length=50)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(help_text="Custom voice name", max_length=255),
+                ),
+                (
+                    "language",
+                    models.CharField(
+                        default="en", help_text="Language code", max_length=10
+                    ),
+                ),
+                (
+                    "quality",
+                    models.CharField(
+                        default="balanced",
+                        help_text="Requested training quality",
+                        max_length=50,
+                    ),
+                ),
                 (
                     "status",
                     models.CharField(
-                        choices=[("processing", "Processing"), ("ready", "Ready"), ("failed", "Failed")],
+                        choices=[
+                            ("processing", "Processing"),
+                            ("ready", "Ready"),
+                            ("failed", "Failed"),
+                        ],
                         default="processing",
                         help_text="Voice training status",
                         max_length=20,
@@ -39,17 +70,30 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "sample_audio",
-                    models.FileField(help_text="Uploaded sample audio file", upload_to="voice_cloning/"),
+                    models.FileField(
+                        help_text="Uploaded sample audio file",
+                        upload_to="voice_cloning/",
+                    ),
                 ),
                 (
                     "sample_duration_seconds",
-                    models.FloatField(default=0, help_text="Duration of the sample audio in seconds"),
+                    models.FloatField(
+                        default=0, help_text="Duration of the sample audio in seconds"
+                    ),
                 ),
                 (
                     "is_default",
-                    models.BooleanField(default=False, help_text="Whether this is the default custom voice"),
+                    models.BooleanField(
+                        default=False,
+                        help_text="Whether this is the default custom voice",
+                    ),
                 ),
-                ("error_message", models.TextField(blank=True, help_text="Failure reason if status is failed")),
+                (
+                    "error_message",
+                    models.TextField(
+                        blank=True, help_text="Failure reason if status is failed"
+                    ),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 (
@@ -70,16 +114,54 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="WakeWord",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ("phrase", models.CharField(help_text="Wake word phrase", max_length=255)),
-                ("sensitivity", models.FloatField(default=0.5, help_text="Detection sensitivity threshold")),
-                ("is_enabled", models.BooleanField(default=True, help_text="Whether the wake word is active")),
-                ("detection_count", models.PositiveIntegerField(default=0, help_text="Total detections")),
-                ("false_positive_count", models.PositiveIntegerField(default=0, help_text="False positive detections")),
-                ("missed_activation_count", models.PositiveIntegerField(default=0, help_text="Missed activations")),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "phrase",
+                    models.CharField(help_text="Wake word phrase", max_length=255),
+                ),
+                (
+                    "sensitivity",
+                    models.FloatField(
+                        default=0.5, help_text="Detection sensitivity threshold"
+                    ),
+                ),
+                (
+                    "is_enabled",
+                    models.BooleanField(
+                        default=True, help_text="Whether the wake word is active"
+                    ),
+                ),
+                (
+                    "detection_count",
+                    models.PositiveIntegerField(
+                        default=0, help_text="Total detections"
+                    ),
+                ),
+                (
+                    "false_positive_count",
+                    models.PositiveIntegerField(
+                        default=0, help_text="False positive detections"
+                    ),
+                ),
+                (
+                    "missed_activation_count",
+                    models.PositiveIntegerField(
+                        default=0, help_text="Missed activations"
+                    ),
+                ),
                 (
                     "last_detected_at",
-                    models.DateTimeField(blank=True, help_text="Timestamp of last detection", null=True),
+                    models.DateTimeField(
+                        blank=True, help_text="Timestamp of last detection", null=True
+                    ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -104,7 +186,9 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="customvoice",
-            index=models.Index(fields=["tenant", "created_at"], name="voice_custo_tenant__c1c2a2_idx"),
+            index=models.Index(
+                fields=["tenant", "created_at"], name="voice_custo_tenant__c1c2a2_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="wakeword",
@@ -112,10 +196,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="wakeword",
-            index=models.Index(fields=["is_enabled"], name="voice_wake_is_en_21b912_idx"),
+            index=models.Index(
+                fields=["is_enabled"], name="voice_wake_is_en_21b912_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="wakeword",
-            index=models.Index(fields=["tenant", "created_at"], name="voice_wake_tenant__22b53c_idx"),
+            index=models.Index(
+                fields=["tenant", "created_at"], name="voice_wake_tenant__22b53c_idx"
+            ),
         ),
     ]

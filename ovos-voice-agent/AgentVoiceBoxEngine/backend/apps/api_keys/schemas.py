@@ -23,14 +23,18 @@ class APIKeyCreate(Schema):
 
     name: str  # A human-readable name for the API key.
     description: str = ""  # An optional description of the API key's purpose.
-    project_id: Optional[UUID] = None  # (Optional) Associate the key with a specific project.
+    project_id: Optional[UUID] = (
+        None  # (Optional) Associate the key with a specific project.
+    )
     scopes: list[str] = [
         "realtime"
     ]  # A list of scopes for the API key (e.g., 'realtime', 'billing').
     rate_limit_tier: str = (
         "standard"  # The rate limit tier for the key (e.g., 'standard', 'elevated').
     )
-    expires_in_days: Optional[int] = None  # (Optional) Number of days until the key expires.
+    expires_in_days: Optional[int] = (
+        None  # (Optional) Number of days until the key expires.
+    )
 
 
 class APIKeyUpdate(Schema):
@@ -64,9 +68,13 @@ class APIKeyResponse(Schema):
     is_active: bool  # True if the key is not revoked and not expired.
     is_expired: bool  # True if the key has passed its expiration date.
     is_revoked: bool  # True if the key has been explicitly revoked.
-    expires_at: Optional[datetime] = None  # The date and time after which the key becomes invalid.
+    expires_at: Optional[datetime] = (
+        None  # The date and time after which the key becomes invalid.
+    )
     revoked_at: Optional[datetime] = None  # The date and time this key was revoked.
-    last_used_at: Optional[datetime] = None  # Timestamp of the last successful API call.
+    last_used_at: Optional[datetime] = (
+        None  # Timestamp of the last successful API call.
+    )
     usage_count: int  # Total number of API calls made using this key.
     created_by_id: Optional[UUID] = None  # The ID of the user who created the key.
     created_at: datetime  # Timestamp of when the key was created.

@@ -40,42 +40,38 @@ local_resource(
 )
 
 # ============================================================================
-# SHARED SERVICES (Infrastructure)
+# AGENTVOICEBOX INFRASTRUCTURE (Isolated)
 # ============================================================================
 
-# Namespaces first
+# Namespaces
 k8s_yaml('./k8s/namespaces.yaml')
 
-# PostgreSQL
-k8s_yaml('./k8s/shared/postgres.yaml')
+# PostgreSQL (Isolated)
+k8s_yaml('./k8s/agentvoicebox/postgres.yaml')
 k8s_resource('postgres', 
-  labels=['shared-infra'],
-  port_forwards=['65004:5432']
+  new_name='avb-postgres',
+  labels=['infra', 'isolated'],
+  port_forwards=['65014:5432']
 )
 
-# Redis
-k8s_yaml('./k8s/shared/redis.yaml')
+# Redis (Isolated)
+k8s_yaml('./k8s/agentvoicebox/redis.yaml')
 k8s_resource('redis', 
-  labels=['shared-infra'],
-  port_forwards=['65005:6379'],
-  resource_deps=['postgres']
+  new_name='avb-redis',
+  labels=['infra', 'isolated'],
+  port_forwards=['65015:6379'],
+  resource_deps=['avb-postgres']
 )
 
-# Keycloak Realm ConfigMap (from JSON file)
-local_resource(
-  'keycloak-realm-config',
-  cmd='kubectl create configmap keycloak-realm --from-file=agentvoicebox-realm.json=./keycloak/realms/agentvoicebox-realm.json -n shared-services --dry-run=client -o yaml | kubectl apply -f -',
-  labels=['shared-infra'],
-  resource_deps=['postgres']
-)
-
-# Keycloak
-k8s_yaml('./k8s/shared/keycloak.yaml')
+# Keycloak (Isolated)
+k8s_yaml('./k8s/agentvoicebox/keycloak.yaml')
 k8s_resource('keycloak',
-  labels=['shared-infra'],
-  port_forwards=['65006:8080'],
-  resource_deps=['postgres', 'keycloak-realm-config']
+  new_name='avb-keycloak',
+  labels=['infra', 'isolated'],
+  port_forwards=['65016:8080'],
+  resource_deps=['avb-postgres']
 )
+
 
 # ============================================================================
 # AGENTVOICEBOX APPLICATION
@@ -94,7 +90,7 @@ k8s_yaml('./k8s/agentvoicebox/django-api.yaml')
 k8s_resource('django-api',
   labels=['backend'],
   port_forwards=['65020:8000'],
-  resource_deps=['postgres', 'redis', 'keycloak']
+  resource_deps=['avb-postgres', 'avb-redis', 'avb-keycloak']
 )
 
 # Portal Frontend Build - with live sync for Vite HMR

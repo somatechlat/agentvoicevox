@@ -86,30 +86,32 @@ def register_routers():
     from apps.api_keys.api import router as api_keys_router
     from apps.audit.api import router as audit_router
     from apps.billing.api import router as billing_router
+
+    # Admin (SYSADMIN-only) Routers
+    from apps.core.api_admin_dashboard import router as admin_dashboard_router
     from apps.llm.api import router as llm_router
     from apps.notifications.api import router as notifications_router
     from apps.projects.api import router as projects_router
     from apps.sessions.api import router as sessions_router
     from apps.stt.api import router as stt_router
     from apps.tenants.api import router as tenants_router
+    from apps.tenants.api_admin import router as admin_tenants_router
     from apps.tenants.api_onboarding import router as onboarding_router
     from apps.themes.api import router as themes_router
     from apps.users.api import router as users_router
+    from apps.users.api_admin import router as admin_users_router
     from apps.users.api_profile import router as profile_router
     from apps.voice.api import router as voice_router
     from apps.voice.api_voice_cloning import router as voice_cloning_router
     from apps.voice.api_wake_words import router as wake_words_router
 
-    # Admin (SYSADMIN-only) Routers
-    from apps.core.api_admin_dashboard import router as admin_dashboard_router
-    from apps.tenants.api_admin import router as admin_tenants_router
-    from apps.users.api_admin import router as admin_users_router
-
     # Register Public (Tenant-Scoped) Routers
     api.add_router("/tenants", tenants_router, tags=["Tenants"])
     api.add_router("/onboarding", onboarding_router, tags=["Onboarding"])
     api.add_router("/users", users_router, tags=["Users"])
-    api.add_router("/user", profile_router, tags=["User Profile"])  # Renamed tag for clarity
+    api.add_router(
+        "/user", profile_router, tags=["User Profile"]
+    )  # Renamed tag for clarity
     api.add_router("/projects", projects_router, tags=["Projects"])
     api.add_router("/api-keys", api_keys_router, tags=["API Keys"])
     api.add_router("/sessions", sessions_router, tags=["Sessions"])
@@ -119,10 +121,16 @@ def register_routers():
     )  # Renamed tag for clarity
     api.add_router("/voice-cloning", voice_cloning_router, tags=["Voice Cloning"])
     api.add_router("/wake-words", wake_words_router, tags=["Wake Words"])
-    api.add_router("/llm", llm_router, tags=["LLM Integrations"])  # Renamed tag for clarity
-    api.add_router("/stt", stt_router, tags=["STT Integrations"])  # Renamed tag for clarity
+    api.add_router(
+        "/llm", llm_router, tags=["LLM Integrations"]
+    )  # Renamed tag for clarity
+    api.add_router(
+        "/stt", stt_router, tags=["STT Integrations"]
+    )  # Renamed tag for clarity
     api.add_router("/themes", themes_router, tags=["Themes"])
-    api.add_router("/audit", audit_router, tags=["Audit Logs"])  # Renamed tag for clarity
+    api.add_router(
+        "/audit", audit_router, tags=["Audit Logs"]
+    )  # Renamed tag for clarity
     api.add_router("/notifications", notifications_router, tags=["Notifications"])
 
     # Register Admin (SYSADMIN-only) Routers

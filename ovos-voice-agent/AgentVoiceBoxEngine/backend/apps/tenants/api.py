@@ -102,12 +102,20 @@ def _settings_to_response(settings: TenantSettings) -> TenantSettingsSchema:
 # ==========================================================================
 
 
-@router.get("/", response=TenantListResponseSchema, summary="List All Tenants (SysAdmin)")
+@router.get(
+    "/", response=TenantListResponseSchema, summary="List All Tenants (SysAdmin)"
+)
 def list_tenants(
     request: HttpRequest,
-    status: Optional[str] = Query(None, description="Filter by tenant status (e.g., 'active')."),
-    tier: Optional[str] = Query(None, description="Filter by tenant tier (e.g., 'pro')."),
-    search: Optional[str] = Query(None, description="Search term for tenant name or slug."),
+    status: Optional[str] = Query(
+        None, description="Filter by tenant status (e.g., 'active')."
+    ),
+    tier: Optional[str] = Query(
+        None, description="Filter by tenant tier (e.g., 'pro')."
+    ),
+    search: Optional[str] = Query(
+        None, description="Search term for tenant name or slug."
+    ),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
@@ -134,7 +142,9 @@ def list_tenants(
     )
 
 
-@router.post("/", response={201: TenantResponseSchema}, summary="Create a Tenant (SysAdmin)")
+@router.post(
+    "/", response={201: TenantResponseSchema}, summary="Create a Tenant (SysAdmin)"
+)
 def create_tenant(request: HttpRequest, payload: TenantCreateSchema):
     """
     Creates a new tenant and its associated default settings.
@@ -151,7 +161,10 @@ def create_tenant(request: HttpRequest, payload: TenantCreateSchema):
         raise PermissionDeniedError("SYSADMIN role required")
 
     tenant = TenantService.create_tenant(
-        name=payload.name, slug=payload.slug, tier=payload.tier, settings=payload.settings
+        name=payload.name,
+        slug=payload.slug,
+        tier=payload.tier,
+        settings=payload.settings,
     )
 
     return 201, _tenant_to_response(tenant)
@@ -191,7 +204,11 @@ def update_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantUpdateSc
     return _tenant_to_response(tenant)
 
 
-@router.post("/{tenant_id}/activate", response=TenantResponseSchema, summary="Activate a Tenant (SysAdmin)")
+@router.post(
+    "/{tenant_id}/activate",
+    response=TenantResponseSchema,
+    summary="Activate a Tenant (SysAdmin)",
+)
 def activate_tenant(request: HttpRequest, tenant_id: UUID):
     """
     Activates a tenant with a 'pending' status.
@@ -205,7 +222,11 @@ def activate_tenant(request: HttpRequest, tenant_id: UUID):
     return _tenant_to_response(tenant)
 
 
-@router.post("/{tenant_id}/suspend", response=TenantResponseSchema, summary="Suspend a Tenant (SysAdmin)")
+@router.post(
+    "/{tenant_id}/suspend",
+    response=TenantResponseSchema,
+    summary="Suspend a Tenant (SysAdmin)",
+)
 def suspend_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantSuspendSchema):
     """
     Suspends an active tenant, preventing access and operations.
@@ -219,7 +240,11 @@ def suspend_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantSuspend
     return _tenant_to_response(tenant)
 
 
-@router.post("/{tenant_id}/reactivate", response=TenantResponseSchema, summary="Reactivate a Tenant (SysAdmin)")
+@router.post(
+    "/{tenant_id}/reactivate",
+    response=TenantResponseSchema,
+    summary="Reactivate a Tenant (SysAdmin)",
+)
 def reactivate_tenant(request: HttpRequest, tenant_id: UUID):
     """
     Reactivates a suspended tenant, setting its status back to 'active'.
@@ -233,7 +258,9 @@ def reactivate_tenant(request: HttpRequest, tenant_id: UUID):
     return _tenant_to_response(tenant)
 
 
-@router.delete("/{tenant_id}", response={204: None}, summary="Soft-Delete a Tenant (SysAdmin)")
+@router.delete(
+    "/{tenant_id}", response={204: None}, summary="Soft-Delete a Tenant (SysAdmin)"
+)
 def delete_tenant(request: HttpRequest, tenant_id: UUID):
     """
     Soft-deletes a tenant by setting its status to 'deleted'.
@@ -250,8 +277,14 @@ def delete_tenant(request: HttpRequest, tenant_id: UUID):
     return 204, None
 
 
-@router.post("/{tenant_id}/upgrade", response=TenantResponseSchema, summary="Upgrade Tenant Tier (SysAdmin)")
-def upgrade_tenant_tier(request: HttpRequest, tenant_id: UUID, payload: TenantUpgradeTierSchema):
+@router.post(
+    "/{tenant_id}/upgrade",
+    response=TenantResponseSchema,
+    summary="Upgrade Tenant Tier (SysAdmin)",
+)
+def upgrade_tenant_tier(
+    request: HttpRequest, tenant_id: UUID, payload: TenantUpgradeTierSchema
+):
     """
     Upgrades or downgrades a tenant's subscription tier.
 
@@ -269,7 +302,11 @@ def upgrade_tenant_tier(request: HttpRequest, tenant_id: UUID, payload: TenantUp
 # ==========================================================================
 
 
-@router.get("/{tenant_id}/settings", response=TenantSettingsSchema, summary="Get Tenant Settings")
+@router.get(
+    "/{tenant_id}/settings",
+    response=TenantSettingsSchema,
+    summary="Get Tenant Settings",
+)
 def get_tenant_settings(request: HttpRequest, tenant_id: UUID):
     """
     Retrieves the extended settings for a specific tenant.
@@ -281,7 +318,11 @@ def get_tenant_settings(request: HttpRequest, tenant_id: UUID):
     return _settings_to_response(settings)
 
 
-@router.patch("/{tenant_id}/settings", response=TenantSettingsSchema, summary="Update Tenant Settings")
+@router.patch(
+    "/{tenant_id}/settings",
+    response=TenantSettingsSchema,
+    summary="Update Tenant Settings",
+)
 def update_tenant_settings(
     request: HttpRequest, tenant_id: UUID, payload: TenantSettingsUpdateSchema
 ):

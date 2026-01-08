@@ -25,7 +25,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
@@ -45,7 +48,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "config",
-                    models.JSONField(default=dict, help_text="Session configuration snapshot"),
+                    models.JSONField(
+                        default=dict, help_text="Session configuration snapshot"
+                    ),
                 ),
                 (
                     "client_ip",
@@ -53,22 +58,33 @@ class Migration(migrations.Migration):
                         blank=True, help_text="Client IP address", null=True
                     ),
                 ),
-                ("user_agent", models.TextField(blank=True, help_text="Client user agent")),
+                (
+                    "user_agent",
+                    models.TextField(blank=True, help_text="Client user agent"),
+                ),
                 (
                     "duration_seconds",
-                    models.FloatField(default=0, help_text="Session duration in seconds"),
+                    models.FloatField(
+                        default=0, help_text="Session duration in seconds"
+                    ),
                 ),
                 (
                     "input_tokens",
-                    models.PositiveIntegerField(default=0, help_text="Total input tokens (LLM)"),
+                    models.PositiveIntegerField(
+                        default=0, help_text="Total input tokens (LLM)"
+                    ),
                 ),
                 (
                     "output_tokens",
-                    models.PositiveIntegerField(default=0, help_text="Total output tokens (LLM)"),
+                    models.PositiveIntegerField(
+                        default=0, help_text="Total output tokens (LLM)"
+                    ),
                 ),
                 (
                     "audio_input_seconds",
-                    models.FloatField(default=0, help_text="Total audio input duration in seconds"),
+                    models.FloatField(
+                        default=0, help_text="Total audio input duration in seconds"
+                    ),
                 ),
                 (
                     "audio_output_seconds",
@@ -85,7 +101,9 @@ class Migration(migrations.Migration):
                 (
                     "error_code",
                     models.CharField(
-                        blank=True, help_text="Error code if session ended in error", max_length=100
+                        blank=True,
+                        help_text="Error code if session ended in error",
+                        max_length=100,
                     ),
                 ),
                 (
@@ -97,7 +115,9 @@ class Migration(migrations.Migration):
                 (
                     "metadata",
                     models.JSONField(
-                        blank=True, default=dict, help_text="Additional session metadata"
+                        blank=True,
+                        default=dict,
+                        help_text="Additional session metadata",
                     ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -166,7 +186,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
@@ -224,15 +247,21 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="session",
-            index=models.Index(fields=["created_at"], name="sessions_created_0a2de2_idx"),
+            index=models.Index(
+                fields=["created_at"], name="sessions_created_0a2de2_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="session",
-            index=models.Index(fields=["tenant", "status"], name="sessions_tenant__2390ea_idx"),
+            index=models.Index(
+                fields=["tenant", "status"], name="sessions_tenant__2390ea_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="session",
-            index=models.Index(fields=["tenant", "created_at"], name="sessions_tenant__7d867f_idx"),
+            index=models.Index(
+                fields=["tenant", "created_at"], name="sessions_tenant__7d867f_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="sessionevent",

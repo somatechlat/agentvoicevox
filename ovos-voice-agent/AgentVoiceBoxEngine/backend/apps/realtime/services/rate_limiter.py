@@ -69,7 +69,9 @@ class RealtimeRateLimiter:
         requests_limit = int(self._limits["REQUESTS_PER_MINUTE"])
         tokens_limit = int(self._limits["TOKENS_PER_MINUTE"])
 
-        allowed = (requests_used < requests_limit) and (tokens_used + tokens <= tokens_limit)
+        allowed = (requests_used < requests_limit) and (
+            tokens_used + tokens <= tokens_limit
+        )
 
         return allowed, {
             "requests_limit": requests_limit,

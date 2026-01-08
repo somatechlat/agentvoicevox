@@ -43,15 +43,21 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="project",
-            index=models.Index(fields=["is_active"], name="projects_is_acti_3457d5_idx"),
+            index=models.Index(
+                fields=["is_active"], name="projects_is_acti_3457d5_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="project",
-            index=models.Index(fields=["created_at"], name="projects_created_40bcd1_idx"),
+            index=models.Index(
+                fields=["created_at"], name="projects_created_40bcd1_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="project",
-            index=models.Index(fields=["tenant", "is_active"], name="projects_tenant__26073d_idx"),
+            index=models.Index(
+                fields=["tenant", "is_active"], name="projects_tenant__26073d_idx"
+            ),
         ),
         migrations.AddConstraint(
             model_name="project",

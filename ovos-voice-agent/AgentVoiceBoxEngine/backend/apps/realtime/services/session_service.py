@@ -77,9 +77,13 @@ class RealtimeSessionService:
                         else None
                     ),
                     "turn_detection": (
-                        config.turn_detection.model_dump() if config.turn_detection else None
+                        config.turn_detection.model_dump()
+                        if config.turn_detection
+                        else None
                     ),
-                    "tools": [t.model_dump() for t in config.tools] if config.tools else [],
+                    "tools": (
+                        [t.model_dump() for t in config.tools] if config.tools else []
+                    ),
                     "tool_choice": config.tool_choice,
                     "temperature": config.temperature,
                     "max_response_output_tokens": config.max_response_output_tokens,
@@ -154,7 +158,9 @@ class RealtimeSessionService:
         session.output_audio_format = config.output_audio_format
 
         if config.input_audio_transcription:
-            session.input_audio_transcription = config.input_audio_transcription.model_dump()
+            session.input_audio_transcription = (
+                config.input_audio_transcription.model_dump()
+            )
 
         if config.turn_detection:
             session.turn_detection = config.turn_detection.model_dump()
@@ -169,7 +175,9 @@ class RealtimeSessionService:
         session.max_response_output_tokens = config.max_response_output_tokens
 
         if config.input_audio_noise_reduction:
-            session.input_audio_noise_reduction = config.input_audio_noise_reduction.model_dump()
+            session.input_audio_noise_reduction = (
+                config.input_audio_noise_reduction.model_dump()
+            )
         elif config.input_audio_noise_reduction is None:
             session.input_audio_noise_reduction = None
 
@@ -206,7 +214,9 @@ class RealtimeSessionService:
         )
 
         if updated:
-            logger.info(f"Terminated realtime session {session_id} with status {status}")
+            logger.info(
+                f"Terminated realtime session {session_id} with status {status}"
+            )
 
         return updated > 0
 

@@ -32,7 +32,9 @@ from .services import BillingService, LagoService
 router = Router(tags=["Billing"])
 
 
-@router.get("/usage", response=CurrentUsageResponse, summary="Get Current Billing Period Usage")
+@router.get(
+    "/usage", response=CurrentUsageResponse, summary="Get Current Billing Period Usage"
+)
 def get_current_usage(request):
     """
     Retrieves aggregated usage data for the current billing period (month-to-date)
@@ -62,7 +64,9 @@ def get_current_usage(request):
     )
 
 
-@router.get("/projected", response=ProjectedCostResponse, summary="Get Projected Monthly Cost")
+@router.get(
+    "/projected", response=ProjectedCostResponse, summary="Get Projected Monthly Cost"
+)
 def get_projected_cost(request):
     """
     Retrieves the current month-to-date cost and a projection of the total cost
@@ -128,7 +132,9 @@ def list_invoices(
     )
 
 
-@router.get("/invoices/{invoice_id}", response=InvoiceResponse, summary="Get an Invoice by ID")
+@router.get(
+    "/invoices/{invoice_id}", response=InvoiceResponse, summary="Get an Invoice by ID"
+)
 def get_invoice(request, invoice_id: UUID):
     """
     Retrieves details for a specific invoice by its ID.
@@ -151,7 +157,9 @@ def get_invoice(request, invoice_id: UUID):
     return InvoiceResponse.from_orm(invoice)
 
 
-@router.get("/alerts", response=BillingAlertListResponse, summary="List Tenant Billing Alerts")
+@router.get(
+    "/alerts", response=BillingAlertListResponse, summary="List Tenant Billing Alerts"
+)
 def list_alerts(
     request,
     acknowledged: Optional[bool] = Query(

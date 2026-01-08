@@ -99,8 +99,12 @@ class CurrentUsageResponse(Schema):
     period_start: datetime
     period_end: datetime
     usage: UsageSummary  # Detailed usage breakdown.
-    limits: dict[str, int]  # Current limits for the tenant (e.g., max_sessions_per_month).
-    percentage_used: dict[str, float]  # Percentage of limits used (e.g., {'sessions': 75.5}).
+    limits: dict[
+        str, int
+    ]  # Current limits for the tenant (e.g., max_sessions_per_month).
+    percentage_used: dict[
+        str, float
+    ]  # Percentage of limits used (e.g., {'sessions': 75.5}).
 
 
 class ProjectedCostResponse(Schema):
@@ -184,10 +188,16 @@ class BillingAlertResponse(Schema):
     alert_type: str  # The type of billing alert (e.g., 'usage_warning').
     message: str  # A human-readable message describing the alert.
     resource_type: str  # The resource type related to the alert (e.g., 'sessions').
-    current_value: Optional[Decimal] = None  # The current usage or value that triggered the alert.
-    threshold_value: Optional[Decimal] = None  # The threshold value that was met or exceeded.
+    current_value: Optional[Decimal] = (
+        None  # The current usage or value that triggered the alert.
+    )
+    threshold_value: Optional[Decimal] = (
+        None  # The threshold value that was met or exceeded.
+    )
     acknowledged: bool  # True if the alert has been acknowledged.
-    acknowledged_at: Optional[datetime] = None  # Timestamp when the alert was acknowledged.
+    acknowledged_at: Optional[datetime] = (
+        None  # Timestamp when the alert was acknowledged.
+    )
     created_at: datetime  # Timestamp when the alert was created.
 
     @staticmethod
@@ -233,8 +243,12 @@ class SubscriptionResponse(Schema):
     tenant_id: UUID  # The ID of the tenant.
     tier: str  # The tenant's current subscription tier.
     status: str  # The status of the subscription (e.g., 'active', 'canceled').
-    current_period_start: Optional[datetime] = None  # Start date of the current billing period.
-    current_period_end: Optional[datetime] = None  # End date of the current billing period.
+    current_period_start: Optional[datetime] = (
+        None  # Start date of the current billing period.
+    )
+    current_period_end: Optional[datetime] = (
+        None  # End date of the current billing period.
+    )
     lago_subscription_id: Optional[str] = None  # The ID of the subscription in Lago.
 
 
@@ -243,6 +257,10 @@ class LagoWebhookPayload(Schema):
     Defines the expected structure of an incoming webhook payload from Lago.
     """
 
-    webhook_type: str  # The type of webhook event (e.g., 'invoice.created', 'payment.failed').
-    object_type: str  # The type of object related to the webhook (e.g., 'invoice', 'customer').
+    webhook_type: (
+        str  # The type of webhook event (e.g., 'invoice.created', 'payment.failed').
+    )
+    object_type: (
+        str  # The type of object related to the webhook (e.g., 'invoice', 'customer').
+    )
     data: dict[str, Any]  # The actual data payload of the webhook event.

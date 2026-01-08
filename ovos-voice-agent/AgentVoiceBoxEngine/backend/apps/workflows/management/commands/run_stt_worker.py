@@ -124,7 +124,9 @@ class STTWorker:
             logger.info("Created consumer group", extra={"group": group})
         except Exception as exc:
             if "BUSYGROUP" not in str(exc):
-                logger.warning("Failed to create consumer group", extra={"error": str(exc)})
+                logger.warning(
+                    "Failed to create consumer group", extra={"error": str(exc)}
+                )
 
     async def run(self) -> None:
         """
@@ -149,14 +151,18 @@ class STTWorker:
 
                 for _, stream_messages in messages:
                     for message_id, data in stream_messages:
-                        task = asyncio.create_task(self._process_message(message_id, data))
+                        task = asyncio.create_task(
+                            self._process_message(message_id, data)
+                        )
                         self._tasks.add(task)
                         task.add_done_callback(self._tasks.discard)
 
             except asyncio.CancelledError:
                 break
             except Exception as exc:
-                logger.error("Worker loop error", extra={"error": str(exc)}, exc_info=True)
+                logger.error(
+                    "Worker loop error", extra={"error": str(exc)}, exc_info=True
+                )
                 await asyncio.sleep(1)
 
     async def _process_message(self, message_id: str, data: dict[str, Any]) -> None:
@@ -311,7 +317,9 @@ class STTWorker:
         )
         await self._redis.publish(channel, message)
 
-    async def _publish_error(self, session_id: str, error: str, correlation_id: str) -> None:
+    async def _publish_error(
+        self, session_id: str, error: str, correlation_id: str
+    ) -> None:
         """Publishes an error message to the appropriate Redis channel if transcription fails."""
         channel = f"{settings.STT_WORKER['CHANNEL_TRANSCRIPTION']}:{session_id}"
         message = json.dumps(

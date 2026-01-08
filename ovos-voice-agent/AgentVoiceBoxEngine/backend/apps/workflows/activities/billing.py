@@ -173,7 +173,9 @@ class BillingActivities:
                     external_customer_id=str(tenant.id),
                     event_type=record.event_type,
                     properties={
-                        "quantity": str(record.quantity),  # Lago often expects quantity as string.
+                        "quantity": str(
+                            record.quantity
+                        ),  # Lago often expects quantity as string.
                         "unit": record.unit,
                         **record.metadata,
                     },
@@ -185,7 +187,9 @@ class BillingActivities:
                 await record.asave()
                 synced_count += 1
 
-            logger.info(f"Synced {synced_count} usage records for tenant {tenant_id} to Lago.")
+            logger.info(
+                f"Synced {synced_count} usage records for tenant {tenant_id} to Lago."
+            )
 
             return {
                 "success": True,
@@ -223,6 +227,7 @@ class BillingActivities:
         try:
             # Local imports.
             from django.db.models import Sum
+
             from apps.billing.models import (
                 UsageEvent as UsageRecordModel,
             )  # Correct model reference.
@@ -309,6 +314,7 @@ class BillingActivities:
         try:
             # Local imports.
             from datetime import datetime
+
             from apps.sessions.models import Session
             from apps.tenants.models import Tenant
 

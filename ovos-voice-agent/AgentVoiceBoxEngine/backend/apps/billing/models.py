@@ -132,7 +132,8 @@ class UsageEvent(TenantScopedModel):
         help_text="Timestamp when this event was successfully synced to Lago.",
     )
     sync_error = models.TextField(
-        blank=True, help_text="Stores any error message if synchronization to Lago failed."
+        blank=True,
+        help_text="Stores any error message if synchronization to Lago failed.",
     )
 
     # --- Metadata and Timestamps ---
@@ -176,7 +177,9 @@ class UsageEvent(TenantScopedModel):
         self.lago_event_id = lago_event_id
         self.synced_at = timezone.now()
         self.sync_error = ""  # Clear any previous errors.
-        self.save(update_fields=["lago_event_id", "synced_at", "sync_error", "updated_at"])
+        self.save(
+            update_fields=["lago_event_id", "synced_at", "sync_error", "updated_at"]
+        )
 
     def mark_sync_error(self, error: str) -> None:
         """
@@ -186,7 +189,9 @@ class UsageEvent(TenantScopedModel):
             error: The error message from the Lago sync attempt.
         """
         self.sync_error = error
-        self.synced_at = None  # Reset synced_at to indicate it needs another sync attempt.
+        self.synced_at = (
+            None  # Reset synced_at to indicate it needs another sync attempt.
+        )
         self.save(update_fields=["sync_error", "synced_at", "updated_at"])
 
 
@@ -209,7 +214,10 @@ class BillingAlert(TenantScopedModel):
             "usage_critical",
             "Usage Critical (90%)",
         )  # Tenant has used 90% of their limit.
-        LIMIT_EXCEEDED = "limit_exceeded", "Limit Exceeded"  # Tenant has exceeded their hard limit.
+        LIMIT_EXCEEDED = (
+            "limit_exceeded",
+            "Limit Exceeded",
+        )  # Tenant has exceeded their hard limit.
         PAYMENT_FAILED = "payment_failed", "Payment Failed"  # A payment attempt failed.
         SUBSCRIPTION_EXPIRING = (
             "subscription_expiring",
@@ -226,7 +234,9 @@ class BillingAlert(TenantScopedModel):
         db_index=True,
         help_text="The type of billing alert.",
     )
-    message = models.TextField(help_text="A human-readable message describing the alert.")
+    message = models.TextField(
+        help_text="A human-readable message describing the alert."
+    )
     resource_type = models.CharField(
         max_length=50,
         blank=True,
@@ -299,7 +309,12 @@ class BillingAlert(TenantScopedModel):
         self.acknowledged_at = timezone.now()
         self.acknowledged_by = user
         self.save(
-            update_fields=["acknowledged", "acknowledged_at", "acknowledged_by", "updated_at"]
+            update_fields=[
+                "acknowledged",
+                "acknowledged_at",
+                "acknowledged_by",
+                "updated_at",
+            ]
         )
 
 
@@ -389,7 +404,9 @@ class Invoice(TenantScopedModel):
 
     def __str__(self) -> str:
         """Returns a string representation of the invoice."""
-        return f"Invoice {self.invoice_number} ({self.status}) for Tenant {self.tenant_id}"
+        return (
+            f"Invoice {self.invoice_number} ({self.status}) for Tenant {self.tenant_id}"
+        )
 
     @property
     def amount(self) -> float:

@@ -67,7 +67,8 @@ def require_permission(
             user = getattr(request, "user", None)
             if not user or not getattr(user, "is_authenticated", False):
                 raise PermissionDeniedError(
-                    "Authentication required", details={"required_permission": permission}
+                    "Authentication required",
+                    details={"required_permission": permission},
                 )
 
             # Parse permission string
@@ -96,7 +97,8 @@ def require_permission(
                     f"permission={permission} resource_id={resource_id}"
                 )
                 raise PermissionDeniedError(
-                    f"Permission '{permission}' denied", details={"required_permission": permission}
+                    f"Permission '{permission}' denied",
+                    details={"required_permission": permission},
                 )
 
             return func(request, *args, **kwargs)
@@ -163,7 +165,8 @@ def require_granular_role(roles: Union[str, list[str]]):
                 return func(request, *args, **kwargs)
 
             logger.warning(
-                f"Role check failed: user={user.id} " f"required={roles} actual={user_roles}"
+                f"Role check failed: user={user.id} "
+                f"required={roles} actual={user_roles}"
             )
             raise PermissionDeniedError(
                 f"Required role: {', '.join(roles)}",
@@ -210,7 +213,8 @@ def require_any_permission(*permissions: str):
             user = getattr(request, "user", None)
             if not user or not getattr(user, "is_authenticated", False):
                 raise PermissionDeniedError(
-                    "Authentication required", details={"required_permissions": list(permissions)}
+                    "Authentication required",
+                    details={"required_permissions": list(permissions)},
                 )
 
             # Check each permission
@@ -228,7 +232,9 @@ def require_any_permission(*permissions: str):
                 ):
                     return func(request, *args, **kwargs)
 
-            logger.warning(f"Permission denied: user={user.id} " f"required_any={permissions}")
+            logger.warning(
+                f"Permission denied: user={user.id} " f"required_any={permissions}"
+            )
             raise PermissionDeniedError(
                 f"Required one of: {', '.join(permissions)}",
                 details={"required_permissions": list(permissions)},
@@ -274,7 +280,8 @@ def require_all_permissions(*permissions: str):
             user = getattr(request, "user", None)
             if not user or not getattr(user, "is_authenticated", False):
                 raise PermissionDeniedError(
-                    "Authentication required", details={"required_permissions": list(permissions)}
+                    "Authentication required",
+                    details={"required_permissions": list(permissions)},
                 )
 
             # Check each permission
@@ -295,7 +302,9 @@ def require_all_permissions(*permissions: str):
                     missing.append(permission)
 
             if missing:
-                logger.warning(f"Permission denied: user={user.id} " f"missing={missing}")
+                logger.warning(
+                    f"Permission denied: user={user.id} " f"missing={missing}"
+                )
                 raise PermissionDeniedError(
                     f"Missing permissions: {', '.join(missing)}",
                     details={

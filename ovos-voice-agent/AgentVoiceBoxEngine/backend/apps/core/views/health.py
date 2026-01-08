@@ -59,7 +59,10 @@ def readiness_check(request) -> JsonResponse:
         if result == "ok":
             checks["cache"] = {"status": "healthy", "type": "redis"}
         else:
-            checks["cache"] = {"status": "unhealthy", "error": "Cache read/write failed"}
+            checks["cache"] = {
+                "status": "unhealthy",
+                "error": "Cache read/write failed",
+            }
             all_healthy = False
     except Exception as e:
         checks["cache"] = {"status": "unhealthy", "error": str(e)}
@@ -78,9 +81,15 @@ def readiness_check(request) -> JsonResponse:
             result = sock.connect_ex((host, int(port)))
             sock.close()
             if result == 0:
-                checks["temporal"] = {"status": "healthy", "host": temporal_config["HOST"]}
+                checks["temporal"] = {
+                    "status": "healthy",
+                    "host": temporal_config["HOST"],
+                }
             else:
-                checks["temporal"] = {"status": "unhealthy", "error": "Connection refused"}
+                checks["temporal"] = {
+                    "status": "unhealthy",
+                    "error": "Connection refused",
+                }
                 all_healthy = False
         except Exception as e:
             checks["temporal"] = {"status": "unhealthy", "error": str(e)}

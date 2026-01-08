@@ -52,7 +52,9 @@ async def generate_ai_response(
         provider=settings.LLM_WORKER["DEFAULT_PROVIDER"],
         max_tokens=_resolve_max_tokens(session.max_response_output_tokens, max_tokens),
         temperature=temperature if temperature is not None else session.temperature,
-        system_prompt=instructions if instructions is not None else session.instructions,
+        system_prompt=(
+            instructions if instructions is not None else session.instructions
+        ),
         tools=session.tools,
     )
 
@@ -100,7 +102,9 @@ def _resolve_max_tokens(session_value: str, override: Optional[int | str]) -> in
     return int(session_value)
 
 
-async def _get_recent_messages(conversation_id: str, max_items: int) -> list[dict[str, str]]:
+async def _get_recent_messages(
+    conversation_id: str, max_items: int
+) -> list[dict[str, str]]:
     """
     Retrieves a list of recent message items from a conversation, formatted for LLM input.
 
@@ -171,7 +175,9 @@ async def _handle_tool_calls(conversation, tool_calls: list[dict[str, Any]]) -> 
 
         is_valid, error = engine.validate_arguments(name, arguments)
         if not is_valid:
-            output = json.dumps({"success": False, "error": error or "Invalid arguments"})
+            output = json.dumps(
+                {"success": False, "error": error or "Invalid arguments"}
+            )
         else:
             result = await engine.execute_function(name, arguments)
             output = json.dumps(result)

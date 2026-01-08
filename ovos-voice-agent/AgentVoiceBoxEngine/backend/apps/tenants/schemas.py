@@ -21,16 +21,33 @@ class TenantCreateSchema(Schema):
     Used in the admin endpoint for tenant creation.
     """
 
-    name: str = Field(..., min_length=1, max_length=255, description="The legal or display name of the organization.")
-    slug: str = Field(..., min_length=1, max_length=100, pattern=r"^[a-z0-9-]+$", description="A unique, URL-friendly identifier for the tenant.")
-    tier: str = Field(default="free", description="The initial subscription tier for the tenant.")
-    settings: dict[str, Any] = Field(default_factory=dict, description="A flexible JSON field for miscellaneous settings.")
+    name: str = Field(
+        ...,
+        min_length=1,
+        max_length=255,
+        description="The legal or display name of the organization.",
+    )
+    slug: str = Field(
+        ...,
+        min_length=1,
+        max_length=100,
+        pattern=r"^[a-z0-9-]+$",
+        description="A unique, URL-friendly identifier for the tenant.",
+    )
+    tier: str = Field(
+        default="free", description="The initial subscription tier for the tenant."
+    )
+    settings: dict[str, Any] = Field(
+        default_factory=dict,
+        description="A flexible JSON field for miscellaneous settings.",
+    )
 
     @field_validator("tier")
     @classmethod
     def validate_tier(cls, v: str) -> str:
         """Ensures the provided tier is one of the valid choices."""
         from .models import Tenant
+
         if v not in Tenant.Tier.values:
             raise ValueError(f"Invalid tier. Must be one of: {Tenant.Tier.values}")
         return v
@@ -42,8 +59,15 @@ class TenantUpdateSchema(Schema):
     Used in the admin endpoint. All fields are optional for partial updates.
     """
 
-    name: Optional[str] = Field(None, min_length=1, max_length=255, description="The new name for the organization.")
-    settings: Optional[dict[str, Any]] = Field(None, description="A dictionary of settings to update in the JSON field.")
+    name: Optional[str] = Field(
+        None,
+        min_length=1,
+        max_length=255,
+        description="The new name for the organization.",
+    )
+    settings: Optional[dict[str, Any]] = Field(
+        None, description="A dictionary of settings to update in the JSON field."
+    )
 
 
 class TenantResponseSchema(Schema):
@@ -174,6 +198,7 @@ class TenantUpgradeTierSchema(Schema):
     def validate_tier(cls, v: str) -> str:
         """Ensures the provided tier is one of the valid choices."""
         from .models import Tenant
+
         if v not in Tenant.Tier.values:
             raise ValueError(f"Invalid tier. Must be one of: {Tenant.Tier.values}")
         return v
@@ -184,4 +209,6 @@ class TenantSuspendSchema(Schema):
     Defines the request payload for suspending a tenant.
     """
 
-    reason: str = Field(default="", max_length=500, description="An optional reason for the suspension.")
+    reason: str = Field(
+        default="", max_length=500, description="An optional reason for the suspension."
+    )

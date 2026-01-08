@@ -178,7 +178,9 @@ class AuthBearer(HttpBearer):
             keycloak_config = getattr(settings, "KEYCLOAK", {})
             missing = [key for key in ("URL", "REALM") if key not in keycloak_config]
             if missing:
-                raise ValueError(f"Keycloak configuration missing keys: {', '.join(missing)}")
+                raise ValueError(
+                    f"Keycloak configuration missing keys: {', '.join(missing)}"
+                )
 
             url = keycloak_config["URL"]
             realm = keycloak_config["REALM"]

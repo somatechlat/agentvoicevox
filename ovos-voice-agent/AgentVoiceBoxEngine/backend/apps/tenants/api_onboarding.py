@@ -66,7 +66,9 @@ async def signup(request, payload: dict):
     use_case = payload.get("use_case")
 
     if not all([email, password, first_name, last_name, organization_name]):
-        raise ValidationError("Missing required signup fields: email, password, first_name, last_name, organization_name")
+        raise ValidationError(
+            "Missing required signup fields: email, password, first_name, last_name, organization_name"
+        )
 
     # 2. Create a unique tenant slug
     slug_base = slugify(organization_name) or "tenant"
@@ -75,7 +77,9 @@ async def signup(request, payload: dict):
     while True:
         try:
             # 3. Create the Tenant instance (within the transaction)
-            tenant = TenantService.create_tenant(name=organization_name, slug=slug, tier="starter")
+            tenant = TenantService.create_tenant(
+                name=organization_name, slug=slug, tier="starter"
+            )
             break  # Emerge on success
         except ConflictError:
             # This logic handles the case where a slug already exists by appending a number.

@@ -262,10 +262,14 @@ def tenant_strategy(
         Hypothesis strategy that generates Tenant instances
     """
     tier_strategy = (
-        st.just(tier) if tier else st.sampled_from(["free", "starter", "pro", "enterprise"])
+        st.just(tier)
+        if tier
+        else st.sampled_from(["free", "starter", "pro", "enterprise"])
     )
     status_strategy = (
-        st.just(status) if status else st.sampled_from(["active", "suspended", "pending"])
+        st.just(status)
+        if status
+        else st.sampled_from(["active", "suspended", "pending"])
     )
 
     return from_model(

@@ -376,7 +376,9 @@ class TestAPIErrorResponseFormat:
     @pytest.mark.property
     @given(
         invalid_values=st.lists(
-            st.text(min_size=1, max_size=20).filter(lambda x: not _is_valid_uuid(x) and x.strip()),
+            st.text(min_size=1, max_size=20).filter(
+                lambda x: not _is_valid_uuid(x) and x.strip()
+            ),
             min_size=1,
             max_size=5,
         ),

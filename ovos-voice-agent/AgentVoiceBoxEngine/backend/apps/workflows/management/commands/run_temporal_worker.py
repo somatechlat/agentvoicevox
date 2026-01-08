@@ -112,10 +112,14 @@ class Command(BaseCommand):
             results = await delete_schedules(client)
             for schedule_id, result in results.items():
                 if result["status"] == "deleted":
-                    self.stdout.write(self.style.SUCCESS(f"Deleted schedule: {schedule_id}"))
+                    self.stdout.write(
+                        self.style.SUCCESS(f"Deleted schedule: {schedule_id}")
+                    )
                 else:
                     self.stdout.write(
-                        self.style.ERROR(f"Failed to delete {schedule_id}: {result.get('error')}")
+                        self.style.ERROR(
+                            f"Failed to delete {schedule_id}: {result.get('error')}"
+                        )
                     )
             return
 
@@ -131,10 +135,14 @@ class Command(BaseCommand):
                         )
                     )
                 elif result["status"] == "exists":
-                    self.stdout.write(self.style.WARNING(f"Schedule exists: {schedule_id}"))
+                    self.stdout.write(
+                        self.style.WARNING(f"Schedule exists: {schedule_id}")
+                    )
                 else:
                     self.stdout.write(
-                        self.style.ERROR(f"Failed to create {schedule_id}: {result.get('error')}")
+                        self.style.ERROR(
+                            f"Failed to create {schedule_id}: {result.get('error')}"
+                        )
                     )
 
         # Determine task queues
@@ -184,7 +192,9 @@ class Command(BaseCommand):
             )
             workers.append(worker)
 
-            self.stdout.write(self.style.SUCCESS(f"Worker configured for queue: {task_queue}"))
+            self.stdout.write(
+                self.style.SUCCESS(f"Worker configured for queue: {task_queue}")
+            )
 
         self.stdout.write(
             self.style.SUCCESS(

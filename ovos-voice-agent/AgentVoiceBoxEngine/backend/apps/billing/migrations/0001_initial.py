@@ -19,7 +19,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
@@ -96,26 +99,41 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
                     "lago_invoice_id",
-                    models.CharField(help_text="Lago invoice ID", max_length=255, unique=True),
+                    models.CharField(
+                        help_text="Lago invoice ID", max_length=255, unique=True
+                    ),
                 ),
-                ("invoice_number", models.CharField(help_text="Invoice number", max_length=100)),
-                ("amount_cents", models.BigIntegerField(help_text="Total amount in cents")),
+                (
+                    "invoice_number",
+                    models.CharField(help_text="Invoice number", max_length=100),
+                ),
+                (
+                    "amount_cents",
+                    models.BigIntegerField(help_text="Total amount in cents"),
+                ),
                 (
                     "taxes_amount_cents",
                     models.BigIntegerField(default=0, help_text="Tax amount in cents"),
                 ),
                 (
                     "total_amount_cents",
-                    models.BigIntegerField(help_text="Total amount including taxes in cents"),
+                    models.BigIntegerField(
+                        help_text="Total amount including taxes in cents"
+                    ),
                 ),
                 (
                     "currency",
-                    models.CharField(default="USD", help_text="Currency code", max_length=3),
+                    models.CharField(
+                        default="USD", help_text="Currency code", max_length=3
+                    ),
                 ),
                 (
                     "status",
@@ -135,13 +153,20 @@ class Migration(migrations.Migration):
                 ("issuing_date", models.DateField(help_text="Invoice issue date")),
                 (
                     "payment_due_date",
-                    models.DateField(blank=True, help_text="Payment due date", null=True),
+                    models.DateField(
+                        blank=True, help_text="Payment due date", null=True
+                    ),
                 ),
-                ("pdf_url", models.URLField(blank=True, help_text="URL to invoice PDF")),
+                (
+                    "pdf_url",
+                    models.URLField(blank=True, help_text="URL to invoice PDF"),
+                ),
                 (
                     "metadata",
                     models.JSONField(
-                        blank=True, default=dict, help_text="Additional invoice metadata"
+                        blank=True,
+                        default=dict,
+                        help_text="Additional invoice metadata",
                     ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -158,7 +183,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
@@ -203,7 +231,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "sync_error",
-                    models.TextField(blank=True, help_text="Error message if sync failed"),
+                    models.TextField(
+                        blank=True, help_text="Error message if sync failed"
+                    ),
                 ),
                 (
                     "metadata",

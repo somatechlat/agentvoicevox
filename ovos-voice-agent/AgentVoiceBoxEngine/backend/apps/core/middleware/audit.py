@@ -77,7 +77,9 @@ class AuditMiddleware:
             resource_type, resource_id = self._extract_resource_info(request.path)
 
             # Get actor info
-            actor_id = getattr(request, "user_id", None) or getattr(request, "api_key_id", None)
+            actor_id = getattr(request, "user_id", None) or getattr(
+                request, "api_key_id", None
+            )
             actor_type = "api_key" if hasattr(request, "api_key_id") else "user"
             actor_email = getattr(request, "jwt_claims", {}).get("email", "")
 

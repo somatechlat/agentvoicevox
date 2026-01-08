@@ -56,7 +56,9 @@ class AudioCodec:
             "g711_ulaw": (AudioCodec.encode_g711_ulaw, AudioCodec.decode_g711_ulaw),
             "g711_alaw": (AudioCodec.encode_g711_alaw, AudioCodec.decode_g711_alaw),
         }
-        return codecs.get(format_type, (AudioCodec.encode_pcm16, AudioCodec.decode_pcm16))
+        return codecs.get(
+            format_type, (AudioCodec.encode_pcm16, AudioCodec.decode_pcm16)
+        )
 
 
 class AudioFormatConverter:

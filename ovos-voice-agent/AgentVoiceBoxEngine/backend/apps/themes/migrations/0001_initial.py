@@ -21,15 +21,23 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 ("name", models.CharField(help_text="Theme name", max_length=255)),
-                ("description", models.TextField(blank=True, help_text="Theme description")),
+                (
+                    "description",
+                    models.TextField(blank=True, help_text="Theme description"),
+                ),
                 (
                     "primary_color",
                     models.CharField(
-                        default="#6366f1", help_text="Primary color (--eog-primary)", max_length=7
+                        default="#6366f1",
+                        help_text="Primary color (--eog-primary)",
+                        max_length=7,
                     ),
                 ),
                 (
@@ -43,25 +51,33 @@ class Migration(migrations.Migration):
                 (
                     "accent_color",
                     models.CharField(
-                        default="#06b6d4", help_text="Accent color (--eog-accent)", max_length=7
+                        default="#06b6d4",
+                        help_text="Accent color (--eog-accent)",
+                        max_length=7,
                     ),
                 ),
                 (
                     "background_color",
                     models.CharField(
-                        default="#0f172a", help_text="Background color (--eog-bg)", max_length=7
+                        default="#0f172a",
+                        help_text="Background color (--eog-bg)",
+                        max_length=7,
                     ),
                 ),
                 (
                     "surface_color",
                     models.CharField(
-                        default="#1e293b", help_text="Surface color (--eog-surface)", max_length=7
+                        default="#1e293b",
+                        help_text="Surface color (--eog-surface)",
+                        max_length=7,
                     ),
                 ),
                 (
                     "text_color",
                     models.CharField(
-                        default="#f8fafc", help_text="Text color (--eog-text)", max_length=7
+                        default="#f8fafc",
+                        help_text="Text color (--eog-text)",
+                        max_length=7,
                     ),
                 ),
                 (
@@ -75,25 +91,33 @@ class Migration(migrations.Migration):
                 (
                     "border_color",
                     models.CharField(
-                        default="#334155", help_text="Border color (--eog-border)", max_length=7
+                        default="#334155",
+                        help_text="Border color (--eog-border)",
+                        max_length=7,
                     ),
                 ),
                 (
                     "success_color",
                     models.CharField(
-                        default="#22c55e", help_text="Success color (--eog-success)", max_length=7
+                        default="#22c55e",
+                        help_text="Success color (--eog-success)",
+                        max_length=7,
                     ),
                 ),
                 (
                     "warning_color",
                     models.CharField(
-                        default="#f59e0b", help_text="Warning color (--eog-warning)", max_length=7
+                        default="#f59e0b",
+                        help_text="Warning color (--eog-warning)",
+                        max_length=7,
                     ),
                 ),
                 (
                     "error_color",
                     models.CharField(
-                        default="#ef4444", help_text="Error color (--eog-error)", max_length=7
+                        default="#ef4444",
+                        help_text="Error color (--eog-error)",
+                        max_length=7,
                     ),
                 ),
                 (
@@ -106,16 +130,25 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "font_size_base",
-                    models.CharField(default="16px", help_text="Base font size", max_length=20),
+                    models.CharField(
+                        default="16px", help_text="Base font size", max_length=20
+                    ),
                 ),
                 (
                     "border_radius",
-                    models.CharField(default="0.5rem", help_text="Border radius", max_length=20),
+                    models.CharField(
+                        default="0.5rem", help_text="Border radius", max_length=20
+                    ),
                 ),
-                ("custom_css", models.TextField(blank=True, help_text="Additional custom CSS")),
+                (
+                    "custom_css",
+                    models.TextField(blank=True, help_text="Additional custom CSS"),
+                ),
                 (
                     "is_active",
-                    models.BooleanField(default=True, help_text="Whether the theme is active"),
+                    models.BooleanField(
+                        default=True, help_text="Whether the theme is active"
+                    ),
                 ),
                 (
                     "is_default",

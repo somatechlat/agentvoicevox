@@ -188,12 +188,16 @@ class TemporalClient:
         client = await self._get_client()
         return client.get_workflow_handle(workflow_id, run_id=run_id)
 
-    async def get_workflow_result(self, workflow_id: str, run_id: Optional[str] = None) -> Any:
+    async def get_workflow_result(
+        self, workflow_id: str, run_id: Optional[str] = None
+    ) -> Any:
         """Get the result of a completed workflow."""
         handle = await self.get_workflow_handle(workflow_id, run_id)
         return await handle.result()
 
-    async def cancel_workflow(self, workflow_id: str, run_id: Optional[str] = None) -> None:
+    async def cancel_workflow(
+        self, workflow_id: str, run_id: Optional[str] = None
+    ) -> None:
         """Cancel a running workflow."""
         handle = await self.get_workflow_handle(workflow_id, run_id)
         await handle.cancel()
@@ -262,8 +266,12 @@ class TemporalClient:
                     run_id=workflow.run_id,
                     workflow_type=workflow.workflow_type,
                     status=str(workflow.status),
-                    start_time=str(workflow.start_time) if workflow.start_time else None,
-                    close_time=str(workflow.close_time) if workflow.close_time else None,
+                    start_time=(
+                        str(workflow.start_time) if workflow.start_time else None
+                    ),
+                    close_time=(
+                        str(workflow.close_time) if workflow.close_time else None
+                    ),
                 )
             )
 

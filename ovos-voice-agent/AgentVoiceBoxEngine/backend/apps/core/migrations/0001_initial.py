@@ -18,7 +18,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
@@ -56,7 +59,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
@@ -90,7 +96,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
@@ -123,7 +132,8 @@ class Migration(migrations.Migration):
                 "indexes": [
                     models.Index(fields=["role"], name="permission__role_34222d_idx"),
                     models.Index(
-                        fields=["resource", "action"], name="permission__resourc_e75e4c_idx"
+                        fields=["resource", "action"],
+                        name="permission__resourc_e75e4c_idx",
                     ),
                 ],
                 "unique_together": {("role", "resource", "action")},

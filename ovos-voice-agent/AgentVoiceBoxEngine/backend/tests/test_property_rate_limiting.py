@@ -373,7 +373,9 @@ class TestRateLimitingEnforcement:
             previous_remaining = current_remaining
 
     @pytest.mark.property
-    def test_rate_limit_reset_is_future_timestamp(self, request_factory: RequestFactory):
+    def test_rate_limit_reset_is_future_timestamp(
+        self, request_factory: RequestFactory
+    ):
         """
         Property: Rate limit reset is a future timestamp.
 

@@ -11,7 +11,11 @@ from django.db import transaction
 from ninja import Router
 from ninja.files import UploadedFile
 
-from apps.core.exceptions import FeatureNotImplementedError, NotFoundError, ValidationError
+from apps.core.exceptions import (
+    FeatureNotImplementedError,
+    NotFoundError,
+    ValidationError,
+)
 
 from .models import CustomVoice
 from .voice_cloning_schemas import CustomVoiceCreateOut, CustomVoiceOut
@@ -135,7 +139,9 @@ def get_custom_voice(request, voice_id: str):
     return _custom_voice_out(voice)
 
 
-@router.delete("/voices/{voice_id}", response={204: None}, summary="Delete a Custom Voice")
+@router.delete(
+    "/voices/{voice_id}", response={204: None}, summary="Delete a Custom Voice"
+)
 def delete_custom_voice(request, voice_id: str):
     """
     Deletes a custom voice.
@@ -157,7 +163,11 @@ def delete_custom_voice(request, voice_id: str):
     return 204, None
 
 
-@router.post("/voices/{voice_id}/default", response=CustomVoiceOut, summary="Set Custom Voice as Default")
+@router.post(
+    "/voices/{voice_id}/default",
+    response=CustomVoiceOut,
+    summary="Set Custom Voice as Default",
+)
 @transaction.atomic
 def set_default_custom_voice(request, voice_id: str):
     """
@@ -178,13 +188,17 @@ def set_default_custom_voice(request, voice_id: str):
         raise NotFoundError("Custom voice not found")
 
     # Atomically unset other defaults and set the new one.
-    CustomVoice.objects.filter(tenant=request.tenant, is_default=True).update(is_default=False)
+    CustomVoice.objects.filter(tenant=request.tenant, is_default=True).update(
+        is_default=False
+    )
     voice.is_default = True
     voice.save(update_fields=["is_default", "updated_at"])
     return _custom_voice_out(voice)
 
 
-@router.get("/voices/{voice_id}/preview", summary="Preview a Custom Voice (Not Implemented)")
+@router.get(
+    "/voices/{voice_id}/preview", summary="Preview a Custom Voice (Not Implemented)"
+)
 def preview_custom_voice(request, voice_id: str, text: str = ""):
     """
     Generates a preview of a custom voice with the given text.

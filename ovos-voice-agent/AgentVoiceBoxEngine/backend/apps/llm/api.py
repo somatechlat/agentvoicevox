@@ -10,7 +10,10 @@ securely stored in HashiCorp Vault.
 
 from ninja import Router
 
-from apps.core.exceptions import FeatureNotImplementedError, PermissionDeniedError, ValidationError
+from apps.core.exceptions import (
+    FeatureNotImplementedError,
+    ValidationError,
+)
 from apps.tenants.services import TenantSettingsService
 from apps.workflows.activities.llm import LLMActivities, LLMRequest, Message
 
@@ -40,9 +43,15 @@ def get_llm_config(request):
         model=settings.default_llm_model,
         temperature=settings.default_llm_temperature,
         max_tokens=settings.default_llm_max_tokens,
-        openai_api_key=secrets.get("openai_api_key", ""),  # Return empty string if not found.
-        groq_api_key=secrets.get("groq_api_key", ""),  # Return empty string if not found.
-        ollama_base_url=secrets.get("ollama_base_url", ""),  # Return empty string if not found.
+        openai_api_key=secrets.get(
+            "openai_api_key", ""
+        ),  # Return empty string if not found.
+        groq_api_key=secrets.get(
+            "groq_api_key", ""
+        ),  # Return empty string if not found.
+        ollama_base_url=secrets.get(
+            "ollama_base_url", ""
+        ),  # Return empty string if not found.
     )
 
 
@@ -90,7 +99,9 @@ def update_llm_config(request, payload: LLMConfigUpdate):
         retrieved_secrets_for_response = updated_secrets
     else:
         # If no secret fields were in payload, re-read existing secrets for response.
-        retrieved_secrets_for_response = LLMConfigService.read_secrets(request.tenant.id)
+        retrieved_secrets_for_response = LLMConfigService.read_secrets(
+            request.tenant.id
+        )
 
     return LLMConfigOut(
         provider=settings.default_llm_provider,

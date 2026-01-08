@@ -746,10 +746,15 @@ portal-frontend/src/
 #### 4.4.2 **view-setup.ts**
 **Purpose**: "Mother Screen" - single-page SaaS admin dashboard.
 
+**Design Philosophy**:
+- **Zero Modals**: All settings visible on one screen
+- **Accordion Layout**: Progressive disclosure of settings
+- **One Click**: Instant access to any service configuration
+
 **Layout**:
 - **Left Panel**: Infrastructure services status
-- **Right Panel**: Tenant management
-- **Modals**: Deep configuration forms
+- **Right Panel**: Configuration accordions (Zero Modals)
+- **Status Indicators**: Real-time health checks
 
 **Infrastructure Services Displayed**:
 1. PostgreSQL

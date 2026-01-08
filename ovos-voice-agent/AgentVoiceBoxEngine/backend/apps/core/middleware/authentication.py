@@ -142,7 +142,9 @@ class KeycloakAuthenticationMiddleware:
 
         if not public_key:
             # Fetch from Keycloak
-            url = f"{self.keycloak_config['URL']}/realms/{self.keycloak_config['REALM']}"
+            url = (
+                f"{self.keycloak_config['URL']}/realms/{self.keycloak_config['REALM']}"
+            )
             response = requests.get(url, timeout=10)
             response.raise_for_status()
 

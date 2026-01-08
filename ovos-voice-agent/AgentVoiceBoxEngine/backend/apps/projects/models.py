@@ -57,7 +57,9 @@ class Project(TenantScopedModel):
 
     # --- Core Identification ---
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255, help_text="The human-readable name of the project.")
+    name = models.CharField(
+        max_length=255, help_text="The human-readable name of the project."
+    )
     slug = models.SlugField(
         max_length=100,
         help_text="A URL-friendly identifier for the project, unique within the tenant.",
@@ -75,10 +77,14 @@ class Project(TenantScopedModel):
 
     # Speech-to-Text (STT) Configuration
     stt_model = models.CharField(
-        max_length=100, default="tiny", help_text="The Whisper model size for transcription."
+        max_length=100,
+        default="tiny",
+        help_text="The Whisper model size for transcription.",
     )
     stt_language = models.CharField(
-        max_length=10, default="en", help_text="The language code for STT processing (e.g., 'en')."
+        max_length=10,
+        default="en",
+        help_text="The language code for STT processing (e.g., 'en').",
     )
 
     # Text-to-Speech (TTS) Configuration
@@ -90,11 +96,15 @@ class Project(TenantScopedModel):
         default="af_heart",
         help_text="The specific voice ID to use for speech synthesis.",
     )
-    tts_speed = models.FloatField(default=1.0, help_text="Speech speed multiplier (1.0 is normal).")
+    tts_speed = models.FloatField(
+        default=1.0, help_text="Speech speed multiplier (1.0 is normal)."
+    )
 
     # Large Language Model (LLM) Configuration
     llm_provider = models.CharField(
-        max_length=50, default="groq", help_text="The LLM provider (e.g., 'groq', 'openai')."
+        max_length=50,
+        default="groq",
+        help_text="The LLM provider (e.g., 'groq', 'openai').",
     )
     llm_model = models.CharField(
         max_length=100,
@@ -118,23 +128,30 @@ class Project(TenantScopedModel):
         help_text="If true, the system automatically detects when a user has finished speaking.",
     )
     turn_detection_threshold = models.FloatField(
-        default=0.5, help_text="The confidence threshold for detecting the end of a user's turn."
+        default=0.5,
+        help_text="The confidence threshold for detecting the end of a user's turn.",
     )
     turn_detection_prefix_padding = models.FloatField(
-        default=0.3, help_text="Audio padding (in seconds) to include before speech starts."
+        default=0.3,
+        help_text="Audio padding (in seconds) to include before speech starts.",
     )
     turn_detection_silence_duration = models.FloatField(
-        default=0.5, help_text="Duration of silence (in seconds) to consider a turn complete."
+        default=0.5,
+        help_text="Duration of silence (in seconds) to consider a turn complete.",
     )
 
     # --- Session and Webhook Configuration ---
     max_session_duration = models.PositiveIntegerField(
-        default=3600, help_text="Maximum session duration in seconds (default is 1 hour)."
+        default=3600,
+        help_text="Maximum session duration in seconds (default is 1 hour).",
     )
     max_concurrent_sessions = models.PositiveIntegerField(
-        default=10, help_text="Maximum number of concurrent sessions allowed for this project."
+        default=10,
+        help_text="Maximum number of concurrent sessions allowed for this project.",
     )
-    webhook_url = models.URLField(blank=True, help_text="A URL to send session-related events to.")
+    webhook_url = models.URLField(
+        blank=True, help_text="A URL to send session-related events to."
+    )
     webhook_events = models.JSONField(
         default=list,
         blank=True,
@@ -210,7 +227,11 @@ class Project(TenantScopedModel):
         """
         return {
             "stt": {"model": self.stt_model, "language": self.stt_language},
-            "tts": {"model": self.tts_model, "voice": self.tts_voice, "speed": self.tts_speed},
+            "tts": {
+                "model": self.tts_model,
+                "voice": self.tts_voice,
+                "speed": self.tts_speed,
+            },
             "llm": {
                 "provider": self.llm_provider,
                 "model": self.llm_model,
@@ -255,7 +276,9 @@ class Project(TenantScopedModel):
             self.llm_max_tokens = llm_config.get("max_tokens", self.llm_max_tokens)
 
         if td_config := config.get("turn_detection"):
-            self.turn_detection_enabled = td_config.get("enabled", self.turn_detection_enabled)
+            self.turn_detection_enabled = td_config.get(
+                "enabled", self.turn_detection_enabled
+            )
             self.turn_detection_threshold = td_config.get(
                 "threshold", self.turn_detection_threshold
             )

@@ -38,8 +38,12 @@ def list_api_keys(
     project_id: Optional[UUID] = Query(
         None, description="Filter API keys by a specific project ID."
     ),
-    is_active: Optional[bool] = Query(None, description="Filter API keys by active status."),
-    search: Optional[str] = Query(None, description="Search term for API key name or prefix."),
+    is_active: Optional[bool] = Query(
+        None, description="Filter API keys by active status."
+    ),
+    search: Optional[str] = Query(
+        None, description="Search term for API key name or prefix."
+    ),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
@@ -159,7 +163,9 @@ def update_api_key(request, key_id: UUID, payload: APIKeyUpdate):
 
 
 @router.post("/{key_id}/revoke", response=APIKeyResponse, summary="Revoke an API Key")
-def revoke_api_key(request, key_id: UUID, payload: Optional[APIKeyRevokeRequest] = None):
+def revoke_api_key(
+    request, key_id: UUID, payload: Optional[APIKeyRevokeRequest] = None
+):
     """
     Revokes an API key, immediately rendering it inactive.
 
@@ -183,8 +189,12 @@ def revoke_api_key(request, key_id: UUID, payload: Optional[APIKeyRevokeRequest]
     return APIKeyResponse.from_orm(revoked_key)
 
 
-@router.post("/{key_id}/rotate", response=APIKeyRotateResponse, summary="Rotate an API Key")
-def rotate_api_key(request, key_id: UUID, payload: Optional[APIKeyRotateRequest] = None):
+@router.post(
+    "/{key_id}/rotate", response=APIKeyRotateResponse, summary="Rotate an API Key"
+)
+def rotate_api_key(
+    request, key_id: UUID, payload: Optional[APIKeyRotateRequest] = None
+):
     """
     Rotates an existing API key by generating a new one and optionally
     revoking the old key after a grace period.
@@ -213,7 +223,9 @@ def rotate_api_key(request, key_id: UUID, payload: Optional[APIKeyRotateRequest]
     return APIKeyRotateResponse(
         new_key=APIKeyCreateResponse.from_orm(new_key, full_key),
         old_key_expires_at=(
-            old_key_grace_period_instance.expires_at if old_key_grace_period_instance else None
+            old_key_grace_period_instance.expires_at
+            if old_key_grace_period_instance
+            else None
         ),
     )
 

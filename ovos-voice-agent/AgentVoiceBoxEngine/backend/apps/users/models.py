@@ -10,7 +10,11 @@ architecture. It replaces Django's default `User` model.
 import uuid
 from typing import Optional
 
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.db import models
 from django.utils import timezone
 
@@ -141,7 +145,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         The roles are hierarchical.
         """
 
-        SYSADMIN = "sysadmin", "System Administrator"  # Highest level, system-wide access
+        SYSADMIN = (
+            "sysadmin",
+            "System Administrator",
+        )  # Highest level, system-wide access
         ADMIN = "admin", "Administrator"  # Full access within a tenant
         DEVELOPER = "developer", "Developer"  # Can manage projects and API keys
         OPERATOR = "operator", "Operator"  # Can manage sessions and view data
@@ -161,11 +168,20 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # --- Personal Information ---
     email = models.EmailField(
-        max_length=255, unique=True, db_index=True, help_text="The user's unique email address."
+        max_length=255,
+        unique=True,
+        db_index=True,
+        help_text="The user's unique email address.",
     )
-    first_name = models.CharField(max_length=150, blank=True, help_text="User's first name.")
-    last_name = models.CharField(max_length=150, blank=True, help_text="User's last name.")
-    avatar_url = models.URLField(blank=True, help_text="URL for the user's profile picture.")
+    first_name = models.CharField(
+        max_length=150, blank=True, help_text="User's first name."
+    )
+    last_name = models.CharField(
+        max_length=150, blank=True, help_text="User's last name."
+    )
+    avatar_url = models.URLField(
+        blank=True, help_text="URL for the user's profile picture."
+    )
 
     # --- Tenancy and Authorization ---
     tenant = models.ForeignKey(
@@ -189,7 +205,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         help_text="Designates whether this user should be treated as active. Unselect this instead of deleting accounts.",
     )
     is_staff = models.BooleanField(
-        default=False, help_text="Designates whether the user can log into the Django admin site."
+        default=False,
+        help_text="Designates whether the user can log into the Django admin site.",
     )
 
     # --- User-specific Settings ---
@@ -260,7 +277,12 @@ class User(AbstractBaseUser, PermissionsMixin):
         """Checks if the user has Operator permissions or higher."""
         return (
             self.role
-            in [self.Role.SYSADMIN, self.Role.ADMIN, self.Role.DEVELOPER, self.Role.OPERATOR]
+            in [
+                self.Role.SYSADMIN,
+                self.Role.ADMIN,
+                self.Role.DEVELOPER,
+                self.Role.OPERATOR,
+            ]
             or self.is_superuser
         )
 

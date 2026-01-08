@@ -39,10 +39,16 @@ def require_sysadmin(request):
 @router.get("", response=UserListResponse, summary="List All Users (SysAdmin)")
 def list_all_users(
     request,
-    tenant_id: Optional[UUID] = Query(None, description="Filter users by a specific tenant ID."),
+    tenant_id: Optional[UUID] = Query(
+        None, description="Filter users by a specific tenant ID."
+    ),
     role: Optional[str] = Query(None, description="Filter users by role."),
-    is_active: Optional[bool] = Query(None, description="Filter users by active status."),
-    search: Optional[str] = Query(None, description="Search term for user name or email."),
+    is_active: Optional[bool] = Query(
+        None, description="Filter users by active status."
+    ),
+    search: Optional[str] = Query(
+        None, description="Search term for user name or email."
+    ),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
@@ -86,7 +92,9 @@ def list_all_users(
     )
 
 
-@router.get("/{user_id}", response=UserResponse, summary="Get Any User by ID (SysAdmin)")
+@router.get(
+    "/{user_id}", response=UserResponse, summary="Get Any User by ID (SysAdmin)"
+)
 def get_user_admin(request, user_id: UUID):
     """
     Retrieves details for any user in the system by their ID.
@@ -106,11 +114,17 @@ def update_user_admin(request, user_id: UUID, payload: UserUpdate):
     **Permissions:** SYSADMIN role required.
     """
     require_sysadmin(request)
-    updated_user = UserService.update_user(user_id=user_id, **payload.dict(exclude_unset=True))
+    updated_user = UserService.update_user(
+        user_id=user_id, **payload.dict(exclude_unset=True)
+    )
     return UserResponse.from_orm(updated_user)
 
 
-@router.post("/{user_id}/deactivate", response=UserResponse, summary="Deactivate Any User (SysAdmin)")
+@router.post(
+    "/{user_id}/deactivate",
+    response=UserResponse,
+    summary="Deactivate Any User (SysAdmin)",
+)
 def deactivate_user_admin(request, user_id: UUID):
     """
     Deactivates any user's account in the system.
@@ -122,7 +136,9 @@ def deactivate_user_admin(request, user_id: UUID):
     return UserResponse.from_orm(updated_user)
 
 
-@router.post("/{user_id}/activate", response=UserResponse, summary="Activate Any User (SysAdmin)")
+@router.post(
+    "/{user_id}/activate", response=UserResponse, summary="Activate Any User (SysAdmin)"
+)
 def activate_user_admin(request, user_id: UUID):
     """
     Activates any user's account in the system.

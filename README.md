@@ -1,28 +1,15 @@
 <!-- WARNING: This documentation uses real data. Do NOT mock or use fake data. -->
 # AgentVoiceBox Monorepo
 
-This repository contains two primary components:
-
-1) A public-facing blog/marketing site (Next.js) at the repo root.
-2) The AgentVoiceBox platform stack (Django + Channels + Ninja + Next.js portal) under `ovos-voice-agent/AgentVoiceBoxEngine`.
+This repository contains the AgentVoiceBox platform stack (Django + Channels + Ninja + Next.js portal) under `ovos-voice-agent/AgentVoiceBoxEngine`.
 
 ## Repository Layout
 
-- `src/`, `public/`, `_posts/`: Next.js blog site at the repo root.
 - `ovos-voice-agent/AgentVoiceBoxEngine/`: Main platform (Django backend, Channels WebSockets, portal frontend, Docker stack).
 - `ovos-voice-agent/`: Legacy sprint artifacts and experiments (not production, not wired to the Django stack).
 - `docs/`, `documents/`: Project notes and marketing content.
 
 ## Quick Start
-
-### Blog Site (Root)
-
-```bash
-npm install
-npm run dev
-```
-
-The blog reads Markdown posts from `/_posts`.
 
 ### AgentVoiceBox Platform (Docker)
 

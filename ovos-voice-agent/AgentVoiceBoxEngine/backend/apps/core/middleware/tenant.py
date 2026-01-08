@@ -142,7 +142,10 @@ class TenantMiddleware:
                 )
             if tenant.status == "suspended":
                 return JsonResponse(
-                    {"error": "tenant_suspended", "message": "Tenant account is suspended"},
+                    {
+                        "error": "tenant_suspended",
+                        "message": "Tenant account is suspended",
+                    },
                     status=403,
                 )
             if tenant.status == "deleted":

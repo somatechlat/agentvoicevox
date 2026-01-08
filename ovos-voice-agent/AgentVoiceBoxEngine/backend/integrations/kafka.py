@@ -64,7 +64,9 @@ class KafkaClient:
         """Initialize Kafka client from Django settings."""
         kafka_config = getattr(settings, "KAFKA", {})
         self.bootstrap_servers = kafka_config.get("BOOTSTRAP_SERVERS", "localhost:9092")
-        self.consumer_group = kafka_config.get("CONSUMER_GROUP", "agentvoicebox-backend")
+        self.consumer_group = kafka_config.get(
+            "CONSUMER_GROUP", "agentvoicebox-backend"
+        )
         self.enabled = kafka_config.get("ENABLED", False)
         self.security_protocol = kafka_config.get("SECURITY_PROTOCOL", "PLAINTEXT")
 
@@ -140,7 +142,9 @@ class KafkaClient:
             # Add standard headers
             headers.append(("event_id", event.event_id.encode("utf-8")))
             if event.timestamp:
-                headers.append(("timestamp", event.timestamp.isoformat().encode("utf-8")))
+                headers.append(
+                    ("timestamp", event.timestamp.isoformat().encode("utf-8"))
+                )
 
             producer.produce(
                 topic=event.topic,

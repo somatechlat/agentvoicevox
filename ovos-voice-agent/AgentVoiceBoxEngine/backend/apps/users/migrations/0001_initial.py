@@ -22,7 +22,9 @@ class Migration(migrations.Migration):
                 ("password", models.CharField(max_length=128, verbose_name="password")),
                 (
                     "last_login",
-                    models.DateTimeField(blank=True, null=True, verbose_name="last login"),
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="last login"
+                    ),
                 ),
                 (
                     "is_superuser",
@@ -35,7 +37,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
@@ -50,14 +55,24 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "email",
-                    models.EmailField(help_text="User email address", max_length=255, unique=True),
+                    models.EmailField(
+                        help_text="User email address", max_length=255, unique=True
+                    ),
                 ),
                 (
                     "first_name",
-                    models.CharField(blank=True, help_text="First name", max_length=150),
+                    models.CharField(
+                        blank=True, help_text="First name", max_length=150
+                    ),
                 ),
-                ("last_name", models.CharField(blank=True, help_text="Last name", max_length=150)),
-                ("avatar_url", models.URLField(blank=True, help_text="User avatar URL")),
+                (
+                    "last_name",
+                    models.CharField(blank=True, help_text="Last name", max_length=150),
+                ),
+                (
+                    "avatar_url",
+                    models.URLField(blank=True, help_text="User avatar URL"),
+                ),
                 (
                     "role",
                     models.CharField(
@@ -83,13 +98,16 @@ class Migration(migrations.Migration):
                 (
                     "is_staff",
                     models.BooleanField(
-                        default=False, help_text="Whether the user can access Django admin"
+                        default=False,
+                        help_text="Whether the user can access Django admin",
                     ),
                 ),
                 (
                     "preferences",
                     models.JSONField(
-                        blank=True, default=dict, help_text="User preferences and settings"
+                        blank=True,
+                        default=dict,
+                        help_text="User preferences and settings",
                     ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -134,11 +152,17 @@ class Migration(migrations.Migration):
                 "db_table": "users",
                 "ordering": ["-created_at"],
                 "indexes": [
-                    models.Index(fields=["keycloak_id"], name="users_keycloa_655743_idx"),
+                    models.Index(
+                        fields=["keycloak_id"], name="users_keycloa_655743_idx"
+                    ),
                     models.Index(fields=["email"], name="users_email_4b85f2_idx"),
-                    models.Index(fields=["tenant", "is_active"], name="users_tenant__2f74ee_idx"),
+                    models.Index(
+                        fields=["tenant", "is_active"], name="users_tenant__2f74ee_idx"
+                    ),
                     models.Index(fields=["role"], name="users_role_0ace22_idx"),
-                    models.Index(fields=["created_at"], name="users_created_6541e9_idx"),
+                    models.Index(
+                        fields=["created_at"], name="users_created_6541e9_idx"
+                    ),
                 ],
             },
         ),

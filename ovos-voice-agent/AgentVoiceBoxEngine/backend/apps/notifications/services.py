@@ -152,7 +152,9 @@ class NotificationPreferenceService:
         for key, value in data.items():
             if value is not None and hasattr(prefs, key):
                 # Handle time fields
-                if key in ("quiet_hours_start", "quiet_hours_end") and isinstance(value, str):
+                if key in ("quiet_hours_start", "quiet_hours_end") and isinstance(
+                    value, str
+                ):
                     if value:
                         parts = value.split(":")
                         value = time(int(parts[0]), int(parts[1]))

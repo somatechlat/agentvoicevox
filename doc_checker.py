@@ -1,7 +1,7 @@
-
 import ast
 import os
 from pathlib import Path
+
 
 def check_documentation(directory: str):
     """
@@ -57,12 +57,14 @@ def check_documentation(directory: str):
     else:
         print("All checked items appear to be documented.")
 
+
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) != 2:
         print("Usage: python doc_checker.py <directory_path>")
         sys.exit(1)
-    
+
     target_directory = sys.argv[1]
     if not os.path.isdir(target_directory):
         print(f"Error: Directory not found at '{target_directory}'")

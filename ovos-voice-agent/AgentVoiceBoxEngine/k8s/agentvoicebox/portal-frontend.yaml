@@ -7,8 +7,8 @@ metadata:
   name: portal-frontend-config
   namespace: agentvoicebox
 data:
-  VITE_API_URL: "http://localhost:30020"
-  VITE_KEYCLOAK_URL: "http://localhost:30006"
+  VITE_API_URL: "http://localhost:65020"
+  VITE_KEYCLOAK_URL: "http://localhost:65016" # Isolated Keycloak (Port Forwarded)
   VITE_KEYCLOAK_REALM: "agentvoicebox"
   VITE_KEYCLOAK_CLIENT_ID: "portal-frontend"
 ---
@@ -49,8 +49,8 @@ spec:
               memory: "512Mi"
               cpu: "500m"
             requests:
-              memory: "256Mi"
-              cpu: "250m"
+              memory: "128Mi" # Reduce for local density
+              cpu: "50m"
           readinessProbe:
             httpGet:
               path: /

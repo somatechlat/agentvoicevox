@@ -91,7 +91,9 @@ def require_permission(
                     f"resource={resource_type}:{resource_id} "
                     f"permission={permission}"
                 )
-                raise PermissionDeniedError(f"Permission '{permission}' denied on {resource_type}")
+                raise PermissionDeniedError(
+                    f"Permission '{permission}' denied on {resource_type}"
+                )
 
             return func(request, *args, **kwargs)
 

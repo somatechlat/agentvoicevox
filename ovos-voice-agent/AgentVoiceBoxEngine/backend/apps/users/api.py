@@ -45,7 +45,9 @@ def get_current_user(request):
     return CurrentUserResponse.from_orm(user)
 
 
-@router.patch("/me", response=CurrentUserResponse, summary="Update Current User's Profile")
+@router.patch(
+    "/me", response=CurrentUserResponse, summary="Update Current User's Profile"
+)
 def update_current_user(request, payload: UserUpdate):
     """
     Allows a user to update their own profile information.
@@ -60,7 +62,9 @@ def update_current_user(request, payload: UserUpdate):
 
     # Security check: Users cannot change their own role via this endpoint.
     if payload.role is not None:
-        raise PermissionDeniedError("Cannot change your own role. Please contact an administrator.")
+        raise PermissionDeniedError(
+            "Cannot change your own role. Please contact an administrator."
+        )
 
     # Security check: Users cannot deactivate themselves.
     if payload.is_active is False:
@@ -75,7 +79,11 @@ def update_current_user(request, payload: UserUpdate):
     return CurrentUserResponse.from_orm(updated_user)
 
 
-@router.patch("/me/preferences", response=CurrentUserResponse, summary="Update Current User's Preferences")
+@router.patch(
+    "/me/preferences",
+    response=CurrentUserResponse,
+    summary="Update Current User's Preferences",
+)
 def update_preferences(request, payload: UserPreferencesUpdate):
     """
     Allows a user to update their own UI preferences.
@@ -93,8 +101,12 @@ def update_preferences(request, payload: UserPreferencesUpdate):
 @router.get("", response=UserListResponse, summary="List Users in Tenant")
 def list_users(
     request,
-    role: Optional[str] = Query(None, description="Filter users by role (e.g., 'admin')."),
-    is_active: Optional[bool] = Query(None, description="Filter users by active status."),
+    role: Optional[str] = Query(
+        None, description="Filter users by role (e.g., 'admin')."
+    ),
+    is_active: Optional[bool] = Query(
+        None, description="Filter users by active status."
+    ),
     search: Optional[str] = Query(None, description="Search term for name or email."),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -111,7 +123,12 @@ def list_users(
         raise PermissionDeniedError("Operator role or higher required to list users.")
 
     users, total = UserService.list_users(
-        tenant=tenant, role=role, is_active=is_active, search=search, page=page, page_size=page_size
+        tenant=tenant,
+        role=role,
+        is_active=is_active,
+        search=search,
+        page=page,
+        page_size=page_size,
     )
 
     pages = (total + page_size - 1) // page_size
@@ -136,7 +153,9 @@ def get_user(request, user_id: UUID):
     current_user = request.user
 
     if not current_user.is_operator:
-        raise PermissionDeniedError("Operator role or higher required to view user details.")
+        raise PermissionDeniedError(
+            "Operator role or higher required to view user details."
+        )
 
     user = UserService.get_by_id(user_id)
     if user.tenant_id != tenant.id:
@@ -190,7 +209,9 @@ def update_user(request, user_id: UUID, payload: UserUpdate):
     if user_to_update.id == current_user.id and payload.role is not None:
         raise PermissionDeniedError("Cannot change your own role via this endpoint.")
 
-    updated_user = UserService.update_user(user_id=user_id, **payload.dict(exclude_unset=True))
+    updated_user = UserService.update_user(
+        user_id=user_id, **payload.dict(exclude_unset=True)
+    )
     return UserResponse.from_orm(updated_user)
 
 
@@ -217,13 +238,17 @@ def change_user_role(request, user_id: UUID, payload: UserRoleChange):
 
     # Security check: Only a SysAdmin can grant the SysAdmin role.
     if payload.role == User.Role.SYSADMIN and not current_user.is_sysadmin:
-        raise PermissionDeniedError("Only a System Administrator can grant the SYSADMIN role.")
+        raise PermissionDeniedError(
+            "Only a System Administrator can grant the SYSADMIN role."
+        )
 
     updated_user = UserService.change_role(user_id, payload.role)
     return UserResponse.from_orm(updated_user)
 
 
-@router.post("/{user_id}/deactivate", response=UserResponse, summary="Deactivate a User")
+@router.post(
+    "/{user_id}/deactivate", response=UserResponse, summary="Deactivate a User"
+)
 def deactivate_user(request, user_id: UUID):
     """
     Deactivates a user's account, preventing them from logging in.

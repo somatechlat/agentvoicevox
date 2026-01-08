@@ -77,7 +77,9 @@ class LagoCustomer:
         customer = data.get("customer", data)
         created_at = None
         if customer.get("created_at"):
-            created_at = datetime.fromisoformat(customer["created_at"].replace("Z", "+00:00"))
+            created_at = datetime.fromisoformat(
+                customer["created_at"].replace("Z", "+00:00")
+            )
         return cls(
             lago_id=customer.get("lago_id", ""),
             external_id=customer.get("external_id", ""),
@@ -281,7 +283,9 @@ class LagoClient:
                 last_error = e
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(self.retry_delay * (attempt + 1))
-                    logger.warning(f"Lago request failed (attempt {attempt + 1}), retrying: {e}")
+                    logger.warning(
+                        f"Lago request failed (attempt {attempt + 1}), retrying: {e}"
+                    )
 
         raise last_error or Exception("Request failed after retries")
 
@@ -344,7 +348,9 @@ class LagoClient:
         if metadata is not None:
             update_data["customer"]["metadata"] = metadata
 
-        response = await self._request("PUT", f"/api/v1/customers/{external_id}", json=update_data)
+        response = await self._request(
+            "PUT", f"/api/v1/customers/{external_id}", json=update_data
+        )
         response.raise_for_status()
 
         return LagoCustomer.from_dict(response.json())
@@ -561,7 +567,9 @@ class LagoClient:
             properties={"duration_minutes": duration_minutes},
         )
 
-    def track_llm_tokens(self, tenant_id: str, input_tokens: int, output_tokens: int) -> bool:
+    def track_llm_tokens(
+        self, tenant_id: str, input_tokens: int, output_tokens: int
+    ) -> bool:
         """Track LLM token usage for billing."""
         success = self.queue_usage_event(
             external_customer_id=tenant_id,

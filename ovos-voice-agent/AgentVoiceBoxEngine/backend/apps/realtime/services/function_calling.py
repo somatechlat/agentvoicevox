@@ -23,7 +23,9 @@ class FunctionCallingEngine:
         self._functions[name] = {"schema": schema, "handler": handler}
         logger.info("Registered function", extra={"name": name})
 
-    async def execute_function(self, function_name: str, arguments: dict) -> dict[str, Any]:
+    async def execute_function(
+        self, function_name: str, arguments: dict
+    ) -> dict[str, Any]:
         """Execute a registered function."""
         function = self._functions.get(function_name)
         if not function:
@@ -40,7 +42,9 @@ class FunctionCallingEngine:
             logger.exception("Function execution error", extra={"name": function_name})
             return {"success": False, "error": str(exc)}
 
-    def validate_arguments(self, function_name: str, arguments: dict) -> tuple[bool, Optional[str]]:
+    def validate_arguments(
+        self, function_name: str, arguments: dict
+    ) -> tuple[bool, Optional[str]]:
         """Validate arguments against the registered schema."""
         function = self._functions.get(function_name)
         if not function:

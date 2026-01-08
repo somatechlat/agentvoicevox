@@ -50,7 +50,9 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="notification",
-            index=models.Index(fields=["user", "read_at"], name="notificatio_user_id_6c7360_idx"),
+            index=models.Index(
+                fields=["user", "read_at"], name="notificatio_user_id_6c7360_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="notification",
@@ -58,6 +60,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="notification",
-            index=models.Index(fields=["created_at"], name="notificatio_created_e4c995_idx"),
+            index=models.Index(
+                fields=["created_at"], name="notificatio_created_e4c995_idx"
+            ),
         ),
     ]

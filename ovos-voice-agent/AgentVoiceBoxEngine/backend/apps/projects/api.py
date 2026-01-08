@@ -32,8 +32,12 @@ router = Router(tags=["Projects"])
 @router.get("", response=ProjectListResponse, summary="List Projects in Tenant")
 def list_projects(
     request,
-    is_active: Optional[bool] = Query(None, description="Filter projects by active status."),
-    search: Optional[str] = Query(None, description="Search term for project name or slug."),
+    is_active: Optional[bool] = Query(
+        None, description="Filter projects by active status."
+    ),
+    search: Optional[str] = Query(
+        None, description="Search term for project name or slug."
+    ),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ):
@@ -46,7 +50,11 @@ def list_projects(
     """
     tenant = get_current_tenant(request)
     projects, total = ProjectService.list_projects(
-        tenant=tenant, is_active=is_active, search=search, page=page, page_size=page_size
+        tenant=tenant,
+        is_active=is_active,
+        search=search,
+        page=page,
+        page_size=page_size,
     )
     pages = (total + page_size - 1) // page_size if total > 0 else 1
 
@@ -77,7 +85,11 @@ def get_project(request, project_id: UUID):
     return ProjectResponse.from_orm(project)
 
 
-@router.get("/{project_id}/voice-config", response=ProjectVoiceConfigResponse, summary="Get Project Voice Configuration")
+@router.get(
+    "/{project_id}/voice-config",
+    response=ProjectVoiceConfigResponse,
+    summary="Get Project Voice Configuration",
+)
 def get_project_voice_config(request, project_id: UUID):
     """
     Retrieves the structured voice configuration for a specific project.
@@ -141,7 +153,11 @@ def update_project(request, project_id: UUID, payload: ProjectUpdate):
     return ProjectResponse.from_orm(updated_project)
 
 
-@router.patch("/{project_id}/voice-config", response=ProjectVoiceConfigResponse, summary="Update Project Voice Configuration")
+@router.patch(
+    "/{project_id}/voice-config",
+    response=ProjectVoiceConfigResponse,
+    summary="Update Project Voice Configuration",
+)
 def update_project_voice_config(request, project_id: UUID, payload: VoiceConfig):
     """
     Updates a project's voice configuration from a structured dictionary.
@@ -165,7 +181,9 @@ def update_project_voice_config(request, project_id: UUID, payload: VoiceConfig)
     return ProjectVoiceConfigResponse.from_project(updated_project)
 
 
-@router.post("/{project_id}/deactivate", response=ProjectResponse, summary="Deactivate a Project")
+@router.post(
+    "/{project_id}/deactivate", response=ProjectResponse, summary="Deactivate a Project"
+)
 def deactivate_project(request, project_id: UUID):
     """
     Deactivates a project, disabling its API keys.
@@ -188,7 +206,9 @@ def deactivate_project(request, project_id: UUID):
     return ProjectResponse.from_orm(updated_project)
 
 
-@router.post("/{project_id}/activate", response=ProjectResponse, summary="Activate a Project")
+@router.post(
+    "/{project_id}/activate", response=ProjectResponse, summary="Activate a Project"
+)
 def activate_project(request, project_id: UUID):
     """
     Activates an inactive project.

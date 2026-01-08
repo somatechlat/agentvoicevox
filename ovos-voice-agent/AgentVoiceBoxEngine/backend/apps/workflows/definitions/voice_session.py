@@ -98,7 +98,9 @@ class VoiceSessionWorkflow:
         )
         self.conversation = [{"role": "system", "content": system_prompt}]
 
-        workflow.logger.info(f"Started voice session workflow for session {self.session_id}")
+        workflow.logger.info(
+            f"Started voice session workflow for session {self.session_id}"
+        )
 
         # Wait for audio chunks via signals
         while self.is_active:
@@ -172,7 +174,10 @@ class VoiceSessionWorkflow:
             LLMRequest(
                 tenant_id=self.tenant_id,
                 session_id=self.session_id,
-                messages=[Message(role=m["role"], content=m["content"]) for m in self.conversation],
+                messages=[
+                    Message(role=m["role"], content=m["content"])
+                    for m in self.conversation
+                ],
                 model=self.config.get("llm_model", "llama-3.1-8b-instant"),
                 provider=self.config.get("llm_provider", "groq"),
                 max_tokens=self.config.get("max_tokens", 512),

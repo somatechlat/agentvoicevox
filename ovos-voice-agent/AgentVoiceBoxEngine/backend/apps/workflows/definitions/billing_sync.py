@@ -172,7 +172,9 @@ class BillingSyncWorkflow:
 
             except Exception as e:
                 errors.append(f"Error processing tenant {tenant_id}: {str(e)}")
-                workflow.logger.error(f"Failed to sync or check limits for tenant {tenant_id}: {e}")
+                workflow.logger.error(
+                    f"Failed to sync or check limits for tenant {tenant_id}: {e}"
+                )
 
         duration_ms = (time.time() - start_time) * 1000
 
