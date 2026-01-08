@@ -76,10 +76,10 @@ export default defineConfig({
     },
   ],
   // Web server configuration (Vite dev server on port 28100)
-  webServer: process.env.CI ? undefined : {
-    command: 'bun run dev',
-    url: 'http://localhost:28100',
-    reuseExistingServer: true,
-    timeout: 120000,
-  },
+  // webServer: process.env.CI ? undefined : {
+  //   command: 'bun run dev',
+  //   url: 'http://localhost:28100',
+  //   reuseExistingServer: true,
+  //   timeout: 120000,
+  // },
 });

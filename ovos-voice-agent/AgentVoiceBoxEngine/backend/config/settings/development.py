@@ -5,7 +5,9 @@ These settings are optimized for local development with Docker.
 """
 
 import os
+
 from .base import *  # noqa: F401, F403
+from .base import INSTALLED_APPS, LOGGING, MIDDLEWARE
 
 # ==========================================================================
 # DEBUG MODE
@@ -25,7 +27,7 @@ else:
 # CORS (Allow all in development)
 # ==========================================================================
 if os.getenv("CORS_ALLOW_ALL_ORIGINS"):
-     CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS").lower() == "true"
+    CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS").lower() == "true"
 else:
     CORS_ALLOW_ALL_ORIGINS = True
 

@@ -63,11 +63,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "billing_id",
-                    models.CharField(blank=True, help_text="Lago customer ID", max_length=255),
+                    models.CharField(
+                        blank=True, help_text="Lago customer ID", max_length=255
+                    ),
                 ),
                 (
                     "keycloak_group_id",
-                    models.CharField(blank=True, help_text="Keycloak group ID", max_length=255),
+                    models.CharField(
+                        blank=True, help_text="Keycloak group ID", max_length=255
+                    ),
                 ),
                 (
                     "settings",
@@ -159,7 +163,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "webhook_url",
-                    models.URLField(blank=True, help_text="Webhook URL for notifications"),
+                    models.URLField(
+                        blank=True, help_text="Webhook URL for notifications"
+                    ),
                 ),
                 (
                     "webhook_secret",
@@ -171,7 +177,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "email_notifications",
-                    models.BooleanField(default=True, help_text="Enable email notifications"),
+                    models.BooleanField(
+                        default=True, help_text="Enable email notifications"
+                    ),
                 ),
                 (
                     "slack_webhook_url",
@@ -179,7 +187,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "require_mfa",
-                    models.BooleanField(default=False, help_text="Require MFA for all users"),
+                    models.BooleanField(
+                        default=False, help_text="Require MFA for all users"
+                    ),
                 ),
                 (
                     "session_timeout_minutes",
@@ -224,10 +234,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="tenant",
-            index=models.Index(fields=["billing_id"], name="tenants_billing_49bf36_idx"),
+            index=models.Index(
+                fields=["billing_id"], name="tenants_billing_49bf36_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="tenant",
-            index=models.Index(fields=["created_at"], name="tenants_created_fc84fe_idx"),
+            index=models.Index(
+                fields=["created_at"], name="tenants_created_fc84fe_idx"
+            ),
         ),
     ]

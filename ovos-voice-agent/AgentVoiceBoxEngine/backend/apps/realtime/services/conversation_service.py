@@ -33,7 +33,9 @@ def _next_position(conversation: Conversation) -> int:
         int: The next available integer position, starting from 0.
     """
     last_item = (
-        ConversationItem.objects.filter(conversation=conversation).order_by("-position").first()
+        ConversationItem.objects.filter(conversation=conversation)
+        .order_by("-position")
+        .first()
     )
     if not last_item:
         return 0

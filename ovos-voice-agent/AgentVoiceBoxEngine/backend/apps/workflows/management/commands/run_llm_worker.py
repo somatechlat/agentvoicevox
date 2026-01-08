@@ -56,7 +56,9 @@ class CircuitBreaker:
         self.last_failure_time = time.time()
         if self.failure_count >= self.threshold:
             self.state = CircuitState.OPEN
-            logger.warning("Circuit breaker opened", extra={"failures": self.failure_count})
+            logger.warning(
+                "Circuit breaker opened", extra={"failures": self.failure_count}
+            )
 
     def can_execute(self) -> bool:
         """
@@ -405,7 +407,9 @@ class LLMWorker:
             logger.info("Created consumer group", extra={"group": group})
         except Exception as exc:
             if "BUSYGROUP" not in str(exc):
-                logger.warning("Failed to create consumer group", extra={"error": str(exc)})
+                logger.warning(
+                    "Failed to create consumer group", extra={"error": str(exc)}
+                )
 
     async def run(self) -> None:
         """
@@ -430,14 +434,18 @@ class LLMWorker:
 
                 for _, stream_messages in messages:
                     for message_id, data in stream_messages:
-                        task = asyncio.create_task(self._process_message(message_id, data))
+                        task = asyncio.create_task(
+                            self._process_message(message_id, data)
+                        )
                         self._tasks.add(task)
                         task.add_done_callback(self._tasks.discard)
 
             except asyncio.CancelledError:
                 break
             except Exception as exc:
-                logger.error("Worker loop error", extra={"error": str(exc)}, exc_info=True)
+                logger.error(
+                    "Worker loop error", extra={"error": str(exc)}, exc_info=True
+                )
                 await asyncio.sleep(1)
 
     async def _process_message(self, message_id: str, data: dict[str, Any]) -> None:
@@ -457,7 +465,9 @@ class LLMWorker:
 
         try:
             messages = (
-                json.loads(messages_json) if isinstance(messages_json, str) else messages_json
+                json.loads(messages_json)
+                if isinstance(messages_json, str)
+                else messages_json
             )
 
             full_response = ""
@@ -549,7 +559,9 @@ class LLMWorker:
 
         raise RuntimeError(f"All LLM providers failed. Last error: {last_error}")
 
-    async def _publish_token(self, session_id: str, token: str, correlation_id: str) -> None:
+    async def _publish_token(
+        self, session_id: str, token: str, correlation_id: str
+    ) -> None:
         """Publishes a single LLM response token to the appropriate Redis channel."""
         channel = f"{settings.LLM_WORKER['RESPONSE_CHANNEL']}:{session_id}"
         message = json.dumps(
@@ -582,7 +594,9 @@ class LLMWorker:
         )
         await self._redis.publish(channel, message)
 
-    async def _publish_error(self, session_id: str, error: str, correlation_id: str) -> None:
+    async def _publish_error(
+        self, session_id: str, error: str, correlation_id: str
+    ) -> None:
         """Publishes an error message to the appropriate Redis channel if an LLM request fails."""
         channel = f"{settings.LLM_WORKER['RESPONSE_CHANNEL']}:{session_id}"
         message = json.dumps(

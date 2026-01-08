@@ -22,7 +22,6 @@ from ninja import Query, Router
 
 from apps.core.exceptions import (
     NotFoundError,
-    PermissionDeniedError,
 )  # PermissionDeniedError added for documentation purposes
 
 from .schemas import (
@@ -134,7 +133,9 @@ def list_actions(request):
     return AuditLogService.get_available_actions(tenant)
 
 
-@router.get("/resource-types", response=list[str], summary="List Available Audit Resource Types")
+@router.get(
+    "/resource-types", response=list[str], summary="List Available Audit Resource Types"
+)
 def list_resource_types(request):
     """
     Retrieves a list of all distinct resource types that have been logged for the current tenant.
@@ -196,11 +197,17 @@ def get_resource_logs(request, resource_type: str, resource_id: str):
     return [_log_to_out(log) for log in logs]
 
 
-@router.get("/actor/{actor_id}", response=list[AuditLogOut], summary="Get Audit Logs for an Actor")
+@router.get(
+    "/actor/{actor_id}",
+    response=list[AuditLogOut],
+    summary="Get Audit Logs for an Actor",
+)
 def get_actor_logs(
     request,
     actor_id: str,
-    days: int = Query(30, ge=1, le=365, description="Number of days to retrieve past activity."),
+    days: int = Query(
+        30, ge=1, le=365, description="Number of days to retrieve past activity."
+    ),
 ):
     """
     Retrieves recent audit logs for a specific actor (user or API key) within the current tenant.

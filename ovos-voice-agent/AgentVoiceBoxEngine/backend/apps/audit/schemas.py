@@ -22,15 +22,15 @@ class AuditLogOut(Schema):
 
     id: UUID  # The unique identifier for this audit log entry.
     created_at: datetime  # The UTC timestamp when the auditable action occurred.
-    actor_id: (
-        str  # The ID of the entity that performed the action (User ID, API Key ID, or 'system').
-    )
+    actor_id: str  # The ID of the entity that performed the action (User ID, API Key ID, or 'system').
     actor_email: str  # The email address of the actor, if available.
-    actor_type: (
-        str  # The type of entity that performed the action (e.g., 'user', 'api_key', 'system').
+    actor_type: str  # The type of entity that performed the action (e.g., 'user', 'api_key', 'system').
+    tenant_id: Optional[UUID] = (
+        None  # The ID of the tenant associated with the action, if any.
     )
-    tenant_id: Optional[UUID] = None  # The ID of the tenant associated with the action, if any.
-    ip_address: Optional[str] = None  # The IP address from which the request originated.
+    ip_address: Optional[str] = (
+        None  # The IP address from which the request originated.
+    )
     user_agent: str  # The User-Agent string of the client.
     request_id: str  # A correlation ID for the request.
     action: str  # The specific action performed (e.g., 'create', 'login').
@@ -38,7 +38,9 @@ class AuditLogOut(Schema):
     resource_id: str  # The ID of the specific resource affected.
     description: str  # A human-readable summary of the action.
     old_values: dict[str, Any]  # A JSON object containing values before an update.
-    new_values: dict[str, Any]  # A JSON object containing values after a create or update.
+    new_values: dict[
+        str, Any
+    ]  # A JSON object containing values after a create or update.
     metadata: dict[str, Any]  # Additional contextual data related to the event.
 
 
@@ -60,5 +62,7 @@ class AuditLogStatsOut(Schema):
 
     total_logs: int  # The total number of audit logs in the aggregated set.
     actions_count: dict[str, int]  # A dictionary mapping each action type to its count.
-    resource_types_count: dict[str, int]  # A dictionary mapping each resource type to its count.
+    resource_types_count: dict[
+        str, int
+    ]  # A dictionary mapping each resource type to its count.
     actors_count: int  # The total number of distinct actors found in the logs.

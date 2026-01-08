@@ -123,5 +123,7 @@ async def change_password(request, payload: dict):
         raise ValidationError("The current password you entered is incorrect.")
 
     # 2. If valid, set the new password in Keycloak.
-    await keycloak_client.set_user_password(user.keycloak_id, new_password, temporary=False)
+    await keycloak_client.set_user_password(
+        user.keycloak_id, new_password, temporary=False
+    )
     return {"message": "Your password has been updated successfully."}

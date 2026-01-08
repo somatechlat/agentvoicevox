@@ -27,7 +27,9 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(help_text="Project name", max_length=255)),
                 (
                     "slug",
-                    models.SlugField(help_text="URL-friendly identifier", max_length=100),
+                    models.SlugField(
+                        help_text="URL-friendly identifier", max_length=100
+                    ),
                 ),
                 (
                     "description",
@@ -35,7 +37,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "is_active",
-                    models.BooleanField(default=True, help_text="Whether the project is active"),
+                    models.BooleanField(
+                        default=True, help_text="Whether the project is active"
+                    ),
                 ),
                 (
                     "voice_config",
@@ -53,7 +57,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "stt_language",
-                    models.CharField(default="en", help_text="STT language code", max_length=10),
+                    models.CharField(
+                        default="en", help_text="STT language code", max_length=10
+                    ),
                 ),
                 (
                     "tts_model",
@@ -65,11 +71,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "tts_voice",
-                    models.CharField(default="af_heart", help_text="TTS voice ID", max_length=100),
+                    models.CharField(
+                        default="af_heart", help_text="TTS voice ID", max_length=100
+                    ),
                 ),
                 (
                     "tts_speed",
-                    models.FloatField(default=1.0, help_text="TTS speech speed (0.5-2.0)"),
+                    models.FloatField(
+                        default=1.0, help_text="TTS speech speed (0.5-2.0)"
+                    ),
                 ),
                 (
                     "llm_provider",
@@ -89,7 +99,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "llm_temperature",
-                    models.FloatField(default=0.7, help_text="LLM temperature (0.0-2.0)"),
+                    models.FloatField(
+                        default=0.7, help_text="LLM temperature (0.0-2.0)"
+                    ),
                 ),
                 (
                     "llm_max_tokens",
@@ -99,11 +111,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "system_prompt",
-                    models.TextField(blank=True, help_text="System prompt for the voice agent"),
+                    models.TextField(
+                        blank=True, help_text="System prompt for the voice agent"
+                    ),
                 ),
                 (
                     "turn_detection_enabled",
-                    models.BooleanField(default=True, help_text="Enable automatic turn detection"),
+                    models.BooleanField(
+                        default=True, help_text="Enable automatic turn detection"
+                    ),
                 ),
                 (
                     "turn_detection_threshold",
@@ -114,7 +130,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "turn_detection_prefix_padding",
-                    models.FloatField(default=0.3, help_text="Audio prefix padding (seconds)"),
+                    models.FloatField(
+                        default=0.3, help_text="Audio prefix padding (seconds)"
+                    ),
                 ),
                 (
                     "turn_detection_silence_duration",
@@ -137,7 +155,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "webhook_url",
-                    models.URLField(blank=True, help_text="Webhook URL for session events"),
+                    models.URLField(
+                        blank=True, help_text="Webhook URL for session events"
+                    ),
                 ),
                 (
                     "webhook_events",

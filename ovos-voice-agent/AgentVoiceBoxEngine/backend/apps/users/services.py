@@ -157,7 +157,9 @@ class UserService:
         TenantService.enforce_limit(tenant, "users")
 
         if User.objects.filter(email=email, tenant=tenant).exists():
-            raise ConflictError(f"User with email '{email}' already exists in this tenant")
+            raise ConflictError(
+                f"User with email '{email}' already exists in this tenant"
+            )
 
         user = User.objects.create_user(
             email=email,
@@ -226,9 +228,7 @@ class UserService:
 
     @staticmethod
     @transaction.atomic
-    def update_user(
-        user_id: UUID, **kwargs: Any
-    ) -> User:
+    def update_user(user_id: UUID, **kwargs: Any) -> User:
         """
         Updates an existing user's details.
 

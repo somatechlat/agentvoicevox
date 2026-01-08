@@ -22,7 +22,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
@@ -43,13 +46,19 @@ class Migration(migrations.Migration):
                 (
                     "actor_email",
                     models.EmailField(
-                        blank=True, help_text="Email of the actor (if user)", max_length=254
+                        blank=True,
+                        help_text="Email of the actor (if user)",
+                        max_length=254,
                     ),
                 ),
                 (
                     "actor_type",
                     models.CharField(
-                        choices=[("user", "User"), ("api_key", "API Key"), ("system", "System")],
+                        choices=[
+                            ("user", "User"),
+                            ("api_key", "API Key"),
+                            ("system", "System"),
+                        ],
                         help_text="Type of actor",
                         max_length=20,
                     ),
@@ -60,11 +69,16 @@ class Migration(migrations.Migration):
                         blank=True, help_text="Client IP address", null=True
                     ),
                 ),
-                ("user_agent", models.TextField(blank=True, help_text="Client user agent")),
+                (
+                    "user_agent",
+                    models.TextField(blank=True, help_text="Client user agent"),
+                ),
                 (
                     "request_id",
                     models.CharField(
-                        blank=True, help_text="Request ID for correlation", max_length=100
+                        blank=True,
+                        help_text="Request ID for correlation",
+                        max_length=100,
                     ),
                 ),
                 (
@@ -92,7 +106,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "resource_type",
-                    models.CharField(help_text="Type of resource affected", max_length=100),
+                    models.CharField(
+                        help_text="Type of resource affected", max_length=100
+                    ),
                 ),
                 (
                     "resource_id",
@@ -102,23 +118,31 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "description",
-                    models.TextField(blank=True, help_text="Human-readable description"),
+                    models.TextField(
+                        blank=True, help_text="Human-readable description"
+                    ),
                 ),
                 (
                     "old_values",
                     models.JSONField(
-                        blank=True, default=dict, help_text="Previous values (for updates)"
+                        blank=True,
+                        default=dict,
+                        help_text="Previous values (for updates)",
                     ),
                 ),
                 (
                     "new_values",
                     models.JSONField(
-                        blank=True, default=dict, help_text="New values (for creates/updates)"
+                        blank=True,
+                        default=dict,
+                        help_text="New values (for creates/updates)",
                     ),
                 ),
                 (
                     "metadata",
-                    models.JSONField(blank=True, default=dict, help_text="Additional context"),
+                    models.JSONField(
+                        blank=True, default=dict, help_text="Additional context"
+                    ),
                 ),
                 (
                     "tenant",
@@ -136,16 +160,32 @@ class Migration(migrations.Migration):
                 "db_table": "audit_logs",
                 "ordering": ["-created_at"],
                 "indexes": [
-                    models.Index(fields=["actor_id"], name="audit_logs_actor_i_0badd2_idx"),
-                    models.Index(fields=["actor_type"], name="audit_logs_actor_t_8f5a74_idx"),
-                    models.Index(fields=["action"], name="audit_logs_action_31f574_idx"),
-                    models.Index(fields=["resource_type"], name="audit_logs_resourc_e11e1b_idx"),
-                    models.Index(fields=["resource_id"], name="audit_logs_resourc_5afa9a_idx"),
-                    models.Index(fields=["created_at"], name="audit_logs_created_262184_idx"),
                     models.Index(
-                        fields=["tenant", "created_at"], name="audit_logs_tenant__0b1a88_idx"
+                        fields=["actor_id"], name="audit_logs_actor_i_0badd2_idx"
                     ),
-                    models.Index(fields=["tenant", "action"], name="audit_logs_tenant__4c766e_idx"),
+                    models.Index(
+                        fields=["actor_type"], name="audit_logs_actor_t_8f5a74_idx"
+                    ),
+                    models.Index(
+                        fields=["action"], name="audit_logs_action_31f574_idx"
+                    ),
+                    models.Index(
+                        fields=["resource_type"], name="audit_logs_resourc_e11e1b_idx"
+                    ),
+                    models.Index(
+                        fields=["resource_id"], name="audit_logs_resourc_5afa9a_idx"
+                    ),
+                    models.Index(
+                        fields=["created_at"], name="audit_logs_created_262184_idx"
+                    ),
+                    models.Index(
+                        fields=["tenant", "created_at"],
+                        name="audit_logs_tenant__0b1a88_idx",
+                    ),
+                    models.Index(
+                        fields=["tenant", "action"],
+                        name="audit_logs_tenant__4c766e_idx",
+                    ),
                 ],
             },
         ),

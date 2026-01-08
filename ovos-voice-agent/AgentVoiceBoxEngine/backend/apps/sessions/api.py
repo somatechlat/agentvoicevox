@@ -38,14 +38,19 @@ def list_sessions(
         None, description="Filter sessions by a specific project ID."
     ),
     status: Optional[str] = Query(
-        None, description="Filter sessions by their status (e.g., 'active', 'completed')."
+        None,
+        description="Filter sessions by their status (e.g., 'active', 'completed').",
     ),
-    api_key_id: Optional[UUID] = Query(None, description="Filter sessions by the API key used."),
+    api_key_id: Optional[UUID] = Query(
+        None, description="Filter sessions by the API key used."
+    ),
     from_date: Optional[str] = Query(
-        None, description="Filter sessions created on or after this date (ISO 8601 format)."
+        None,
+        description="Filter sessions created on or after this date (ISO 8601 format).",
     ),
     to_date: Optional[str] = Query(
-        None, description="Filter sessions created on or before this date (ISO 8601 format)."
+        None,
+        description="Filter sessions created on or before this date (ISO 8601 format).",
     ),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -59,7 +64,9 @@ def list_sessions(
     user = request.user
 
     if not user.is_operator:
-        raise PermissionDeniedError("Operator role or higher required to list sessions.")
+        raise PermissionDeniedError(
+            "Operator role or higher required to list sessions."
+        )
 
     sessions, total = SessionService.list_sessions(
         tenant=tenant,
@@ -90,10 +97,12 @@ def get_session_stats(
         None, description="Filter statistics for a specific project."
     ),
     from_date: Optional[str] = Query(
-        None, description="Include sessions created on or after this date (ISO 8601 format)."
+        None,
+        description="Include sessions created on or after this date (ISO 8601 format).",
     ),
     to_date: Optional[str] = Query(
-        None, description="Include sessions created on or before this date (ISO 8601 format)."
+        None,
+        description="Include sessions created on or before this date (ISO 8601 format).",
     ),
 ):
     """
@@ -108,7 +117,9 @@ def get_session_stats(
     user = request.user
 
     if not user.is_operator:
-        raise PermissionDeniedError("Operator role or higher required to view session statistics.")
+        raise PermissionDeniedError(
+            "Operator role or higher required to view session statistics."
+        )
 
     stats = SessionService.get_stats(
         tenant=tenant,
@@ -133,7 +144,9 @@ def get_session(request, session_id: UUID):
     user = request.user
 
     if not user.is_operator:
-        raise PermissionDeniedError("Operator role or higher required to view sessions.")
+        raise PermissionDeniedError(
+            "Operator role or higher required to view sessions."
+        )
 
     session = SessionService.get_by_id(session_id)
 
@@ -143,11 +156,15 @@ def get_session(request, session_id: UUID):
     return SessionResponse.from_orm(session)
 
 
-@router.get("/{session_id}/events", response=SessionEventsResponse, summary="Get Session Events")
+@router.get(
+    "/{session_id}/events", response=SessionEventsResponse, summary="Get Session Events"
+)
 def get_session_events(
     request,
     session_id: UUID,
-    event_type: Optional[str] = Query(None, description="Filter events by a specific type."),
+    event_type: Optional[str] = Query(
+        None, description="Filter events by a specific type."
+    ),
 ):
     """
     Retrieves all logged events for a specific session.
@@ -160,7 +177,9 @@ def get_session_events(
     user = request.user
 
     if not user.is_operator:
-        raise PermissionDeniedError("Operator role or higher required to view session events.")
+        raise PermissionDeniedError(
+            "Operator role or higher required to view session events."
+        )
 
     session = SessionService.get_by_id(session_id)
     if session.tenant_id != tenant.id:
@@ -190,7 +209,9 @@ def create_session(request, payload: SessionCreate):
     # Determine authentication context and check permissions.
     api_key = getattr(request, "api_key", None)
     if not api_key and not user.is_developer:
-        raise PermissionDeniedError("Developer role or valid API key required to create sessions.")
+        raise PermissionDeniedError(
+            "Developer role or valid API key required to create sessions."
+        )
 
     # Populate client information from the request.
     client_ip = request.META.get("REMOTE_ADDR")
@@ -225,7 +246,9 @@ def start_session(request, session_id: UUID):
 
     api_key = getattr(request, "api_key", None)
     if not api_key and not user.is_developer:
-        raise PermissionDeniedError("Developer role or valid API key required to start sessions.")
+        raise PermissionDeniedError(
+            "Developer role or valid API key required to start sessions."
+        )
 
     session = SessionService.get_by_id(session_id)
     if session.tenant_id != tenant.id:
@@ -235,7 +258,9 @@ def start_session(request, session_id: UUID):
     return SessionResponse.from_orm(started_session)
 
 
-@router.post("/{session_id}/complete", response=SessionResponse, summary="Complete a Session")
+@router.post(
+    "/{session_id}/complete", response=SessionResponse, summary="Complete a Session"
+)
 def complete_session(request, session_id: UUID):
     """
     Marks a session as 'COMPLETED' (normal termination).
@@ -261,8 +286,12 @@ def complete_session(request, session_id: UUID):
     return SessionResponse.from_orm(completed_session)
 
 
-@router.post("/{session_id}/terminate", response=SessionResponse, summary="Terminate a Session")
-def terminate_session(request, session_id: UUID, payload: Optional[SessionTerminate] = None):
+@router.post(
+    "/{session_id}/terminate", response=SessionResponse, summary="Terminate a Session"
+)
+def terminate_session(
+    request, session_id: UUID, payload: Optional[SessionTerminate] = None
+):
     """
     Transitions a session to 'TERMINATED' status (abnormal termination).
 
@@ -277,7 +306,9 @@ def terminate_session(request, session_id: UUID, payload: Optional[SessionTermin
     api_key = getattr(request, "api_key", None)
     # Operator role can terminate, or if API key is used, Developer+ can terminate.
     if not api_key and not user.is_operator:
-        raise PermissionDeniedError("Operator role or higher required to terminate sessions.")
+        raise PermissionDeniedError(
+            "Operator role or higher required to terminate sessions."
+        )
 
     session = SessionService.get_by_id(session_id)
     if session.tenant_id != tenant.id:

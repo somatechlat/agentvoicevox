@@ -71,8 +71,12 @@ class TestTenantScopedModelIsolation:
         from apps.projects.models import Project
 
         # Create two tenants
-        tenant_a = tenant_factory(name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}")
-        tenant_b = tenant_factory(name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}")
+        tenant_a = tenant_factory(
+            name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}"
+        )
+        tenant_b = tenant_factory(
+            name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}"
+        )
 
         # Create projects for each tenant using all_objects (bypasses filtering)
         project_a1 = Project.all_objects.create(
@@ -180,8 +184,12 @@ class TestTenantScopedModelIsolation:
         """
         from apps.projects.models import Project
 
-        tenant_a = tenant_factory(name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}")
-        tenant_b = tenant_factory(name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}")
+        tenant_a = tenant_factory(
+            name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}"
+        )
+        tenant_b = tenant_factory(
+            name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}"
+        )
 
         # Set tenant A context
         set_current_tenant(tenant_a)
@@ -206,8 +214,12 @@ class TestTenantScopedModelIsolation:
         """
         from apps.projects.models import Project
 
-        tenant_a = tenant_factory(name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}")
-        tenant_b = tenant_factory(name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}")
+        tenant_a = tenant_factory(
+            name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}"
+        )
+        tenant_b = tenant_factory(
+            name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}"
+        )
 
         # Create projects for each tenant
         project_a = Project.all_objects.create(
@@ -241,8 +253,12 @@ class TestTenantScopedModelIsolation:
         """
         from apps.projects.models import Project
 
-        tenant_a = tenant_factory(name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}")
-        tenant_b = tenant_factory(name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}")
+        tenant_a = tenant_factory(
+            name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}"
+        )
+        tenant_b = tenant_factory(
+            name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}"
+        )
 
         # Create projects with same name in different tenants
         shared_name = f"Shared Project {uuid.uuid4().hex[:8]}"
@@ -283,8 +299,12 @@ class TestTenantScopedModelIsolation:
         """
         from apps.projects.models import Project
 
-        tenant_a = tenant_factory(name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}")
-        tenant_b = tenant_factory(name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}")
+        tenant_a = tenant_factory(
+            name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}"
+        )
+        tenant_b = tenant_factory(
+            name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}"
+        )
 
         # Create project in tenant B
         project_b = Project.all_objects.create(
@@ -320,7 +340,9 @@ class TestCrossTenantIsolation:
         max_examples=5,
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
-    def test_multiple_tenants_complete_isolation(self, num_tenants: int, tenant_factory):
+    def test_multiple_tenants_complete_isolation(
+        self, num_tenants: int, tenant_factory
+    ):
         """
         Property: Multiple tenants have complete data isolation.
 
@@ -376,8 +398,12 @@ class TestCrossTenantIsolation:
         """
         from apps.projects.models import Project
 
-        tenant_a = tenant_factory(name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}")
-        tenant_b = tenant_factory(name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}")
+        tenant_a = tenant_factory(
+            name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}"
+        )
+        tenant_b = tenant_factory(
+            name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}"
+        )
 
         # Create 3 projects for tenant A
         for i in range(3):
@@ -416,8 +442,12 @@ class TestCrossTenantIsolation:
         """
         from apps.projects.models import Project
 
-        tenant_a = tenant_factory(name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}")
-        tenant_b = tenant_factory(name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}")
+        tenant_a = tenant_factory(
+            name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}"
+        )
+        tenant_b = tenant_factory(
+            name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}"
+        )
 
         # Create project only in tenant B
         project_b = Project.all_objects.create(

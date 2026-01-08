@@ -241,7 +241,9 @@ class TestExceptionSanitization:
 
         # Handle RateLimitError specially (has retry_after param)
         if exception_class == RateLimitError:
-            exception = exception_class(message=message, retry_after=60, details=details)
+            exception = exception_class(
+                message=message, retry_after=60, details=details
+            )
         else:
             exception = exception_class(message=message, details=details)
 
@@ -263,7 +265,9 @@ class TestExceptionSanitization:
 
     @pytest.mark.property
     @override_settings(DEBUG=False)
-    def test_production_mode_no_sensitive_data_leak(self, request_factory: RequestFactory):
+    def test_production_mode_no_sensitive_data_leak(
+        self, request_factory: RequestFactory
+    ):
         """
         Property: Production mode does not leak sensitive data.
 
@@ -490,7 +494,9 @@ class TestSpecificExceptionTypes:
 
     @pytest.mark.property
     @override_settings(DEBUG=False)
-    def test_rate_limit_returns_429_with_retry_after(self, request_factory: RequestFactory):
+    def test_rate_limit_returns_429_with_retry_after(
+        self, request_factory: RequestFactory
+    ):
         """
         Property: RateLimitError returns 429 with retry_after.
 

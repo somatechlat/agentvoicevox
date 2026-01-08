@@ -11,7 +11,7 @@ metadata:
   name: worker-llm-config
   namespace: agentvoicebox
 data:
-  REDIS_URL: "redis://redis.shared-services.svc.cluster.local:6379/4"
+  REDIS_URL: "redis://redis.agentvoicebox.svc.cluster.local:6379/4"
   GROQ_API_BASE: "https://api.groq.com/openai/v1"
   OPENAI_API_BASE: "https://api.openai.com/v1"
   LLM_DEFAULT_PROVIDER: "groq"
@@ -73,7 +73,7 @@ metadata:
   name: worker-stt-config
   namespace: agentvoicebox
 data:
-  REDIS_URL: "redis://redis.shared-services.svc.cluster.local:6379/5"
+  REDIS_URL: "redis://redis.agentvoicebox.svc.cluster.local:6379/5"
   STT_ENGINE: "faster-whisper"
   WHISPER_MODEL: "base"
   WHISPER_DEVICE: "cpu"
@@ -122,7 +122,7 @@ metadata:
   name: worker-tts-config
   namespace: agentvoicebox
 data:
-  REDIS_URL: "redis://redis.shared-services.svc.cluster.local:6379/6"
+  REDIS_URL: "redis://redis.agentvoicebox.svc.cluster.local:6379/6"
   TTS_ENGINE: "kokoro"
   KOKORO_VOICE: "af_heart"
   KOKORO_SPEED: "1.0"

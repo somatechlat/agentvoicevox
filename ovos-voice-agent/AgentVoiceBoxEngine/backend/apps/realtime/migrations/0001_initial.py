@@ -33,7 +33,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "object",
-                    models.CharField(default="realtime.session", editable=False, max_length=32),
+                    models.CharField(
+                        default="realtime.session", editable=False, max_length=32
+                    ),
                 ),
                 (
                     "model",
@@ -117,7 +119,9 @@ class Migration(migrations.Migration):
                 ("tools", models.JSONField(default=list, help_text="Function tools")),
                 (
                     "tool_choice",
-                    models.CharField(default="auto", help_text="Tool choice mode", max_length=64),
+                    models.CharField(
+                        default="auto", help_text="Tool choice mode", max_length=64
+                    ),
                 ),
                 (
                     "temperature",
@@ -125,7 +129,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "max_response_output_tokens",
-                    models.CharField(default="inf", help_text="Max output tokens", max_length=16),
+                    models.CharField(
+                        default="inf", help_text="Max output tokens", max_length=16
+                    ),
                 ),
                 (
                     "input_audio_noise_reduction",
@@ -229,16 +235,22 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "session_config",
-                    models.JSONField(default=dict, help_text="Pre-configured session settings"),
+                    models.JSONField(
+                        default=dict, help_text="Pre-configured session settings"
+                    ),
                 ),
                 ("expires_at", models.DateTimeField(help_text="Token expiration time")),
                 (
                     "used",
-                    models.BooleanField(default=False, help_text="Whether token has been used"),
+                    models.BooleanField(
+                        default=False, help_text="Whether token has been used"
+                    ),
                 ),
                 (
                     "used_at",
-                    models.DateTimeField(blank=True, help_text="When token was used", null=True),
+                    models.DateTimeField(
+                        blank=True, help_text="When token was used", null=True
+                    ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
@@ -325,7 +337,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "object",
-                    models.CharField(default="realtime.response", editable=False, max_length=32),
+                    models.CharField(
+                        default="realtime.response", editable=False, max_length=32
+                    ),
                 ),
                 (
                     "status",
@@ -349,7 +363,9 @@ class Migration(migrations.Migration):
                 ("output", models.JSONField(default=list, help_text="Output item IDs")),
                 (
                     "usage",
-                    models.JSONField(blank=True, help_text="Token usage statistics", null=True),
+                    models.JSONField(
+                        blank=True, help_text="Token usage statistics", null=True
+                    ),
                 ),
                 (
                     "config",
@@ -362,7 +378,9 @@ class Migration(migrations.Migration):
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "completed_at",
-                    models.DateTimeField(blank=True, help_text="Completion timestamp", null=True),
+                    models.DateTimeField(
+                        blank=True, help_text="Completion timestamp", null=True
+                    ),
                 ),
                 (
                     "session",
@@ -394,7 +412,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "object",
-                    models.CharField(default="realtime.item", editable=False, max_length=32),
+                    models.CharField(
+                        default="realtime.item", editable=False, max_length=32
+                    ),
                 ),
                 (
                     "type",
@@ -456,7 +476,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "arguments",
-                    models.TextField(blank=True, help_text="Function arguments JSON", null=True),
+                    models.TextField(
+                        blank=True, help_text="Function arguments JSON", null=True
+                    ),
                 ),
                 (
                     "output",
@@ -468,7 +490,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "position",
-                    models.PositiveIntegerField(default=0, help_text="Position in conversation"),
+                    models.PositiveIntegerField(
+                        default=0, help_text="Position in conversation"
+                    ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
@@ -490,7 +514,9 @@ class Migration(migrations.Migration):
                         name="realtime_co_convers_9fa484_idx",
                     ),
                     models.Index(fields=["type"], name="realtime_co_type_00853f_idx"),
-                    models.Index(fields=["call_id"], name="realtime_co_call_id_f00dd8_idx"),
+                    models.Index(
+                        fields=["call_id"], name="realtime_co_call_id_f00dd8_idx"
+                    ),
                 ],
             },
         ),
@@ -500,15 +526,21 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="realtimesession",
-            index=models.Index(fields=["created_at"], name="realtime_se_created_e4ea85_idx"),
+            index=models.Index(
+                fields=["created_at"], name="realtime_se_created_e4ea85_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="realtimesession",
-            index=models.Index(fields=["expires_at"], name="realtime_se_expires_edc7a7_idx"),
+            index=models.Index(
+                fields=["expires_at"], name="realtime_se_expires_edc7a7_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="realtimesession",
-            index=models.Index(fields=["tenant", "status"], name="realtime_se_tenant__2a5841_idx"),
+            index=models.Index(
+                fields=["tenant", "status"], name="realtime_se_tenant__2a5841_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="realtimesession",
@@ -518,11 +550,15 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="ephemeraltoken",
-            index=models.Index(fields=["token_hash"], name="realtime_ep_token_h_3b915b_idx"),
+            index=models.Index(
+                fields=["token_hash"], name="realtime_ep_token_h_3b915b_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="ephemeraltoken",
-            index=models.Index(fields=["expires_at"], name="realtime_ep_expires_b5f7d3_idx"),
+            index=models.Index(
+                fields=["expires_at"], name="realtime_ep_expires_b5f7d3_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="ephemeraltoken",
@@ -532,10 +568,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="response",
-            index=models.Index(fields=["session", "status"], name="realtime_re_session_742337_idx"),
+            index=models.Index(
+                fields=["session", "status"], name="realtime_re_session_742337_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="response",
-            index=models.Index(fields=["created_at"], name="realtime_re_created_6be64a_idx"),
+            index=models.Index(
+                fields=["created_at"], name="realtime_re_created_6be64a_idx"
+            ),
         ),
     ]

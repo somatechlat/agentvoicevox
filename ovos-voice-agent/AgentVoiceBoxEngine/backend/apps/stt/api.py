@@ -7,7 +7,6 @@ and for testing STT provider integrations. These endpoints allow tenants to set 
 their preferred STT models and languages, and to get insights into STT usage metrics.
 """
 
-from datetime import datetime
 
 from django.db.models import Sum
 from django.utils import timezone
@@ -15,7 +14,7 @@ from ninja import Router
 from ninja.files import UploadedFile
 
 from apps.billing.models import UsageEvent
-from apps.core.exceptions import PermissionDeniedError, ValidationError
+from apps.core.exceptions import ValidationError
 from apps.tenants.services import TenantSettingsService
 from apps.workflows.activities.stt import STTActivities, TranscriptionRequest
 
@@ -131,7 +130,9 @@ async def test_stt(request, audio: UploadedFile):
             audio_format=ext,
             # Use tenant's default language, or None if set to 'auto' for model to detect.
             language=(
-                settings.default_stt_language if settings.default_stt_language != "auto" else None
+                settings.default_stt_language
+                if settings.default_stt_language != "auto"
+                else None
             ),
             model=settings.default_stt_model,
         )

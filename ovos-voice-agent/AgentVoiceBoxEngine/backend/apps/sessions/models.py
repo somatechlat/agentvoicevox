@@ -96,7 +96,9 @@ class Session(TenantScopedModel):
 
     # --- Client Information ---
     client_ip = models.GenericIPAddressField(
-        null=True, blank=True, help_text="The IP address of the client initiating the session."
+        null=True,
+        blank=True,
+        help_text="The IP address of the client initiating the session.",
     )
     user_agent = models.TextField(
         blank=True, help_text="The User-Agent string from the client application."
@@ -107,7 +109,8 @@ class Session(TenantScopedModel):
         default=0, help_text="The total duration of the session in seconds."
     )
     input_tokens = models.PositiveIntegerField(
-        default=0, help_text="Total number of input tokens processed by the LLM during the session."
+        default=0,
+        help_text="Total number of input tokens processed by the LLM during the session.",
     )
     output_tokens = models.PositiveIntegerField(
         default=0,
@@ -120,7 +123,8 @@ class Session(TenantScopedModel):
         default=0, help_text="Total duration of synthesized audio output in seconds."
     )
     turn_count = models.PositiveIntegerField(
-        default=0, help_text="The number of conversational turns taken during the session."
+        default=0,
+        help_text="The number of conversational turns taken during the session.",
     )
 
     # --- Error Tracking ---
@@ -189,7 +193,9 @@ class Session(TenantScopedModel):
         self.status = self.Status.COMPLETED
         self.terminated_at = timezone.now()
         if self.started_at:
-            self.duration_seconds = (self.terminated_at - self.started_at).total_seconds()
+            self.duration_seconds = (
+                self.terminated_at - self.started_at
+            ).total_seconds()
         self.save(
             update_fields=[
                 "status",
@@ -207,7 +213,9 @@ class Session(TenantScopedModel):
         self.status = self.Status.TERMINATED
         self.terminated_at = timezone.now()
         if self.started_at:
-            self.duration_seconds = (self.terminated_at - self.started_at).total_seconds()
+            self.duration_seconds = (
+                self.terminated_at - self.started_at
+            ).total_seconds()
         if reason:
             self.metadata["termination_reason"] = reason
         self.save(
@@ -230,7 +238,9 @@ class Session(TenantScopedModel):
         self.error_message = error_message
         self.terminated_at = timezone.now()
         if self.started_at:
-            self.duration_seconds = (self.terminated_at - self.started_at).total_seconds()
+            self.duration_seconds = (
+                self.terminated_at - self.started_at
+            ).total_seconds()
         self.save(
             update_fields=[
                 "status",
@@ -312,7 +322,10 @@ class SessionEvent(models.Model):
         LLM_RESPONSE = "llm.response", "LLM Response"  # Response received from the LLM.
         TTS_REQUEST = "tts.request", "TTS Request"  # Request to the TTS engine.
         TTS_RESPONSE = "tts.response", "TTS Response"  # Audio bytes received from TTS.
-        TURN_START = "turn.start", "Turn Start"  # Beginning of a new conversational turn.
+        TURN_START = (
+            "turn.start",
+            "Turn Start",
+        )  # Beginning of a new conversational turn.
         TURN_END = "turn.end", "Turn End"  # End of a conversational turn.
         ERROR = "error", "Error"  # Any general error during the session.
 

@@ -59,12 +59,16 @@ class VoicePersonaService:
         total = qs.count()
         offset = (page - 1) * page_size
         # Order by `is_default` to ensure the default persona appears first.
-        personas = list(qs.order_by("-is_default", "-created_at")[offset : offset + page_size])
+        personas = list(
+            qs.order_by("-is_default", "-created_at")[offset : offset + page_size]
+        )
 
         return personas, total
 
     @staticmethod
-    def get_persona(persona_id: UUID, tenant: Optional[Tenant] = None) -> Optional[VoicePersona]:
+    def get_persona(
+        persona_id: UUID, tenant: Optional[Tenant] = None
+    ) -> Optional[VoicePersona]:
         """
         Retrieves a single voice persona by its ID.
 
@@ -103,10 +107,16 @@ class VoicePersonaService:
         """
         try:
             # Prioritize the explicitly set, active default persona.
-            return VoicePersona.objects.get(tenant=tenant, is_default=True, is_active=True)
+            return VoicePersona.objects.get(
+                tenant=tenant, is_default=True, is_active=True
+            )
         except VoicePersona.DoesNotExist:
             # Fallback: return the most recent active persona if no explicit default is set.
-            return VoicePersona.objects.filter(tenant=tenant, is_active=True).order_by("-created_at").first()
+            return (
+                VoicePersona.objects.filter(tenant=tenant, is_active=True)
+                .order_by("-created_at")
+                .first()
+            )
 
     @staticmethod
     @transaction.atomic
@@ -128,7 +138,9 @@ class VoicePersonaService:
         """
         if data.get("is_default"):
             # Ensure only one default persona exists per tenant.
-            VoicePersona.objects.filter(tenant=tenant, is_default=True).update(is_default=False)
+            VoicePersona.objects.filter(tenant=tenant, is_default=True).update(
+                is_default=False
+            )
 
         persona = VoicePersona.objects.create(tenant=tenant, **data)
         return persona
@@ -258,7 +270,9 @@ class VoiceModelService:
             A list of strings, where each string is a unique provider name.
         """
         return list(
-            VoiceModel.objects.filter(is_active=True).values_list("provider", flat=True).distinct()
+            VoiceModel.objects.filter(is_active=True)
+            .values_list("provider", flat=True)
+            .distinct()
         )
 
     @staticmethod
@@ -270,7 +284,9 @@ class VoiceModelService:
             A list of strings, where each string is a unique language code.
         """
         return list(
-            VoiceModel.objects.filter(is_active=True).values_list("language", flat=True).distinct()
+            VoiceModel.objects.filter(is_active=True)
+            .values_list("language", flat=True)
+            .distinct()
         )
 
     @staticmethod

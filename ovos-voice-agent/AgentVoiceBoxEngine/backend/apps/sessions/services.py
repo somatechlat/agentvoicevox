@@ -16,12 +16,12 @@ from django.db import transaction
 from django.db.models import Avg, Count, QuerySet, Sum
 from django.utils import timezone
 
+from apps.api_keys.models import APIKey
 from apps.core.exceptions import (
     NotFoundError,
     TenantLimitExceededError,
     ValidationError,
 )
-from apps.api_keys.models import APIKey
 from apps.tenants.models import Tenant
 from apps.tenants.services import TenantService
 from apps.users.models import User
@@ -47,9 +47,9 @@ class SessionService:
             NotFoundError: If a session with the specified ID does not exist.
         """
         try:
-            return Session.objects.select_related("tenant", "project", "api_key", "user").get(
-                id=session_id
-            )
+            return Session.objects.select_related(
+                "tenant", "project", "api_key", "user"
+            ).get(id=session_id)
         except Session.DoesNotExist:
             raise NotFoundError(f"Session {session_id} not found")
 
@@ -158,17 +158,23 @@ class SessionService:
             NotFoundError: If the project is not found for the given tenant.
             TenantLimitExceededError: If tenant monthly or project concurrent session limits are met.
         """
-        from apps.projects.models import Project  # Local import to avoid circular dependency.
+        from apps.projects.models import (
+            Project,
+        )  # Local import to avoid circular dependency.
 
         try:
             # Use all_objects for Project lookup, but filter by tenant.
             project = Project.all_objects.get(id=project_id, tenant=tenant)
         except Project.DoesNotExist:
-            raise NotFoundError(f"Project {project_id} not found for tenant {tenant.id}")
+            raise NotFoundError(
+                f"Project {project_id} not found for tenant {tenant.id}"
+            )
 
         # Enforce tenant monthly session limit.
         current_month_sessions_count = SessionService.count_sessions_this_month(tenant)
-        TenantService.enforce_limit(tenant, "max_sessions_per_month", current_month_sessions_count)
+        TenantService.enforce_limit(
+            tenant, "max_sessions_per_month", current_month_sessions_count
+        )
 
         # Enforce project concurrent session limit.
         active_concurrent_sessions = Session.all_objects.filter(
@@ -519,11 +525,16 @@ class SessionService:
 
         terminated_count = 0
         for session in expired_sessions:
-            session.terminate(reason=f"Exceeded maximum duration of {max_duration_hours} hours")
+            session.terminate(
+                reason=f"Exceeded maximum duration of {max_duration_hours} hours"
+            )
             SessionService.log_event(
                 session=session,
                 event_type=SessionEvent.EventType.SESSION_TERMINATED,
-                data={"reason": "auto_terminated", "max_duration_hours": max_duration_hours},
+                data={
+                    "reason": "auto_terminated",
+                    "max_duration_hours": max_duration_hours,
+                },
             )
             terminated_count += 1
 

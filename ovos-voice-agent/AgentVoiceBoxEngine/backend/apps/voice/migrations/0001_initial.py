@@ -27,7 +27,10 @@ class Migration(migrations.Migration):
                         serialize=False,
                     ),
                 ),
-                ("name", models.CharField(help_text="Voice display name", max_length=255)),
+                (
+                    "name",
+                    models.CharField(help_text="Voice display name", max_length=255),
+                ),
                 (
                     "provider",
                     models.CharField(
@@ -38,14 +41,29 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "language",
-                    models.CharField(default="en", help_text="Voice language", max_length=10),
+                    models.CharField(
+                        default="en", help_text="Voice language", max_length=10
+                    ),
                 ),
-                ("gender", models.CharField(blank=True, help_text="Voice gender", max_length=20)),
-                ("description", models.TextField(blank=True, help_text="Voice description")),
-                ("sample_url", models.URLField(blank=True, help_text="Sample audio URL")),
+                (
+                    "gender",
+                    models.CharField(
+                        blank=True, help_text="Voice gender", max_length=20
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(blank=True, help_text="Voice description"),
+                ),
+                (
+                    "sample_url",
+                    models.URLField(blank=True, help_text="Sample audio URL"),
+                ),
                 (
                     "is_active",
-                    models.BooleanField(default=True, help_text="Whether the voice is available"),
+                    models.BooleanField(
+                        default=True, help_text="Whether the voice is available"
+                    ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -61,41 +79,61 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 ("name", models.CharField(help_text="Persona name", max_length=255)),
-                ("description", models.TextField(blank=True, help_text="Persona description")),
+                (
+                    "description",
+                    models.TextField(blank=True, help_text="Persona description"),
+                ),
                 (
                     "voice_id",
                     models.CharField(
                         default="af_heart", help_text="Kokoro voice ID", max_length=100
                     ),
                 ),
-                ("voice_speed", models.FloatField(default=1.0, help_text="Voice speed multiplier")),
+                (
+                    "voice_speed",
+                    models.FloatField(default=1.0, help_text="Voice speed multiplier"),
+                ),
                 (
                     "stt_model",
-                    models.CharField(default="tiny", help_text="Whisper STT model", max_length=100),
+                    models.CharField(
+                        default="tiny", help_text="Whisper STT model", max_length=100
+                    ),
                 ),
                 (
                     "stt_language",
-                    models.CharField(default="en", help_text="STT language code", max_length=10),
+                    models.CharField(
+                        default="en", help_text="STT language code", max_length=10
+                    ),
                 ),
                 (
                     "llm_provider",
-                    models.CharField(default="groq", help_text="LLM provider", max_length=50),
+                    models.CharField(
+                        default="groq", help_text="LLM provider", max_length=50
+                    ),
                 ),
                 (
                     "llm_model",
                     models.CharField(
-                        default="llama-3.3-70b-versatile", help_text="LLM model", max_length=100
+                        default="llama-3.3-70b-versatile",
+                        help_text="LLM model",
+                        max_length=100,
                     ),
                 ),
                 (
                     "system_prompt",
                     models.TextField(blank=True, help_text="System prompt for the LLM"),
                 ),
-                ("temperature", models.FloatField(default=0.7, help_text="LLM temperature")),
+                (
+                    "temperature",
+                    models.FloatField(default=0.7, help_text="LLM temperature"),
+                ),
                 (
                     "max_tokens",
                     models.PositiveIntegerField(
@@ -104,21 +142,28 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "turn_detection_enabled",
-                    models.BooleanField(default=True, help_text="Enable automatic turn detection"),
+                    models.BooleanField(
+                        default=True, help_text="Enable automatic turn detection"
+                    ),
                 ),
                 (
                     "turn_detection_threshold",
-                    models.FloatField(default=0.5, help_text="Turn detection threshold"),
+                    models.FloatField(
+                        default=0.5, help_text="Turn detection threshold"
+                    ),
                 ),
                 (
                     "silence_duration_ms",
                     models.PositiveIntegerField(
-                        default=500, help_text="Silence duration for turn detection (ms)"
+                        default=500,
+                        help_text="Silence duration for turn detection (ms)",
                     ),
                 ),
                 (
                     "is_active",
-                    models.BooleanField(default=True, help_text="Whether the persona is active"),
+                    models.BooleanField(
+                        default=True, help_text="Whether the persona is active"
+                    ),
                 ),
                 (
                     "is_default",
@@ -142,8 +187,12 @@ class Migration(migrations.Migration):
                 "db_table": "voice_personas",
                 "ordering": ["-created_at"],
                 "indexes": [
-                    models.Index(fields=["is_active"], name="voice_perso_is_acti_6de4f5_idx"),
-                    models.Index(fields=["is_default"], name="voice_perso_is_defa_c1a865_idx"),
+                    models.Index(
+                        fields=["is_active"], name="voice_perso_is_acti_6de4f5_idx"
+                    ),
+                    models.Index(
+                        fields=["is_default"], name="voice_perso_is_defa_c1a865_idx"
+                    ),
                 ],
                 "constraints": [
                     models.UniqueConstraint(

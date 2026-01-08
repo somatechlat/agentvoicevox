@@ -79,7 +79,10 @@ class APIKey(TenantScopedModel):
 
         REALTIME = "realtime", "Realtime API"  # Access to real-time voice sessions.
         BILLING = "billing", "Billing API"  # Access to billing and usage data.
-        ADMIN = "admin", "Admin API"  # Administrative operations (e.g., user management).
+        ADMIN = (
+            "admin",
+            "Admin API",
+        )  # Administrative operations (e.g., user management).
 
     class RateLimitTier(models.TextChoices):
         """Defines the rate limiting policy applied to an API key."""
@@ -90,7 +93,9 @@ class APIKey(TenantScopedModel):
 
     # --- Core Identification ---
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255, help_text="A human-readable name for the API key.")
+    name = models.CharField(
+        max_length=255, help_text="A human-readable name for the API key."
+    )
     description = models.TextField(
         blank=True, help_text="An optional description of the API key's purpose."
     )
@@ -136,7 +141,9 @@ class APIKey(TenantScopedModel):
         help_text="The date and time after which the API key becomes invalid.",
     )
     revoked_at = models.DateTimeField(
-        null=True, blank=True, help_text="The date and time this API key was explicitly revoked."
+        null=True,
+        blank=True,
+        help_text="The date and time this API key was explicitly revoked.",
     )
     revoked_by = models.ForeignKey(
         "users.User",
@@ -147,7 +154,8 @@ class APIKey(TenantScopedModel):
         help_text="The user who performed the revocation, if applicable.",
     )
     revocation_reason = models.TextField(
-        blank=True, help_text="An optional text description for the reason of revocation."
+        blank=True,
+        help_text="An optional text description for the reason of revocation.",
     )
 
     # --- Usage Tracking and Ownership ---

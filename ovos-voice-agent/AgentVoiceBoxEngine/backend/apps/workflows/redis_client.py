@@ -120,6 +120,8 @@ class RedisClient:
         try:
             return await self.client.publish(channel, message)
         except (ConnectionError, TimeoutError) as exc:
-            logger.error("Redis PUBLISH failed", extra={"channel": channel, "error": str(exc)})
+            logger.error(
+                "Redis PUBLISH failed", extra={"channel": channel, "error": str(exc)}
+            )
             self.start_reconnect()
             raise

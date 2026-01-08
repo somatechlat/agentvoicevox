@@ -453,7 +453,9 @@ try:
     _settings = Settings()
 except ValidationError as e:
     print("=" * 60, file=sys.stderr)
-    print("CONFIGURATION ERROR: Missing or invalid environment variables", file=sys.stderr)
+    print(
+        "CONFIGURATION ERROR: Missing or invalid environment variables", file=sys.stderr
+    )
     print("=" * 60, file=sys.stderr)
     for error in e.errors():
         field = ".".join(str(loc) for loc in error["loc"])

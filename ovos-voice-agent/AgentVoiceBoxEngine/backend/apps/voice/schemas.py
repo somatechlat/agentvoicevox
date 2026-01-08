@@ -34,16 +34,22 @@ class VoicePersonaCreate(Schema):
     voice_speed: float = 1.0  # Speech speed multiplier (1.0 = normal).
     stt_model: str = "tiny"  # The Whisper model for Speech-to-Text.
     stt_language: str = "en"  # The language code for STT.
-    llm_provider: str = "groq"  # The provider for the Large Language Model (e.g., 'groq', 'openai').
+    llm_provider: str = (
+        "groq"  # The provider for the Large Language Model (e.g., 'groq', 'openai').
+    )
     llm_model: str = "llama-3.3-70b-versatile"  # The specific LLM to use.
     system_prompt: str = ""  # The system prompt that defines the LLM's personality.
     temperature: float = 0.7  # LLM creativity control (0.0 to 1.0).
     max_tokens: int = 1024  # Maximum tokens for the LLM response.
     solvers: list[str] = []  # A list of enabled 'solver' plugins for tool use.
-    turn_detection_enabled: bool = True  # Whether to automatically detect when the user has finished speaking.
+    turn_detection_enabled: bool = (
+        True  # Whether to automatically detect when the user has finished speaking.
+    )
     turn_detection_threshold: float = 0.5  # Confidence threshold for turn detection.
     silence_duration_ms: int = 500  # Silence duration (ms) to trigger end of turn.
-    is_default: bool = False  # If true, this persona will be the default for the tenant.
+    is_default: bool = (
+        False  # If true, this persona will be the default for the tenant.
+    )
 
 
 class VoicePersonaUpdate(Schema):
@@ -53,20 +59,30 @@ class VoicePersonaUpdate(Schema):
     """
 
     name: Optional[str] = None  # The human-readable name for the persona.
-    description: Optional[str] = None  # Optional description of the persona's character.
+    description: Optional[str] = (
+        None  # Optional description of the persona's character.
+    )
     voice_id: Optional[str] = None  # The ID of the TTS voice model to use.
     voice_speed: Optional[float] = None  # Speech speed multiplier (1.0 = normal).
     stt_model: Optional[str] = None  # The Whisper model for Speech-to-Text.
     stt_language: Optional[str] = None  # The language code for STT.
     llm_provider: Optional[str] = None  # The provider for the Large Language Model.
     llm_model: Optional[str] = None  # The specific LLM to use.
-    system_prompt: Optional[str] = None  # The system prompt that defines the LLM's personality.
+    system_prompt: Optional[str] = (
+        None  # The system prompt that defines the LLM's personality.
+    )
     temperature: Optional[float] = None  # LLM creativity control (0.0 to 1.0).
     max_tokens: Optional[int] = None  # Maximum tokens for the LLM response.
     solvers: Optional[list[str]] = None  # A list of enabled 'solver' plugins.
-    turn_detection_enabled: Optional[bool] = None  # Enable/disable automatic turn detection.
-    turn_detection_threshold: Optional[float] = None  # Confidence threshold for turn detection.
-    silence_duration_ms: Optional[int] = None  # Silence duration (ms) to trigger end of turn.
+    turn_detection_enabled: Optional[bool] = (
+        None  # Enable/disable automatic turn detection.
+    )
+    turn_detection_threshold: Optional[float] = (
+        None  # Confidence threshold for turn detection.
+    )
+    silence_duration_ms: Optional[int] = (
+        None  # Silence duration (ms) to trigger end of turn.
+    )
     is_active: Optional[bool] = None  # Set the persona to active or inactive.
     is_default: Optional[bool] = None  # Set the persona as the tenant's default.
 
@@ -207,7 +223,9 @@ class VoiceProvidersOut(Schema):
     Defines the response structure for the list of available voice providers.
     """
 
-    providers: list[str]  # A list of unique provider names (e.g., ['kokoro', 'phoonnx']).
+    providers: list[
+        str
+    ]  # A list of unique provider names (e.g., ['kokoro', 'phoonnx']).
 
 
 class VoiceLanguagesOut(Schema):
@@ -216,4 +234,3 @@ class VoiceLanguagesOut(Schema):
     """
 
     languages: list[str]  # A list of unique language codes (e.g., ['en', 'es', 'fr']).
-

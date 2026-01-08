@@ -11,17 +11,23 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="tenantsettings",
             name="default_stt_language",
-            field=models.CharField(default="en", help_text="Default STT language code", max_length=10),
+            field=models.CharField(
+                default="en", help_text="Default STT language code", max_length=10
+            ),
         ),
         migrations.AddField(
             model_name="tenantsettings",
             name="stt_vad_enabled",
-            field=models.BooleanField(default=True, help_text="Enable STT voice activity detection"),
+            field=models.BooleanField(
+                default=True, help_text="Enable STT voice activity detection"
+            ),
         ),
         migrations.AddField(
             model_name="tenantsettings",
             name="stt_beam_size",
-            field=models.PositiveIntegerField(default=5, help_text="STT beam search size"),
+            field=models.PositiveIntegerField(
+                default=5, help_text="STT beam search size"
+            ),
         ),
         migrations.AddField(
             model_name="tenantsettings",
@@ -31,6 +37,8 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="tenantsettings",
             name="default_llm_max_tokens",
-            field=models.PositiveIntegerField(default=1024, help_text="Default LLM max tokens"),
+            field=models.PositiveIntegerField(
+                default=1024, help_text="Default LLM max tokens"
+            ),
         ),
     ]

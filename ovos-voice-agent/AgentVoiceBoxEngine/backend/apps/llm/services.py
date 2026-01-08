@@ -57,7 +57,9 @@ class LLMConfigService:
             NotFoundError: If the tenant settings are not found.
         """
         try:
-            return TenantSettings.objects.select_related("tenant").get(tenant_id=tenant_id)
+            return TenantSettings.objects.select_related("tenant").get(
+                tenant_id=tenant_id
+            )
         except TenantSettings.DoesNotExist:
             raise NotFoundError(f"Tenant settings for {tenant_id} not found.")
 
@@ -92,7 +94,9 @@ class LLMConfigService:
         if not ok:
             # Note: FeatureNotImplementedError is a generic APIException.
             # A more specific VaultError might be appropriate in a production system.
-            raise FeatureNotImplementedError("Vault write failed", error_code="vault_write_failed")
+            raise FeatureNotImplementedError(
+                "Vault write failed", error_code="vault_write_failed"
+            )
 
     @staticmethod
     def merge_secrets(

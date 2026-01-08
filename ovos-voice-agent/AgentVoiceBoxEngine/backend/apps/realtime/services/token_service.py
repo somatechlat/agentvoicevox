@@ -110,7 +110,8 @@ class EphemeralTokenService:
         self.cache.set(cache_key, cache_data, timeout=ttl)
 
         logger.info(
-            f"Created ephemeral token {prefix}... for tenant {tenant_id}, " f"expires in {ttl}s"
+            f"Created ephemeral token {prefix}... for tenant {tenant_id}, "
+            f"expires in {ttl}s"
         )
 
         return full_token, expires_timestamp
@@ -208,7 +209,9 @@ class EphemeralTokenService:
                 cache_key = f"{self.TOKEN_PREFIX}{token_hash}"
                 self.cache.delete(cache_key)
 
-                logger.info(f"Token {token[:12]}... marked as used for session {session_id}")
+                logger.info(
+                    f"Token {token[:12]}... marked as used for session {session_id}"
+                )
                 return True
 
             return False

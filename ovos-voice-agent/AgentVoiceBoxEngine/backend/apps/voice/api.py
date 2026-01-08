@@ -21,7 +21,11 @@ from uuid import UUID
 
 from ninja import Query, Router
 
-from apps.core.exceptions import FeatureNotImplementedError, NotFoundError, ValidationError
+from apps.core.exceptions import (
+    FeatureNotImplementedError,
+    NotFoundError,
+    ValidationError,
+)
 from apps.llm.services import LLMConfigService
 from apps.workflows.activities.llm import LLMActivities, LLMRequest, Message
 
@@ -117,9 +121,13 @@ def _model_to_out(m) -> VoiceModelOut:
 @router.get("/personas", response=VoicePersonaListOut, summary="List Voice Personas")
 def list_personas(
     request,
-    active_only: bool = Query(False, description="If true, only returns active personas."),
+    active_only: bool = Query(
+        False, description="If true, only returns active personas."
+    ),
     page: int = Query(1, ge=1, description="The page number for pagination."),
-    page_size: int = Query(20, ge=1, le=100, description="The number of items per page."),
+    page_size: int = Query(
+        20, ge=1, le=100, description="The number of items per page."
+    ),
 ):
     """
     Lists all voice personas associated with the current tenant.
@@ -145,7 +153,9 @@ def list_personas(
     )
 
 
-@router.post("/personas", response={201: VoicePersonaOut}, summary="Create a Voice Persona")
+@router.post(
+    "/personas", response={201: VoicePersonaOut}, summary="Create a Voice Persona"
+)
 def create_persona(request, payload: VoicePersonaCreate):
     """
     Creates a new voice persona for the current tenant.
@@ -164,7 +174,9 @@ def create_persona(request, payload: VoicePersonaCreate):
     return 201, _persona_to_out(persona)
 
 
-@router.get("/personas/default", response=VoicePersonaOut, summary="Get Default Voice Persona")
+@router.get(
+    "/personas/default", response=VoicePersonaOut, summary="Get Default Voice Persona"
+)
 def get_default_persona(request):
     """
     Retrieves the default voice persona for the current tenant.
@@ -185,7 +197,11 @@ def get_default_persona(request):
     return _persona_to_out(persona)
 
 
-@router.get("/personas/{persona_id}", response=VoicePersonaOut, summary="Get a Specific Voice Persona")
+@router.get(
+    "/personas/{persona_id}",
+    response=VoicePersonaOut,
+    summary="Get a Specific Voice Persona",
+)
 def get_persona(request, persona_id: UUID):
     """
     Retrieves a specific voice persona by its unique ID.
@@ -237,7 +253,9 @@ def get_persona_config(request, persona_id: UUID):
     return VoicePersonaConfigOut(**config)
 
 
-@router.patch("/personas/{persona_id}", response=VoicePersonaOut, summary="Update a Voice Persona")
+@router.patch(
+    "/personas/{persona_id}", response=VoicePersonaOut, summary="Update a Voice Persona"
+)
 def update_persona(request, persona_id: UUID, payload: VoicePersonaUpdate):
     """
     Updates an existing voice persona.
@@ -258,7 +276,9 @@ def update_persona(request, persona_id: UUID, payload: VoicePersonaUpdate):
     persona = VoicePersonaService.get_persona(persona_id, tenant=request.tenant)
     if not persona:
         raise NotFoundError(f"Voice persona {persona_id} not found")
-    persona = VoicePersonaService.update_persona(persona, payload.dict(exclude_unset=True))
+    persona = VoicePersonaService.update_persona(
+        persona, payload.dict(exclude_unset=True)
+    )
     return _persona_to_out(persona)
 
 
@@ -289,7 +309,9 @@ def set_default_persona(request, persona_id: UUID):
     return _persona_to_out(persona)
 
 
-@router.delete("/personas/{persona_id}", response={204: None}, summary="Delete a Voice Persona")
+@router.delete(
+    "/personas/{persona_id}", response={204: None}, summary="Delete a Voice Persona"
+)
 def delete_persona(request, persona_id: UUID):
     """
     Deletes a voice persona.
@@ -371,11 +393,17 @@ async def test_persona(request, persona_id: UUID, payload: VoicePersonaTestReque
 # ==========================================================================
 # VOICE MODEL ENDPOINTS
 # ==========================================================================
-@router.get("/models", response=VoiceModelListOut, summary="List Available Voice Models")
+@router.get(
+    "/models", response=VoiceModelListOut, summary="List Available Voice Models"
+)
 def list_models(
     request,
-    provider: Optional[str] = Query(None, description="Filter models by provider (e.g., 'elevenlabs')."),
-    language: Optional[str] = Query(None, description="Filter models by language code (e.g., 'en-US')."),
+    provider: Optional[str] = Query(
+        None, description="Filter models by provider (e.g., 'elevenlabs')."
+    ),
+    language: Optional[str] = Query(
+        None, description="Filter models by language code (e.g., 'en-US')."
+    ),
     active_only: bool = Query(True, description="If true, only returns active models."),
 ):
     """
@@ -398,7 +426,9 @@ def list_models(
     )
 
 
-@router.get("/models/providers", response=VoiceProvidersOut, summary="List Voice Providers")
+@router.get(
+    "/models/providers", response=VoiceProvidersOut, summary="List Voice Providers"
+)
 def list_providers(request):
     """
     Lists all unique voice providers available in the system.
@@ -409,7 +439,9 @@ def list_providers(request):
     return VoiceProvidersOut(providers=providers)
 
 
-@router.get("/models/languages", response=VoiceLanguagesOut, summary="List Voice Languages")
+@router.get(
+    "/models/languages", response=VoiceLanguagesOut, summary="List Voice Languages"
+)
 def list_languages(request):
     """
     Lists all unique languages available across all voice models.
@@ -420,7 +452,9 @@ def list_languages(request):
     return VoiceLanguagesOut(languages=languages)
 
 
-@router.get("/models/{model_id}", response=VoiceModelOut, summary="Get a Specific Voice Model")
+@router.get(
+    "/models/{model_id}", response=VoiceModelOut, summary="Get a Specific Voice Model"
+)
 def get_model(request, model_id: str):
     """
     Retrieves a specific voice model by its unique ID.
@@ -442,7 +476,11 @@ def get_model(request, model_id: str):
     return _model_to_out(model)
 
 
-@router.post("/models", response={201: VoiceModelOut}, summary="Create a Voice Model (Admin Only)")
+@router.post(
+    "/models",
+    response={201: VoiceModelOut},
+    summary="Create a Voice Model (Admin Only)",
+)
 def create_model(request, payload: VoiceModelCreate):
     """
     Creates a new voice model.
@@ -459,7 +497,11 @@ def create_model(request, payload: VoiceModelCreate):
     return 201, _model_to_out(model)
 
 
-@router.patch("/models/{model_id}", response=VoiceModelOut, summary="Update a Voice Model (Admin Only)")
+@router.patch(
+    "/models/{model_id}",
+    response=VoiceModelOut,
+    summary="Update a Voice Model (Admin Only)",
+)
 def update_model(request, model_id: str, payload: VoiceModelUpdate):
     """
     Updates an existing voice model.
@@ -483,7 +525,11 @@ def update_model(request, model_id: str, payload: VoiceModelUpdate):
     return _model_to_out(model)
 
 
-@router.delete("/models/{model_id}", response={204: None}, summary="Delete a Voice Model (Admin Only)")
+@router.delete(
+    "/models/{model_id}",
+    response={204: None},
+    summary="Delete a Voice Model (Admin Only)",
+)
 def delete_model(request, model_id: str):
     """
     Deletes a voice model from the system.

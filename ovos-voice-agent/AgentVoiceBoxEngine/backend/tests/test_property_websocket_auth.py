@@ -368,7 +368,9 @@ class TestWebSocketHeartbeat:
 
     @pytest.mark.property
     @given(
-        unknown_type=st.text(min_size=1, max_size=50).filter(lambda x: x.strip() and x != "ping")
+        unknown_type=st.text(min_size=1, max_size=50).filter(
+            lambda x: x.strip() and x != "ping"
+        )
     )
     @settings(max_examples=20)
     async def test_unknown_message_type_returns_error(self, unknown_type: str):

@@ -21,28 +21,41 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
                     "email_enabled",
-                    models.BooleanField(default=True, help_text="Enable email notifications"),
+                    models.BooleanField(
+                        default=True, help_text="Enable email notifications"
+                    ),
                 ),
                 (
                     "in_app_enabled",
-                    models.BooleanField(default=True, help_text="Enable in-app notifications"),
+                    models.BooleanField(
+                        default=True, help_text="Enable in-app notifications"
+                    ),
                 ),
                 (
                     "billing_notifications",
-                    models.BooleanField(default=True, help_text="Receive billing notifications"),
+                    models.BooleanField(
+                        default=True, help_text="Receive billing notifications"
+                    ),
                 ),
                 (
                     "security_notifications",
-                    models.BooleanField(default=True, help_text="Receive security notifications"),
+                    models.BooleanField(
+                        default=True, help_text="Receive security notifications"
+                    ),
                 ),
                 (
                     "system_notifications",
-                    models.BooleanField(default=True, help_text="Receive system notifications"),
+                    models.BooleanField(
+                        default=True, help_text="Receive system notifications"
+                    ),
                 ),
                 (
                     "quiet_hours_enabled",
@@ -50,11 +63,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "quiet_hours_start",
-                    models.TimeField(blank=True, help_text="Quiet hours start time", null=True),
+                    models.TimeField(
+                        blank=True, help_text="Quiet hours start time", null=True
+                    ),
                 ),
                 (
                     "quiet_hours_end",
-                    models.TimeField(blank=True, help_text="Quiet hours end time", null=True),
+                    models.TimeField(
+                        blank=True, help_text="Quiet hours end time", null=True
+                    ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
@@ -69,7 +86,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.UUIDField(
-                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                        default=uuid.uuid4,
+                        editable=False,
+                        primary_key=True,
+                        serialize=False,
                     ),
                 ),
                 (
@@ -89,34 +109,50 @@ class Migration(migrations.Migration):
                         max_length=20,
                     ),
                 ),
-                ("title", models.CharField(help_text="Notification title", max_length=255)),
+                (
+                    "title",
+                    models.CharField(help_text="Notification title", max_length=255),
+                ),
                 ("message", models.TextField(help_text="Notification message")),
                 (
                     "data",
-                    models.JSONField(blank=True, default=dict, help_text="Additional data payload"),
+                    models.JSONField(
+                        blank=True, default=dict, help_text="Additional data payload"
+                    ),
                 ),
                 ("action_url", models.URLField(blank=True, help_text="Action URL")),
                 (
                     "action_label",
-                    models.CharField(blank=True, help_text="Action button label", max_length=100),
+                    models.CharField(
+                        blank=True, help_text="Action button label", max_length=100
+                    ),
                 ),
-                ("channels", models.JSONField(default=list, help_text="Delivery channels")),
+                (
+                    "channels",
+                    models.JSONField(default=list, help_text="Delivery channels"),
+                ),
                 (
                     "delivered_at",
                     models.JSONField(
-                        blank=True, default=dict, help_text="Delivery timestamps per channel"
+                        blank=True,
+                        default=dict,
+                        help_text="Delivery timestamps per channel",
                     ),
                 ),
                 (
                     "read_at",
                     models.DateTimeField(
-                        blank=True, help_text="When the notification was read", null=True
+                        blank=True,
+                        help_text="When the notification was read",
+                        null=True,
                     ),
                 ),
                 (
                     "dismissed_at",
                     models.DateTimeField(
-                        blank=True, help_text="When the notification was dismissed", null=True
+                        blank=True,
+                        help_text="When the notification was dismissed",
+                        null=True,
                     ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),

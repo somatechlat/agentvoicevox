@@ -171,7 +171,9 @@ class KeycloakClient:
             self._admin_token = data["access_token"]
             # Expire 60 seconds early to be safe
             expires_in = data.get("expires_in", 300) - 60
-            self._admin_token_expires = datetime.utcnow() + timedelta(seconds=expires_in)
+            self._admin_token_expires = datetime.utcnow() + timedelta(
+                seconds=expires_in
+            )
 
             return self._admin_token
 

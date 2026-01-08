@@ -101,7 +101,9 @@ class SessionConsumer(BaseConsumer):
 
             self.session.status = "active"
             self.session.started_at = timezone.now()
-            await self.session.asave(update_fields=["status", "started_at", "updated_at"])
+            await self.session.asave(
+                update_fields=["status", "started_at", "updated_at"]
+            )
 
     async def _complete_session(self):
         """Mark session as completed."""
@@ -115,7 +117,12 @@ class SessionConsumer(BaseConsumer):
                     self.session.terminated_at - self.session.started_at
                 ).total_seconds()
             await self.session.asave(
-                update_fields=["status", "terminated_at", "duration_seconds", "updated_at"]
+                update_fields=[
+                    "status",
+                    "terminated_at",
+                    "duration_seconds",
+                    "updated_at",
+                ]
             )
 
     # Message handlers

@@ -6,6 +6,7 @@ COPY package.json bun.lock* ./
 RUN bun install
 
 COPY . .
+COPY src ./src
 
 EXPOSE 3000
 

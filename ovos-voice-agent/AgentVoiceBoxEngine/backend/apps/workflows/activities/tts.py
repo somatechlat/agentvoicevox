@@ -114,9 +114,10 @@ class TTSActivities:
             Exception: If the speech synthesis process fails.
         """
         import io
-        import numpy as np  # Used for efficient audio array manipulation.
         import time
         import wave  # Python's built-in WAV file writer.
+
+        import numpy as np  # Used for efficient audio array manipulation.
 
         start_time = time.time()  # Record start time for latency calculation.
 
@@ -160,7 +161,9 @@ class TTSActivities:
 
             audio_data = audio_bytes_buffer.getvalue()
             duration = len(combined_audio_float) / sample_rate
-            processing_time = (time.time() - start_time) * 1000  # Convert to milliseconds.
+            processing_time = (
+                time.time() - start_time
+            ) * 1000  # Convert to milliseconds.
 
             logger.info(
                 f"Synthesized speech for session {request.session_id}: "
@@ -314,7 +317,9 @@ class TTSActivities:
         # Check for unsupported control characters that might interfere with TTS engines.
         import unicodedata  # Local import.
 
-        control_chars = [c for c in text if unicodedata.category(c) == "Cc" and c not in "\n\r\t"]
+        control_chars = [
+            c for c in text if unicodedata.category(c) == "Cc" and c not in "\n\r\t"
+        ]
         if control_chars:
             return {
                 "valid": False,
@@ -327,5 +332,6 @@ class TTSActivities:
             "valid": True,
             "character_count": len(text),
             "word_count": len(text.split()),
-            "estimated_duration_seconds": len(text) / 15,  # Heuristic: approx. 15 chars per second.
+            "estimated_duration_seconds": len(text)
+            / 15,  # Heuristic: approx. 15 chars per second.
         }

@@ -787,7 +787,9 @@ class Command(BaseCommand):
                 elif len(entry) == 4:
                     resource, action, role_permissions, conditions = entry
                 else:
-                    self.stdout.write(self.style.ERROR(f"Invalid entry format: {entry}"))
+                    self.stdout.write(
+                        self.style.ERROR(f"Invalid entry format: {entry}")
+                    )
                     continue
 
                 for role, allowed in role_permissions.items():
@@ -841,5 +843,7 @@ class Command(BaseCommand):
             # Print summary by role
             self.stdout.write("\nPermissions by role:")
             for role in PlatformRole:
-                allowed = PermissionMatrix.objects.filter(role=role.value, allowed=True).count()
+                allowed = PermissionMatrix.objects.filter(
+                    role=role.value, allowed=True
+                ).count()
                 self.stdout.write(f"  {role.label}: {allowed} permissions")

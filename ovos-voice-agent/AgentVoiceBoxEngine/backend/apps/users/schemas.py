@@ -30,7 +30,9 @@ class UserCreate(UserBase):
     Used by tenant admins to add users to their tenant.
     """
 
-    keycloak_id: Optional[str] = None  # The user's ID from the external identity provider (Keycloak).
+    keycloak_id: Optional[str] = (
+        None  # The user's ID from the external identity provider (Keycloak).
+    )
 
 
 class UserUpdate(Schema):
@@ -43,7 +45,9 @@ class UserUpdate(Schema):
     last_name: Optional[str] = None
     role: Optional[str] = None  # The user's new role (e.g., 'admin', 'developer').
     is_active: Optional[bool] = None  # Set the user's account to active or inactive.
-    preferences: Optional[dict[str, Any]] = None  # A dictionary of user-specific UI preferences.
+    preferences: Optional[dict[str, Any]] = (
+        None  # A dictionary of user-specific UI preferences.
+    )
 
 
 class UserResponse(Schema):
@@ -113,9 +117,13 @@ class UserPreferencesUpdate(Schema):
 
     theme: Optional[str] = None  # The UI theme (e.g., 'light', 'dark').
     language: Optional[str] = None  # The preferred UI language (e.g., 'en', 'es').
-    timezone: Optional[str] = None  # The user's timezone (e.g., 'UTC', 'America/New_York').
+    timezone: Optional[str] = (
+        None  # The user's timezone (e.g., 'UTC', 'America/New_York').
+    )
     notifications_enabled: Optional[bool] = None  # Master switch for all notifications.
-    email_notifications: Optional[bool] = None  # Specific switch for email notifications.
+    email_notifications: Optional[bool] = (
+        None  # Specific switch for email notifications.
+    )
 
 
 class UserRoleChange(Schema):
@@ -212,4 +220,3 @@ class CurrentUserResponse(Schema):
             created_at=user.created_at,
             last_login_at=user.last_login_at,
         )
-

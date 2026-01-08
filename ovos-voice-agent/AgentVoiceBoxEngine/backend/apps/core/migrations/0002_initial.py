@@ -65,7 +65,9 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="tenantpermissionoverride",
-            index=models.Index(fields=["tenant", "role"], name="tenant_perm_tenant__dc6af5_idx"),
+            index=models.Index(
+                fields=["tenant", "role"], name="tenant_perm_tenant__dc6af5_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
             name="tenantpermissionoverride",
@@ -73,15 +75,21 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="userroleassignment",
-            index=models.Index(fields=["user", "role"], name="user_role_a_user_id_addc9d_idx"),
+            index=models.Index(
+                fields=["user", "role"], name="user_role_a_user_id_addc9d_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="userroleassignment",
-            index=models.Index(fields=["tenant", "role"], name="user_role_a_tenant__cf1225_idx"),
+            index=models.Index(
+                fields=["tenant", "role"], name="user_role_a_tenant__cf1225_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="userroleassignment",
-            index=models.Index(fields=["expires_at"], name="user_role_a_expires_d25c32_idx"),
+            index=models.Index(
+                fields=["expires_at"], name="user_role_a_expires_d25c32_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
             name="userroleassignment",

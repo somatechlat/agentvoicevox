@@ -162,7 +162,9 @@ class AuditLogService:
             A list of unique action strings.
         """
         return list(
-            AuditLog.objects.filter(tenant=tenant).values_list("action", flat=True).distinct()
+            AuditLog.objects.filter(tenant=tenant)
+            .values_list("action", flat=True)
+            .distinct()
         )
 
     @staticmethod

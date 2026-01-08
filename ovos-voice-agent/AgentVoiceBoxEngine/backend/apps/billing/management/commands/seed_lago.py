@@ -43,7 +43,9 @@ def create_billable_metrics(client: httpx.Client, api_url: str, api_key: str) ->
             )
             if response.status_code == 200:
                 continue
-        raise CommandError(f"Failed to create/update metric {metric['code']}: {response.text}")
+        raise CommandError(
+            f"Failed to create/update metric {metric['code']}: {response.text}"
+        )
 
 
 def create_plans(client: httpx.Client, api_url: str, api_key: str) -> None:
@@ -72,7 +74,9 @@ def create_plans(client: httpx.Client, api_url: str, api_key: str) -> None:
             )
             if response.status_code == 200:
                 continue
-        raise CommandError(f"Failed to create/update plan {plan['code']}: {response.text}")
+        raise CommandError(
+            f"Failed to create/update plan {plan['code']}: {response.text}"
+        )
 
 
 class Command(BaseCommand):
@@ -113,9 +117,13 @@ class Command(BaseCommand):
                 response = client.get(f"{api_url}/health")
                 response.raise_for_status()
             except httpx.RequestError as exc:
-                raise CommandError(f"Cannot connect to Lago at {api_url}: {exc}") from exc
+                raise CommandError(
+                    f"Cannot connect to Lago at {api_url}: {exc}"
+                ) from exc
             except httpx.HTTPStatusError as exc:
-                raise CommandError(f"Lago health check failed: {exc.response.status_code}") from exc
+                raise CommandError(
+                    f"Lago health check failed: {exc.response.status_code}"
+                ) from exc
 
             create_billable_metrics(client, api_url, api_key)
             create_plans(client, api_url, api_key)

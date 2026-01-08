@@ -26,7 +26,10 @@ class PlatformRole(models.TextChoices):
         "saas_admin",
         "SaaS Administrator",
     )  # Full platform access, cross-tenant operations.
-    TENANT_ADMIN = "tenant_admin", "Tenant Administrator"  # Full access within a specific tenant.
+    TENANT_ADMIN = (
+        "tenant_admin",
+        "Tenant Administrator",
+    )  # Full access within a specific tenant.
     AGENT_ADMIN = (
         "agent_admin",
         "Agent Administrator",
@@ -35,8 +38,14 @@ class PlatformRole(models.TextChoices):
         "supervisor",
         "Supervisor",
     )  # Monitors sessions, views analytics, manages operators.
-    OPERATOR = "operator", "Operator"  # Handles live sessions, views assigned conversations.
-    AGENT_USER = "agent_user", "Agent User"  # Interacts with agents, views own conversations.
+    OPERATOR = (
+        "operator",
+        "Operator",
+    )  # Handles live sessions, views assigned conversations.
+    AGENT_USER = (
+        "agent_user",
+        "Agent User",
+    )  # Interacts with agents, views own conversations.
     VIEWER = "viewer", "Viewer"  # Read-only access to permitted resources.
     BILLING_ADMIN = (
         "billing_admin",
@@ -131,7 +140,11 @@ class PermissionMatrix(models.Model):
         """Model metadata options."""
 
         db_table = "permission_matrix"
-        unique_together = ["role", "resource", "action"]  # Ensures no duplicate permission rules.
+        unique_together = [
+            "role",
+            "resource",
+            "action",
+        ]  # Ensures no duplicate permission rules.
         indexes = [
             models.Index(fields=["resource", "action"]),
         ]
@@ -220,7 +233,9 @@ class TenantPermissionOverride(models.Model):
     def __str__(self):
         """Returns a string representation of the tenant permission override."""
         status = "✓" if self.allowed else "✗"
-        return f"{self.tenant.slug}/{self.role}: {self.resource}:{self.action} [{status}]"
+        return (
+            f"{self.tenant.slug}/{self.role}: {self.resource}:{self.action} [{status}]"
+        )
 
 
 class UserRoleAssignment(models.Model):
@@ -260,7 +275,9 @@ class UserRoleAssignment(models.Model):
     )
     assigned_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(
-        null=True, blank=True, help_text="The date and time when this role assignment expires."
+        null=True,
+        blank=True,
+        help_text="The date and time when this role assignment expires.",
     )
 
     class Meta:

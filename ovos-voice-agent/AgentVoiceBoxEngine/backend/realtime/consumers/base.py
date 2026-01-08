@@ -70,7 +70,9 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
                 self.channel_name,
             )
 
-        logger.info(f"WebSocket connected: user={self.user_id}, tenant={self.tenant_id}")
+        logger.info(
+            f"WebSocket connected: user={self.user_id}, tenant={self.tenant_id}"
+        )
 
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection."""
@@ -107,7 +109,9 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
                 logger.error(f"Error handling {message_type}: {e}")
                 await self.send_error("internal_error", str(e))
         else:
-            await self.send_error("unknown_message_type", f"Unknown type: {message_type}")
+            await self.send_error(
+                "unknown_message_type", f"Unknown type: {message_type}"
+            )
 
     async def _authenticate(self) -> bool:
         """Authenticate the WebSocket connection."""

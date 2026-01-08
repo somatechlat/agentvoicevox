@@ -11,15 +11,13 @@ Access to all endpoints in this module is strictly restricted to users with
 the `SYSADMIN` role.
 """
 
-from datetime import datetime, timedelta
 
 from django.db.models import Sum
 from django.utils import timezone
 from ninja import Router
 
-from apps.core.exceptions import PermissionDeniedError
 from apps.billing.models import UsageEvent
-from apps.sessions.models import Session
+from apps.core.exceptions import PermissionDeniedError
 from apps.tenants.models import Tenant
 
 # Router for admin dashboard endpoints, tagged for OpenAPI documentation.

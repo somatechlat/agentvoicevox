@@ -19,12 +19,14 @@ from ninja import Schema
 # ==========================================================================
 class STTConfig(Schema):
     """Defines the structure for Speech-to-Text (STT) configuration."""
+
     model: str = "tiny"  # The Whisper model size to use for transcription.
     language: str = "en"  # The language code for STT processing (e.g., 'en', 'es').
 
 
 class TTSConfig(Schema):
     """Defines the structure for Text-to-Speech (TTS) configuration."""
+
     model: str = "kokoro"  # The TTS provider/model to use.
     voice: str = "af_heart"  # The specific voice ID for speech synthesis.
     speed: float = 1.0  # Speech speed multiplier (1.0 is normal).
@@ -32,6 +34,7 @@ class TTSConfig(Schema):
 
 class LLMConfig(Schema):
     """Defines the structure for Large Language Model (LLM) configuration."""
+
     provider: str = "groq"  # The LLM provider (e.g., 'groq', 'openai').
     model: str = "llama-3.3-70b-versatile"  # The specific LLM for generating responses.
     temperature: float = 0.7  # Creativity control (higher is more creative).
@@ -40,14 +43,22 @@ class LLMConfig(Schema):
 
 class TurnDetectionConfig(Schema):
     """Defines the structure for Voice Activity Detection (VAD) / turn detection."""
-    enabled: bool = True  # If true, automatically detect when a user has finished speaking.
+
+    enabled: bool = (
+        True  # If true, automatically detect when a user has finished speaking.
+    )
     threshold: float = 0.5  # Confidence threshold for detecting speech.
-    prefix_padding: float = 0.3  # Audio padding (in seconds) to include before speech starts.
-    silence_duration: float = 0.5  # Duration of silence (in seconds) to consider a turn complete.
+    prefix_padding: float = (
+        0.3  # Audio padding (in seconds) to include before speech starts.
+    )
+    silence_duration: float = (
+        0.5  # Duration of silence (in seconds) to consider a turn complete.
+    )
 
 
 class VoiceConfig(Schema):
     """A composite schema representing the full, structured voice agent configuration."""
+
     stt: Optional[STTConfig] = None
     tts: Optional[TTSConfig] = None
     llm: Optional[LLMConfig] = None
@@ -60,6 +71,7 @@ class VoiceConfig(Schema):
 # ==========================================================================
 class ProjectBase(Schema):
     """A base schema with the core identifying fields of a project."""
+
     name: str  # The human-readable name of the project.
     slug: str  # A URL-friendly identifier, unique within the tenant.
     description: str = ""  # An optional description of the project's purpose.
@@ -72,6 +84,7 @@ class ProjectCreate(ProjectBase):
     This schema has a flat structure with default values for all configuration
     settings, allowing for quick project creation with minimal input.
     """
+
     stt_model: str = "tiny"
     stt_language: str = "en"
     tts_model: str = "kokoro"
@@ -92,6 +105,7 @@ class ProjectUpdate(Schema):
     Defines the request payload for updating a project.
     All fields are optional to allow for partial (PATCH) updates.
     """
+
     name: Optional[str] = None
     description: Optional[str] = None
     is_active: Optional[bool] = None
@@ -129,6 +143,7 @@ class ProjectResponse(Schema):
     Defines the standard response structure for a single project object.
     This schema presents a flat view of all project configurations.
     """
+
     id: UUID
     tenant_id: UUID
     name: str
@@ -211,6 +226,7 @@ class ProjectListResponse(Schema):
     """
     Defines the response structure for a paginated list of projects.
     """
+
     items: list[ProjectResponse]  # The list of projects on the current page.
     total: int  # The total number of projects matching the query.
     page: int  # The current page number.
@@ -225,6 +241,7 @@ class ProjectVoiceConfigResponse(Schema):
     This schema composes the smaller config components into a nested structure,
     which is ideal for client applications to consume.
     """
+
     project_id: UUID
     stt: STTConfig
     tts: TTSConfig
@@ -265,4 +282,3 @@ class ProjectVoiceConfigResponse(Schema):
             ),
             system_prompt=project.system_prompt,
         )
-

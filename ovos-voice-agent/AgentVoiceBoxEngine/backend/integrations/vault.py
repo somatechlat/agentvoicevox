@@ -64,7 +64,9 @@ class DatabaseCredentials:
 
     def is_expired(self, buffer_seconds: int = 60) -> bool:
         """Check if credentials are expired or about to expire."""
-        return datetime.utcnow() >= (self.expires_at - timedelta(seconds=buffer_seconds))
+        return datetime.utcnow() >= (
+            self.expires_at - timedelta(seconds=buffer_seconds)
+        )
 
 
 @dataclass
@@ -138,7 +140,9 @@ class VaultClient:
             if self.fail_fast:
                 raise VaultUnavailableError(error_msg) from e
             else:
-                logger.warning("Vault unavailable but fail_fast is disabled, continuing...")
+                logger.warning(
+                    "Vault unavailable but fail_fast is disabled, continuing..."
+                )
 
     def _get_client(self):
         """Get or create Vault client with authentication."""
@@ -156,7 +160,9 @@ class VaultClient:
                     self._authenticate_approle()
                     logger.debug("Using AppRole authentication")
                 else:
-                    raise VaultAuthenticationError("Vault token or AppRole credentials required")
+                    raise VaultAuthenticationError(
+                        "Vault token or AppRole credentials required"
+                    )
 
                 if not self._client.is_authenticated():
                     raise VaultAuthenticationError("Vault authentication failed")
@@ -183,7 +189,9 @@ class VaultClient:
         lease_duration = response["auth"]["lease_duration"]
         # Renew 60 seconds before expiration
         self._token_expires = datetime.utcnow() + timedelta(seconds=lease_duration - 60)
-        logger.info(f"AppRole authentication successful, token expires in {lease_duration}s")
+        logger.info(
+            f"AppRole authentication successful, token expires in {lease_duration}s"
+        )
 
     def _check_and_renew_token(self) -> None:
         """Check and renew token if needed."""
@@ -393,7 +401,8 @@ class VaultClient:
                 password=response["data"]["password"],
                 lease_id=response["lease_id"],
                 lease_duration=response["lease_duration"],
-                expires_at=datetime.utcnow() + timedelta(seconds=response["lease_duration"]),
+                expires_at=datetime.utcnow()
+                + timedelta(seconds=response["lease_duration"]),
             )
 
             self._db_credentials[role] = creds
@@ -718,7 +727,9 @@ class VaultClient:
         client = self._get_client()
 
         try:
-            response = client.secrets.pki.read_ca_certificate_chain(mount_point=mount_point)
+            response = client.secrets.pki.read_ca_certificate_chain(
+                mount_point=mount_point
+            )
             return response
 
         except Exception as e:
@@ -745,7 +756,8 @@ class VaultClient:
             client = self._get_client()
             health = client.sys.read_health_status(method="GET")
             return {
-                "healthy": health.get("initialized", False) and not health.get("sealed", True),
+                "healthy": health.get("initialized", False)
+                and not health.get("sealed", True),
                 "initialized": health.get("initialized", False),
                 "sealed": health.get("sealed", True),
                 "version": health.get("version", "unknown"),

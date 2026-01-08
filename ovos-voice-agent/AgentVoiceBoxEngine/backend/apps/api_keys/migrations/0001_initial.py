@@ -40,7 +40,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "key_hash",
-                    models.CharField(help_text="SHA-256 hash of the full key", max_length=64),
+                    models.CharField(
+                        help_text="SHA-256 hash of the full key", max_length=64
+                    ),
                 ),
                 (
                     "scopes",
@@ -66,11 +68,15 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "expires_at",
-                    models.DateTimeField(blank=True, help_text="Key expiration time", null=True),
+                    models.DateTimeField(
+                        blank=True, help_text="Key expiration time", null=True
+                    ),
                 ),
                 (
                     "revoked_at",
-                    models.DateTimeField(blank=True, help_text="Key revocation time", null=True),
+                    models.DateTimeField(
+                        blank=True, help_text="Key revocation time", null=True
+                    ),
                 ),
                 (
                     "revocation_reason",
@@ -78,7 +84,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "last_used_at",
-                    models.DateTimeField(blank=True, help_text="Last usage time", null=True),
+                    models.DateTimeField(
+                        blank=True, help_text="Last usage time", null=True
+                    ),
                 ),
                 (
                     "last_used_ip",
@@ -88,7 +96,9 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "usage_count",
-                    models.PositiveIntegerField(default=0, help_text="Total usage count"),
+                    models.PositiveIntegerField(
+                        default=0, help_text="Total usage count"
+                    ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),

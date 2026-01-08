@@ -9,6 +9,7 @@ transcription and language detection, and include utilities for audio validation
 """
 
 import logging
+import time
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -114,7 +115,7 @@ class STTActivities:
         # Local import to avoid loading the model at module level and for dynamic model loading.
         import os
         import tempfile
-        import time
+
         from faster_whisper import WhisperModel
 
         try:
@@ -209,6 +210,7 @@ class STTActivities:
         """
         import os
         import tempfile
+
         from faster_whisper import WhisperModel  # Local import.
 
         try:

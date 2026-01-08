@@ -46,7 +46,9 @@ class APIKeyService:
             NotFoundError: If an API key with the specified ID does not exist.
         """
         try:
-            return APIKey.objects.select_related("tenant", "project", "created_by").get(id=key_id)
+            return APIKey.objects.select_related("tenant", "project", "created_by").get(
+                id=key_id
+            )
         except APIKey.DoesNotExist:
             raise NotFoundError(f"API key {key_id} not found")
 
@@ -66,7 +68,9 @@ class APIKeyService:
             The APIKey instance if found, otherwise None.
         """
         try:
-            return APIKey.all_objects.select_related("tenant", "project").get(key_prefix=prefix)
+            return APIKey.all_objects.select_related("tenant", "project").get(
+                key_prefix=prefix
+            )
         except APIKey.DoesNotExist:
             return None
 
@@ -100,7 +104,9 @@ class APIKeyService:
         """
         # 1. Check API key format and length.
         if not api_key.startswith("avb_") or len(api_key) != 68:
-            raise AuthenticationError("Invalid API key format", error_code="invalid_api_key")
+            raise AuthenticationError(
+                "Invalid API key format", error_code="invalid_api_key"
+            )
 
         # 2. Extract prefix and hash the full key.
         prefix = api_key[:12]
@@ -117,11 +123,15 @@ class APIKeyService:
 
         # 5. Check if the key has been explicitly revoked.
         if key.is_revoked:
-            raise AuthenticationError("API key has been revoked", error_code="api_key_revoked")
+            raise AuthenticationError(
+                "API key has been revoked", error_code="api_key_revoked"
+            )
 
         # 6. Check if the key has passed its expiration date.
         if key.is_expired:
-            raise AuthenticationError("API key has expired", error_code="api_key_expired")
+            raise AuthenticationError(
+                "API key has expired", error_code="api_key_expired"
+            )
 
         # 7. Check the status of the tenant associated with the API key.
         if not key.tenant.is_active:
@@ -259,13 +269,17 @@ class APIKeyService:
         # 4. Validate project association if provided.
         project = None
         if project_id:
-            from apps.projects.models import Project  # Local import to avoid circular dependency.
+            from apps.projects.models import (
+                Project,
+            )  # Local import to avoid circular dependency.
 
             try:
                 # Use all_objects to check across tenants in case of admin action, but filter by tenant.
                 project = Project.all_objects.get(id=project_id, tenant=tenant)
             except Project.DoesNotExist:
-                raise ValidationError(f"Project {project_id} not found for this tenant.")
+                raise ValidationError(
+                    f"Project {project_id} not found for this tenant."
+                )
 
         # 5. Generate the key components.
         full_key, prefix, key_hash = APIKey.generate_key()

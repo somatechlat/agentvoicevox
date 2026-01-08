@@ -153,7 +153,8 @@ class Tenant(models.Model):
         default=3, help_text="The maximum number of projects this tenant can create."
     )
     max_api_keys = models.PositiveIntegerField(
-        default=10, help_text="The maximum number of active API keys this tenant can have."
+        default=10,
+        help_text="The maximum number of active API keys this tenant can have.",
     )
     max_sessions_per_month = models.PositiveIntegerField(
         default=1000, help_text="The monthly session usage limit for this tenant."
@@ -163,7 +164,9 @@ class Tenant(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     activated_at = models.DateTimeField(
-        null=True, blank=True, help_text="Timestamp when the tenant first became active."
+        null=True,
+        blank=True,
+        help_text="Timestamp when the tenant first became active.",
     )
     suspended_at = models.DateTimeField(
         null=True, blank=True, help_text="Timestamp when the tenant was last suspended."
@@ -245,7 +248,9 @@ class Tenant(models.Model):
             raise ValueError(f"Invalid tier: {new_tier}")
 
         self.tier = new_tier
-        limits = self.TIER_LIMITS.get(self.Tier(new_tier), self.TIER_LIMITS[self.Tier.FREE])
+        limits = self.TIER_LIMITS.get(
+            self.Tier(new_tier), self.TIER_LIMITS[self.Tier.FREE]
+        )
         self.max_users = limits["max_users"]
         self.max_projects = limits["max_projects"]
         self.max_api_keys = limits["max_api_keys"]
@@ -280,7 +285,9 @@ class TenantSettings(models.Model):
     )
 
     # --- Branding Customization ---
-    logo_url = models.URLField(blank=True, help_text="URL for a custom logo to display in the UI.")
+    logo_url = models.URLField(
+        blank=True, help_text="URL for a custom logo to display in the UI."
+    )
     favicon_url = models.URLField(blank=True, help_text="URL for a custom favicon.")
     primary_color = models.CharField(
         max_length=7,
@@ -288,12 +295,16 @@ class TenantSettings(models.Model):
         help_text="Primary brand color in hex format (e.g., #6366f1).",
     )
     secondary_color = models.CharField(
-        max_length=7, default="#8b5cf6", help_text="Secondary brand color in hex format."
+        max_length=7,
+        default="#8b5cf6",
+        help_text="Secondary brand color in hex format.",
     )
 
     # --- Feature Defaults: Voice ---
     default_voice_id = models.CharField(
-        max_length=100, default="af_heart", help_text="Default TTS voice ID for new personas."
+        max_length=100,
+        default="af_heart",
+        help_text="Default TTS voice ID for new personas.",
     )
     default_stt_model = models.CharField(
         max_length=100, default="tiny", help_text="Default STT model for new personas."
@@ -311,27 +322,34 @@ class TenantSettings(models.Model):
         max_length=100, default="kokoro", help_text="Default TTS provider/model."
     )
     default_llm_provider = models.CharField(
-        max_length=50, default="groq", help_text="Default LLM provider for new personas."
+        max_length=50,
+        default="groq",
+        help_text="Default LLM provider for new personas.",
     )
     default_llm_model = models.CharField(
         max_length=100,
         default="llama-3.3-70b-versatile",
         help_text="Default LLM model for new personas.",
     )
-    default_llm_temperature = models.FloatField(default=0.7, help_text="Default LLM temperature.")
+    default_llm_temperature = models.FloatField(
+        default=0.7, help_text="Default LLM temperature."
+    )
     default_llm_max_tokens = models.PositiveIntegerField(
         default=1024, help_text="Default LLM max tokens."
     )
 
     # --- Notification Settings ---
-    webhook_url = models.URLField(blank=True, help_text="URL to send event notifications to.")
+    webhook_url = models.URLField(
+        blank=True, help_text="URL to send event notifications to."
+    )
     webhook_secret = models.CharField(
         max_length=255,
         blank=True,
         help_text="Signing secret to verify webhook payloads (should be stored encrypted).",
     )
     email_notifications = models.BooleanField(
-        default=True, help_text="Master switch for enabling or disabling email notifications."
+        default=True,
+        help_text="Master switch for enabling or disabling email notifications.",
     )
     slack_webhook_url = models.URLField(
         blank=True, help_text="URL for sending notifications to a Slack channel."
@@ -351,7 +369,8 @@ class TenantSettings(models.Model):
         help_text="A list of allowed IP addresses or CIDR ranges for accessing the tenant's resources.",
     )
     api_key_expiry_days = models.PositiveIntegerField(
-        default=365, help_text="The default lifespan in days for newly generated API keys."
+        default=365,
+        help_text="The default lifespan in days for newly generated API keys.",
     )
 
     # --- Timestamps ---
@@ -443,5 +462,7 @@ class TenantScopedModel(models.Model):
                 self.tenant = tenant
             else:
                 # This check prevents creating "orphaned" records without a tenant.
-                raise ValueError("Tenant context is required to save a TenantScopedModel instance.")
+                raise ValueError(
+                    "Tenant context is required to save a TenantScopedModel instance."
+                )
         super().save(*args, **kwargs)

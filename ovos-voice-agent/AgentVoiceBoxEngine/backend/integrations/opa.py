@@ -37,7 +37,11 @@ class OPAClient:
     def __init__(self):
         """Initialize OPA client from Django settings."""
         opa_config = getattr(settings, "OPA", {})
-        missing = [key for key in ("URL", "DECISION_PATH", "TIMEOUT_SECONDS", "ENABLED") if key not in opa_config]
+        missing = [
+            key
+            for key in ("URL", "DECISION_PATH", "TIMEOUT_SECONDS", "ENABLED")
+            if key not in opa_config
+        ]
         if missing:
             raise ValueError(f"OPA configuration missing keys: {', '.join(missing)}")
 
@@ -112,7 +116,9 @@ class OPAClient:
             )
 
             if response.status_code != 200:
-                logger.error(f"OPA returned status {response.status_code}: {response.text}")
+                logger.error(
+                    f"OPA returned status {response.status_code}: {response.text}"
+                )
                 # Fail closed
                 return PolicyDecision(
                     allowed=False,

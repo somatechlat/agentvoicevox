@@ -311,7 +311,9 @@ class TenantService:
             "usage": {
                 "users": User.objects.filter(tenant=tenant).count(),
                 "projects": Project.objects.filter(tenant=tenant).count(),
-                "api_keys": APIKey.objects.filter(tenant=tenant, revoked_at__isnull=True).count(),
+                "api_keys": APIKey.objects.filter(
+                    tenant=tenant, revoked_at__isnull=True
+                ).count(),
             },
         }
 
@@ -339,8 +341,14 @@ class TenantService:
 
         limit_map = {
             "users": (tenant.max_users, User.objects.filter(tenant=tenant).count()),
-            "projects": (tenant.max_projects, Project.objects.filter(tenant=tenant).count()),
-            "api_keys": (tenant.max_api_keys, APIKey.objects.filter(tenant=tenant, revoked_at__isnull=True).count()),
+            "projects": (
+                tenant.max_projects,
+                Project.objects.filter(tenant=tenant).count(),
+            ),
+            "api_keys": (
+                tenant.max_api_keys,
+                APIKey.objects.filter(tenant=tenant, revoked_at__isnull=True).count(),
+            ),
         }
 
         if resource_type not in limit_map:
@@ -373,7 +381,9 @@ class TenantSettingsService:
         """
         try:
             # Use `select_related` to optimize the query by fetching the related Tenant object in the same DB call.
-            return TenantSettings.objects.select_related("tenant").get(tenant_id=tenant_id)
+            return TenantSettings.objects.select_related("tenant").get(
+                tenant_id=tenant_id
+            )
         except TenantSettings.DoesNotExist:
             raise NotFoundError(f"Settings for tenant {tenant_id} not found")
 
@@ -468,10 +478,16 @@ class TenantSettingsService:
         settings = TenantSettingsService.get_settings(tenant_id)
         update_fields = ["updated_at"]
         voice_fields = [
-            "default_voice_id", "default_stt_model", "default_stt_language",
-            "stt_vad_enabled", "stt_beam_size", "default_tts_model",
-            "default_llm_provider", "default_llm_model",
-            "default_llm_temperature", "default_llm_max_tokens"
+            "default_voice_id",
+            "default_stt_model",
+            "default_stt_language",
+            "stt_vad_enabled",
+            "stt_beam_size",
+            "default_tts_model",
+            "default_llm_provider",
+            "default_llm_model",
+            "default_llm_temperature",
+            "default_llm_max_tokens",
         ]
         for key, value in kwargs.items():
             if key in voice_fields and value is not None:
@@ -499,8 +515,10 @@ class TenantSettingsService:
         settings = TenantSettingsService.get_settings(tenant_id)
         update_fields = ["updated_at"]
         security_fields = [
-            "require_mfa", "session_timeout_minutes",
-            "allowed_ip_ranges", "api_key_expiry_days"
+            "require_mfa",
+            "session_timeout_minutes",
+            "allowed_ip_ranges",
+            "api_key_expiry_days",
         ]
         for key, value in kwargs.items():
             if key in security_fields and value is not None:

@@ -99,15 +99,21 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="billingalert",
-            index=models.Index(fields=["alert_type"], name="billing_ale_alert_t_76309a_idx"),
+            index=models.Index(
+                fields=["alert_type"], name="billing_ale_alert_t_76309a_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="billingalert",
-            index=models.Index(fields=["acknowledged"], name="billing_ale_acknowl_0ba2a8_idx"),
+            index=models.Index(
+                fields=["acknowledged"], name="billing_ale_acknowl_0ba2a8_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="billingalert",
-            index=models.Index(fields=["created_at"], name="billing_ale_created_c397cc_idx"),
+            index=models.Index(
+                fields=["created_at"], name="billing_ale_created_c397cc_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="billingalert",
@@ -117,7 +123,9 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="invoice",
-            index=models.Index(fields=["lago_invoice_id"], name="invoices_lago_in_f010a2_idx"),
+            index=models.Index(
+                fields=["lago_invoice_id"], name="invoices_lago_in_f010a2_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="invoice",
@@ -125,23 +133,33 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="invoice",
-            index=models.Index(fields=["issuing_date"], name="invoices_issuing_f8c120_idx"),
+            index=models.Index(
+                fields=["issuing_date"], name="invoices_issuing_f8c120_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="invoice",
-            index=models.Index(fields=["tenant", "status"], name="invoices_tenant__14414f_idx"),
+            index=models.Index(
+                fields=["tenant", "status"], name="invoices_tenant__14414f_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="usageevent",
-            index=models.Index(fields=["event_type"], name="usage_event_event_t_d2d712_idx"),
+            index=models.Index(
+                fields=["event_type"], name="usage_event_event_t_d2d712_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="usageevent",
-            index=models.Index(fields=["synced_at"], name="usage_event_synced__531fe3_idx"),
+            index=models.Index(
+                fields=["synced_at"], name="usage_event_synced__531fe3_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="usageevent",
-            index=models.Index(fields=["created_at"], name="usage_event_created_c1f325_idx"),
+            index=models.Index(
+                fields=["created_at"], name="usage_event_created_c1f325_idx"
+            ),
         ),
         migrations.AddIndex(
             model_name="usageevent",

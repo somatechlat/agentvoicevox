@@ -13,7 +13,10 @@ from django.db.models import Q
 from django.utils import timezone
 
 if TYPE_CHECKING:
-    from apps.core.permissions.models import TenantPermissionOverride, UserRoleAssignment
+    from apps.core.permissions.models import (
+        TenantPermissionOverride,
+        UserRoleAssignment,
+    )
     from apps.tenants.models import Tenant
     from apps.users.models import User
 
@@ -121,7 +124,8 @@ class GranularPermissionService:
                     return True
 
         logger.info(
-            f"Permission denied: user={user.id} roles={user_roles} " f"resource={resource}:{action}"
+            f"Permission denied: user={user.id} roles={user_roles} "
+            f"resource={resource}:{action}"
         )
         return False
 
@@ -396,7 +400,8 @@ class GranularPermissionService:
         if conditions.get("own_only"):
             if resource_id and str(user.id) != resource_id:
                 logger.debug(
-                    f"Condition failed: own_only - user={user.id} " f"resource_id={resource_id}"
+                    f"Condition failed: own_only - user={user.id} "
+                    f"resource_id={resource_id}"
                 )
                 return False
 

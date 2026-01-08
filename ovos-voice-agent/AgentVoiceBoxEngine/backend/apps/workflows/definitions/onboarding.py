@@ -78,7 +78,9 @@ class TenantOnboardingWorkflow:
             maximum_attempts=3,
         )
 
-        workflow.logger.info(f"Starting TenantOnboardingWorkflow for tenant {input.tenant_id}.")
+        workflow.logger.info(
+            f"Starting TenantOnboardingWorkflow for tenant {input.tenant_id}."
+        )
 
         # 1. Create Keycloak group
         try:

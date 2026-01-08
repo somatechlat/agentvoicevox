@@ -119,8 +119,12 @@ class TestCacheTenantIsolation:
         from apps.core.cache import CacheService
         from apps.core.middleware.tenant import clear_current_tenant, set_current_tenant
 
-        tenant_a = tenant_factory(name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}")
-        tenant_b = tenant_factory(name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}")
+        tenant_a = tenant_factory(
+            name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}"
+        )
+        tenant_b = tenant_factory(
+            name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}"
+        )
 
         try:
             # Set value as tenant A
@@ -226,8 +230,12 @@ class TestCacheTenantIsolation:
         from apps.core.cache import CacheService
         from apps.core.middleware.tenant import clear_current_tenant, set_current_tenant
 
-        tenant_a = tenant_factory(name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}")
-        tenant_b = tenant_factory(name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}")
+        tenant_a = tenant_factory(
+            name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}"
+        )
+        tenant_b = tenant_factory(
+            name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}"
+        )
 
         try:
             # Set value for both tenants

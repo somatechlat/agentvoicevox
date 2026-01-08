@@ -252,8 +252,12 @@ class TestAuditLogQueries:
         """
         from apps.audit.models import AuditLog
 
-        tenant_a = tenant_factory(name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}")
-        tenant_b = tenant_factory(name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}")
+        tenant_a = tenant_factory(
+            name="Tenant A", slug=f"tenant-a-{uuid.uuid4().hex[:8]}"
+        )
+        tenant_b = tenant_factory(
+            name="Tenant B", slug=f"tenant-b-{uuid.uuid4().hex[:8]}"
+        )
 
         # Create logs for tenant A
         for i in range(num_logs):

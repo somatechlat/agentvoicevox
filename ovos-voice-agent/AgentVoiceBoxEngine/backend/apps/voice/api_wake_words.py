@@ -13,7 +13,11 @@ from django.db.models import Sum
 from ninja import Router
 from ninja.files import UploadedFile
 
-from apps.core.exceptions import FeatureNotImplementedError, NotFoundError, ValidationError
+from apps.core.exceptions import (
+    FeatureNotImplementedError,
+    NotFoundError,
+    ValidationError,
+)
 
 from .models import WakeWord
 from .wake_words_schemas import (
@@ -163,7 +167,9 @@ def test_wake_word(request, wake_word_id: UUID, audio: UploadedFile):
     raise FeatureNotImplementedError("Wake word detection pipeline not configured")
 
 
-@router.get("/analytics", response=WakeWordAnalyticsOut, summary="Get Wake Word Analytics")
+@router.get(
+    "/analytics", response=WakeWordAnalyticsOut, summary="Get Wake Word Analytics"
+)
 def wake_word_analytics(request):
     """
     Retrieves aggregated analytics for all wake words for the current tenant.
@@ -178,7 +184,9 @@ def wake_word_analytics(request):
     # Aggregate statistics from all wake words for the tenant.
     total_detections = int(qs.aggregate(total=Sum("detection_count")).get("total") or 0)
     total_false = int(qs.aggregate(total=Sum("false_positive_count")).get("total") or 0)
-    total_missed = int(qs.aggregate(total=Sum("missed_activation_count")).get("total") or 0)
+    total_missed = int(
+        qs.aggregate(total=Sum("missed_activation_count")).get("total") or 0
+    )
 
     # Calculate rates, avoiding division by zero.
     false_rate = (total_false / total_detections) if total_detections else 0.0

@@ -151,7 +151,9 @@ class LLMActivities:
             else:
                 raise ValueError(f"Unsupported LLM provider: {request.provider}")
 
-            processing_time = (time.time() - start_time) * 1000  # Convert to milliseconds.
+            processing_time = (
+                time.time() - start_time
+            ) * 1000  # Convert to milliseconds.
             result.processing_time_ms = processing_time
 
             logger.info(
@@ -173,7 +175,9 @@ class LLMActivities:
         or Django settings), and parsing the Groq API response.
         """
         import httpx
-        from django.conf import settings  # Local import to avoid module-level dependency.
+        from django.conf import (
+            settings,
+        )  # Local import to avoid module-level dependency.
 
         provider_config = settings.LLM_PROVIDERS.get("groq", {})
         api_key = request.api_keys.get("groq") or provider_config.get("api_key", "")
@@ -434,7 +438,9 @@ class LLMActivities:
         """
         logger.info(f"Executing tool '{tool_name}' for session {session_id}")
 
-        from apps.realtime.services.function_calling import get_function_engine  # Local import.
+        from apps.realtime.services.function_calling import (
+            get_function_engine,
+        )  # Local import.
 
         engine = get_function_engine()
         is_valid, error = engine.validate_arguments(tool_name, tool_args)

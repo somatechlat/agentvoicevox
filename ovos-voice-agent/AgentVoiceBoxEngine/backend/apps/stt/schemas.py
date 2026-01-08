@@ -43,9 +43,7 @@ class STTMetricsOut(Schema):
 
     avg_latency_ms: float  # Average latency for STT processing in milliseconds.
     total_minutes: float  # Total audio minutes processed by the STT engine.
-    accuracy_estimate: (
-        float  # An estimated accuracy score for the STT (e.g., Word Error Rate or similar).
-    )
+    accuracy_estimate: float  # An estimated accuracy score for the STT (e.g., Word Error Rate or similar).
 
 
 class STTTestOut(Schema):

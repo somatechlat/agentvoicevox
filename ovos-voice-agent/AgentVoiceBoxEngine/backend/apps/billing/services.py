@@ -119,7 +119,9 @@ class BillingService:
         usage_map = {u["event_type"]: u["total"] or Decimal("0") for u in usage_by_type}
 
         # Get session count separately (as it's tracked on the Session model).
-        from apps.sessions.models import Session  # Local import to avoid circular dependency.
+        from apps.sessions.models import (
+            Session,
+        )  # Local import to avoid circular dependency.
 
         session_count = Session.all_objects.filter(
             tenant=tenant,
@@ -132,11 +134,17 @@ class BillingService:
             "period_end": period_end,
             "sessions": session_count,
             "api_calls": int(usage_map.get(UsageEvent.EventType.API_CALL, 0)),
-            "audio_minutes": usage_map.get(UsageEvent.EventType.AUDIO_MINUTES, Decimal("0")),
+            "audio_minutes": usage_map.get(
+                UsageEvent.EventType.AUDIO_MINUTES, Decimal("0")
+            ),
             "input_tokens": int(usage_map.get(UsageEvent.EventType.INPUT_TOKENS, 0)),
             "output_tokens": int(usage_map.get(UsageEvent.EventType.OUTPUT_TOKENS, 0)),
-            "stt_minutes": usage_map.get(UsageEvent.EventType.STT_MINUTES, Decimal("0")),
-            "tts_minutes": usage_map.get(UsageEvent.EventType.TTS_MINUTES, Decimal("0")),
+            "stt_minutes": usage_map.get(
+                UsageEvent.EventType.STT_MINUTES, Decimal("0")
+            ),
+            "tts_minutes": usage_map.get(
+                UsageEvent.EventType.TTS_MINUTES, Decimal("0")
+            ),
         }
 
         # Define limits for comparison.
@@ -447,7 +455,9 @@ class LagoService:
         # Construct the payload for Lago customer creation/update.
         payload = {
             "customer": {
-                "external_id": str(tenant.id),  # Our internal tenant ID as Lago's external ID.
+                "external_id": str(
+                    tenant.id
+                ),  # Our internal tenant ID as Lago's external ID.
                 "name": tenant.name,
                 "email": "billing@example.com",  # Placeholder; ideally from TenantSettings or primary user.
                 "metadata": [
@@ -460,7 +470,10 @@ class LagoService:
         response = httpx.post(
             f"{lago_url}/api/v1/customers",
             json=payload,
-            headers={"Authorization": f"Bearer {lago_key}", "Content-Type": "application/json"},
+            headers={
+                "Authorization": f"Bearer {lago_key}",
+                "Content-Type": "application/json",
+            },
             timeout=30,
         )
 
@@ -505,7 +518,9 @@ class LagoService:
             payload = {
                 "event": {
                     "transaction_id": str(event.id),  # Unique ID for the event in Lago.
-                    "external_customer_id": str(event.tenant_id),  # Link to the Lago customer.
+                    "external_customer_id": str(
+                        event.tenant_id
+                    ),  # Link to the Lago customer.
                     "code": event.event_type,  # The billing metric code in Lago.
                     "timestamp": int(event.event_timestamp.timestamp()),
                     "properties": {

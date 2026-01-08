@@ -164,7 +164,9 @@ class TestSessionAutoTermination:
         assert session.status == Session.Status.ACTIVE
 
         # Run cleanup
-        terminated_count = SessionService.cleanup_expired_sessions(max_duration_hours=24)
+        terminated_count = SessionService.cleanup_expired_sessions(
+            max_duration_hours=24
+        )
 
         # Verify session was terminated
         session.refresh_from_db()
@@ -277,7 +279,9 @@ class TestSessionAutoTermination:
             sessions.append(session)
 
         # Run cleanup
-        terminated_count = SessionService.cleanup_expired_sessions(max_duration_hours=24)
+        terminated_count = SessionService.cleanup_expired_sessions(
+            max_duration_hours=24
+        )
 
         # Verify all were terminated
         assert terminated_count >= num_expired

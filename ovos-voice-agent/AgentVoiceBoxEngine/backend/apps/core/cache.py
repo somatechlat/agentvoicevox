@@ -226,7 +226,9 @@ def cached(
             # Get tenant ID if tenant-aware
             tenant_id = None
             if tenant_aware:
-                tenant_id = str(get_current_tenant_id()) if get_current_tenant_id() else None
+                tenant_id = (
+                    str(get_current_tenant_id()) if get_current_tenant_id() else None
+                )
 
             # Try to get from cache
             cached_value = CacheService.get(cache_key, tenant_id=tenant_id)

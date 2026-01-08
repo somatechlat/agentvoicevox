@@ -51,7 +51,9 @@ def require_sysadmin(request: HttpRequest) -> None:
         raise PermissionDeniedError("SYSADMIN role required")
 
 
-@router.get("/", response=TenantListResponseSchema, summary="List All Tenants (SysAdmin)")
+@router.get(
+    "/", response=TenantListResponseSchema, summary="List All Tenants (SysAdmin)"
+)
 def list_tenants(
     request: HttpRequest,
     status: Optional[str] = Query(None, description="Filter by tenant status."),
@@ -87,11 +89,18 @@ def create_tenant(request: HttpRequest, payload: TenantCreateSchema):
     """
     require_sysadmin(request)
     return TenantService.create_tenant(
-        name=payload.name, slug=payload.slug, tier=payload.tier, settings=payload.settings
+        name=payload.name,
+        slug=payload.slug,
+        tier=payload.tier,
+        settings=payload.settings,
     )
 
 
-@router.get("/{tenant_id}", response=TenantResponseSchema, summary="Get a Tenant by ID (SysAdmin)")
+@router.get(
+    "/{tenant_id}",
+    response=TenantResponseSchema,
+    summary="Get a Tenant by ID (SysAdmin)",
+)
 def get_tenant(request: HttpRequest, tenant_id: UUID):
     """
     Retrieves complete details for a specific tenant by its ID.
@@ -102,7 +111,9 @@ def get_tenant(request: HttpRequest, tenant_id: UUID):
     return TenantService.get_by_id(tenant_id)
 
 
-@router.patch("/{tenant_id}", response=TenantResponseSchema, summary="Update a Tenant (SysAdmin)")
+@router.patch(
+    "/{tenant_id}", response=TenantResponseSchema, summary="Update a Tenant (SysAdmin)"
+)
 def update_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantUpdateSchema):
     """
     Updates a tenant's name or settings.
@@ -115,7 +126,11 @@ def update_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantUpdateSc
     )
 
 
-@router.post("/{tenant_id}/activate", response=TenantResponseSchema, summary="Activate a Tenant (SysAdmin)")
+@router.post(
+    "/{tenant_id}/activate",
+    response=TenantResponseSchema,
+    summary="Activate a Tenant (SysAdmin)",
+)
 def activate_tenant(request: HttpRequest, tenant_id: UUID):
     """
     Activates a tenant with a 'pending' status.
@@ -126,7 +141,11 @@ def activate_tenant(request: HttpRequest, tenant_id: UUID):
     return TenantService.activate_tenant(tenant_id)
 
 
-@router.post("/{tenant_id}/suspend", response=TenantResponseSchema, summary="Suspend a Tenant (SysAdmin)")
+@router.post(
+    "/{tenant_id}/suspend",
+    response=TenantResponseSchema,
+    summary="Suspend a Tenant (SysAdmin)",
+)
 def suspend_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantSuspendSchema):
     """
     Suspends an active tenant, preventing access and operations.
@@ -137,7 +156,11 @@ def suspend_tenant(request: HttpRequest, tenant_id: UUID, payload: TenantSuspend
     return TenantService.suspend_tenant(tenant_id, payload.reason)
 
 
-@router.post("/{tenant_id}/reactivate", response=TenantResponseSchema, summary="Reactivate a Tenant (SysAdmin)")
+@router.post(
+    "/{tenant_id}/reactivate",
+    response=TenantResponseSchema,
+    summary="Reactivate a Tenant (SysAdmin)",
+)
 def reactivate_tenant(request: HttpRequest, tenant_id: UUID):
     """
     Reactivates a suspended tenant, setting its status back to 'active'.
@@ -148,7 +171,11 @@ def reactivate_tenant(request: HttpRequest, tenant_id: UUID):
     return TenantService.reactivate_tenant(tenant_id)
 
 
-@router.post("/{tenant_id}/unsuspend", response=TenantResponseSchema, summary="Unsuspend a Tenant (SysAdmin)")
+@router.post(
+    "/{tenant_id}/unsuspend",
+    response=TenantResponseSchema,
+    summary="Unsuspend a Tenant (SysAdmin)",
+)
 def unsuspend_tenant(request: HttpRequest, tenant_id: UUID):
     """
     Alias for the 'reactivate' endpoint. Reactivates a suspended tenant.
@@ -174,8 +201,14 @@ def delete_tenant(request: HttpRequest, tenant_id: UUID):
     return {"status": "deleted"}
 
 
-@router.post("/{tenant_id}/upgrade", response=TenantResponseSchema, summary="Upgrade Tenant Tier (SysAdmin)")
-def upgrade_tenant_tier(request: HttpRequest, tenant_id: UUID, payload: TenantUpgradeTierSchema):
+@router.post(
+    "/{tenant_id}/upgrade",
+    response=TenantResponseSchema,
+    summary="Upgrade Tenant Tier (SysAdmin)",
+)
+def upgrade_tenant_tier(
+    request: HttpRequest, tenant_id: UUID, payload: TenantUpgradeTierSchema
+):
     """
     Upgrades or downgrades a tenant's subscription tier.
 
@@ -200,7 +233,9 @@ def get_tenant_usage_admin(request: HttpRequest, tenant_id: UUID):
     return TenantService.get_usage_stats(tenant_id)
 
 
-@router.post("/{tenant_id}/impersonate", summary="Impersonate a User (SysAdmin, Not Implemented)")
+@router.post(
+    "/{tenant_id}/impersonate", summary="Impersonate a User (SysAdmin, Not Implemented)"
+)
 def impersonate_user(request: HttpRequest, tenant_id: UUID):
     """
     Issues an impersonation token for a user in the specified tenant.
@@ -210,4 +245,6 @@ def impersonate_user(request: HttpRequest, tenant_id: UUID):
     *Note: This feature is a placeholder and is not currently implemented.*
     """
     require_sysadmin(request)
-    raise FeatureNotImplementedError("Impersonation is not configured for this deployment")
+    raise FeatureNotImplementedError(
+        "Impersonation is not configured for this deployment"
+    )
