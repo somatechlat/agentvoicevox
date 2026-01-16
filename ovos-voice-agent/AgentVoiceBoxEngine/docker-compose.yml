@@ -126,6 +126,37 @@ services:
       test: [ "CMD-SHELL", "curl -f http://localhost:65027/ || exit 1" ]
 
   # ==========================================================================
+  # PROMETHEUS (512MB)
+  # ==========================================================================
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: avb-prometheus
+    hostname: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+    ports:
+      - "65011:9090"
+    volumes:
+      - ./backend/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./backend/prometheus/alerts:/etc/prometheus/alerts:ro
+      - avb_prometheus_data:/prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - shared-network
+    logging: *default-logging
+    restart: unless-stopped
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy" ]
+
+  # ==========================================================================
   # LLM WORKER (2GB for large context)
   # ==========================================================================
   worker-llm:
@@ -222,4 +253,5 @@ networks:
     name: shared_services_network
     external: true
 
-# No volumes needed - shared services handle persistence
+volumes:
+  avb_prometheus_data:

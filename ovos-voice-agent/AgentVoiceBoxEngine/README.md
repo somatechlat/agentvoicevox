@@ -21,7 +21,7 @@ This repository is the source of truth for the Django stack. OpenAI-compatible `
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Portal Frontend                          │
-│                    (Next.js, port 65027)                        │
+│                    (Lit 3 + Bun 1.3.5, port 65027)               │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -32,7 +32,7 @@ This repository is the source of truth for the Django stack. OpenAI-compatible `
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│   Postgres · Redis · Keycloak · Vault · OPA · Lago · Grafana     │
+│   Postgres · Redis · Keycloak · Vault · OPA · Lago               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -40,8 +40,9 @@ This repository is the source of truth for the Django stack. OpenAI-compatible `
 
 - **Django REST API (Ninja)**: `/api/v2/*`
 - **WebSockets (Channels)**: `/ws/v2/*`
-- **Portal Frontend**: Next.js app under `portal-frontend/`
-- **Workers**: TTS worker in `workers/` (Kokoro ONNX)
+- **Backend Runtime**: Python 3.12
+- **Portal Frontend**: Lit 3 + Bun 1.3.5 app under `portal-frontend/`
+- **Workers**: LLM, STT (faster-whisper), TTS (Kokoro ONNX) in `workers/`
 
 ## Quick Start (Docker)
 
@@ -59,8 +60,8 @@ docker compose -p agentvoicebox up -d
 | Django API | http://localhost:65020/api/v2 |
 | API Docs (Ninja) | http://localhost:65020/api/v2/docs |
 | WebSockets | ws://localhost:65020/ws/v2/... |
-| Keycloak | http://localhost:65024 |
-| Grafana | http://localhost:65029 |
+| Keycloak | http://localhost:65006 |
+| Prometheus | http://localhost:65011 |
 
 ## WebSocket Endpoints
 

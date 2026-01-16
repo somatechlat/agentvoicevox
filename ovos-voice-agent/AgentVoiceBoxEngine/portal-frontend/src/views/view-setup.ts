@@ -18,7 +18,7 @@ import '../components/saas-layout';
  * RIGHT (80%): Expandable accordion panels for all settings
  */
 
-type Service = 'postgresql' | 'redis' | 'temporal' | 'keycloak' | 'vault' | 'opa' | 'kafka' | 'lago' | 'llm' | 'stt' | 'tts' | 'app';
+type Service = 'postgresql' | 'redis' | 'temporal' | 'keycloak' | 'vault' | 'opa' | 'kafka' | 'lago' | 'paypal' | 'llm' | 'stt' | 'tts' | 'app';
 
 @customElement('view-setup')
 export class ViewSetup extends LitElement {
@@ -63,6 +63,7 @@ export class ViewSetup extends LitElement {
               ${this.renderServiceTab('opa', 'OPA', 'connected', '📜')}
               ${this.renderServiceTab('kafka', 'Kafka', 'error', '📡')}
               ${this.renderServiceTab('lago', 'Lago', 'connected', '💵')}
+              ${this.renderServiceTab('paypal', 'PayPal', 'connected', '💳')}
               
               <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-6 mb-3">AI Workers</div>
               ${this.renderServiceTab('llm', 'LLM Providers', 'connected', '🤖')}
@@ -124,6 +125,7 @@ export class ViewSetup extends LitElement {
       case 'opa': return this.renderOPASettings();
       case 'kafka': return this.renderKafkaSettings();
       case 'lago': return this.renderLagoSettings();
+      case 'paypal': return this.renderPayPalSettings();
       case 'llm': return this.renderLLMSettings();
       case 'stt': return this.renderSTTSettings();
       case 'tts': return this.renderTTSSettings();
@@ -359,6 +361,43 @@ export class ViewSetup extends LitElement {
       this.renderInput('LAGO_API_URL', 'API URL', 'http://localhost:3000', 'Lago API server URL'),
       this.renderInput('LAGO_API_KEY', 'API Key', '••••••••', 'Lago authentication key', 'password'),
       this.renderInput('LAGO_WEBHOOK_SECRET', 'Webhook Secret', '••••••••', 'HMAC webhook validation secret', 'password'),
+    ])}
+      </div>
+    `;
+  }
+
+  // ==================== PAYPAL ====================
+  private renderPayPalSettings() {
+    return html`
+      <div class="space-y-6">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-3xl shadow-lg">
+            💳
+          </div>
+          <div>
+            <h2 class="text-2xl font-semibold text-gray-900">PayPal Payments</h2>
+            <p class="text-sm text-gray-600 mt-1">Subscription billing and one-time payments via PayPal</p>
+          </div>
+        </div>
+
+        ${this.renderSection('connection', 'API Configuration', [
+      this.renderInput('PAYPAL_CLIENT_ID', 'Client ID', 'your-paypal-client-id', 'PayPal REST API client ID'),
+      this.renderInput('PAYPAL_CLIENT_SECRET', 'Client Secret', '••••••••', 'PayPal REST API client secret', 'password'),
+      this.renderSelect('PAYPAL_ENVIRONMENT', 'Environment', ['sandbox', 'live'], 'sandbox', 'PayPal API environment'),
+      this.renderInput('PAYPAL_WEBHOOK_ID', 'Webhook ID', '', 'PayPal webhook ID for signature verification'),
+      this.renderToggle('PAYPAL_ENABLED', 'Enabled', false, 'Enable PayPal payment processing'),
+    ])}
+
+        ${this.renderSection('subscription', 'Subscription Plans', [
+      this.renderInput('PAYPAL_PLAN_STARTER', 'Starter Plan ID', '', 'PayPal plan ID for Starter tier'),
+      this.renderInput('PAYPAL_PLAN_PRO', 'Pro Plan ID', '', 'PayPal plan ID for Pro tier'),
+      this.renderInput('PAYPAL_PLAN_ENTERPRISE', 'Enterprise Plan ID', '', 'PayPal plan ID for Enterprise tier'),
+    ])}
+
+        ${this.renderSection('webhooks', 'Webhook Events', [
+      this.renderToggle('PAYPAL_WEBHOOK_PAYMENT_COMPLETED', 'Payment Completed', true, 'Handle PAYMENT.CAPTURE.COMPLETED events'),
+      this.renderToggle('PAYPAL_WEBHOOK_SUBSCRIPTION_CREATED', 'Subscription Created', true, 'Handle BILLING.SUBSCRIPTION.CREATED events'),
+      this.renderToggle('PAYPAL_WEBHOOK_SUBSCRIPTION_CANCELLED', 'Subscription Cancelled', true, 'Handle BILLING.SUBSCRIPTION.CANCELLED events'),
     ])}
       </div>
     `;

@@ -44,7 +44,7 @@ is unconstrained, so Sprints A–C execute in parallel with shared acceptance ch
 > Owner: Platform squad · Dependencies: Sprint A+B interfaces · Exit: End-to-end voice conversation demo
 
 - Plug OVOS listener/speech pipeline into realtime events; route assistant responses through skills bus.
-- Extend metrics dashboards (Prometheus/Grafana) with policy denials, latency buckets, and call success ratios.
+- Extend metrics dashboards (Prometheus) with policy denials, latency buckets, and call success ratios.
 - Author resilience tests for persona swaps, multilingual wake words, and continuous mode per OVOS manual.
 - Publish runbooks for deployment, incident response, and troubleshooting; wire CI smoke tests into GitHub Actions.
 - Harden container images with health probes, resource limits, and optional autoscaling manifests; promote a

@@ -146,34 +146,6 @@ services:
       <<: *healthcheck-defaults
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
 
-  grafana:
-    image: grafana/grafana:10.2.0
-    container_name: agentvoicebox_grafana
-    hostname: grafana
-    env_file:
-      - ../settings.docker.env
-    environment:
-      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
-      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
-      GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SERVER_ROOT_URL: ${GF_SERVER_ROOT_URL}
-    ports:
-      - "${GRAFANA_PORT}:3000"
-    volumes:
-      - agentvoicebox_grafana_data:/var/lib/grafana
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-    depends_on:
-      - prometheus
-    networks:
-      - agentvoicebox-network
-    logging: *default-logging
-    restart: unless-stopped
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health"]
 
 networks:
   agentvoicebox-network:
@@ -189,4 +161,3 @@ volumes:
   agentvoicebox_backend_media:
   agentvoicebox_backend_logs:
   agentvoicebox_prometheus_data:
-  agentvoicebox_grafana_data:

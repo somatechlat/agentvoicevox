@@ -1,7 +1,7 @@
 # Software Requirements Specification (SRS)
 **Project**: AgentVoiceBox  
-**Version**: 1.0.0  
-**Date**: 2026-01-05  
+**Version**: 1.1.6  
+**Date**: 2026-01-12  
 **Standard**: ISO/IEC 29148:2018  
 **Authors**: SOMA Engineering Team
 
@@ -18,7 +18,7 @@ AgentVoiceBox is a multi-tenant SaaS platform for deploying and managing voice A
 **Backend Stack**:
 - OVOS (Open Voice OS) voice processing engine
 - Django 5 + Django Ninja REST API framework
-- Python 3.11 microservices architecture
+- Python 3.12 microservices architecture
 - PostgreSQL for persistence
 - Redis for caching and realtime messaging
 - Keycloak for identity management
@@ -46,6 +46,7 @@ AgentVoiceBox is a multi-tenant SaaS platform for deploying and managing voice A
 
 ### 1.4 References
 - ISO/IEC 29148:2018 - Systems and software engineering — Life cycle processes — Requirements engineering
+- [Authoritative UI SRS](../../../.kiro/specs/portal-ui-srs/requirements.md) (AVB-SRS-UI-001)
 - OVOS Technical Documentation
 - Django Ninja API Documentation
 - Lit 3 Component Model Specification
@@ -105,7 +106,7 @@ AgentVoiceBox is the **Voice AI pillar** of the SOMA ecosystem. It interfaces wi
 
 **Backend**:
 - **OS**: Linux (Docker containers)
-- **Runtime**: Python 3.11
+- **Runtime**: Python 3.12
 - **Database**: PostgreSQL 14+
 - **Cache**: Redis 7+
 - **Orchestration**: Docker Compose / Kubernetes
@@ -115,7 +116,7 @@ AgentVoiceBox is the **Voice AI pillar** of the SOMA ecosystem. It interfaces wi
 - **Browser**: Chrome/Firefox/Safari (latest 2 versions)
 - **Runtime**: Bun 1.3.5
 - **Module System**: ES Modules
-- **Build Tool**: Vite 5
+- **Build Tool**: Vite 7.3.0
 
 ### 2.5 Constraints
 
@@ -128,6 +129,64 @@ AgentVoiceBox is the **Voice AI pillar** of the SOMA ecosystem. It interfaces wi
 ---
 
 ## 3. Backend System Architecture
+
+### 3.0 System Architecture Diagram
+
+```mermaid
+flowchart TB
+    subgraph Frontend["Portal Frontend (Bun 1.3.5)"]
+        direction LR
+        LIT["Lit 3.3.2 Components"]
+        VITE["Vite 7.3.0 Dev Server"]
+        LIT --> VITE
+    end
+
+    subgraph Backend["Django API Gateway (65020)"]
+        NINJA["Django Ninja REST API<br/>/api/v2/*"]
+        CHANNELS["Django Channels<br/>/ws/v2/*"]
+        subgraph Apps["Django Apps"]
+            CORE["core"]
+            TENANTS["tenants"]
+            USERS["users"]
+            VOICE["voice"]
+            SESSIONS["sessions"]
+            BILLING["billing"]
+            AUDIT["audit"]
+            APIKEYS["api_keys"]
+            LLM["llm"]
+            STT_APP["stt"]
+        end
+    end
+
+    subgraph Workers["Worker Services"]
+        LLM_W["LLM Worker<br/>(2GB RAM)"]
+        STT_W["STT Worker<br/>(faster-whisper)"]
+        TTS_W["TTS Worker<br/>(Kokoro ONNX)"]
+    end
+
+    subgraph Infrastructure["Shared Infrastructure"]
+        PG[("PostgreSQL<br/>65004")]
+        REDIS[("Redis<br/>65005")]
+        KC["Keycloak<br/>65006"]
+        VAULT["Vault<br/>65003"]
+        OPA["OPA<br/>65030"]
+        LAGO["Lago<br/>63690"]
+        PROM["Prometheus<br/>65011"]
+    end
+
+    Frontend -->|"REST /api/v2"| NINJA
+    Frontend -->|"WebSocket /ws/v2"| CHANNELS
+    NINJA --> Apps
+    CHANNELS --> Apps
+    Apps --> PG
+    Apps --> REDIS
+    Apps --> KC
+    Apps --> VAULT
+    Apps --> OPA
+    CHANNELS -->|"Redis Streams"| Workers
+    Workers --> REDIS
+    PROM --> Backend
+```
 
 ### 3.1 Django Applications
 
@@ -358,22 +417,22 @@ AgentVoiceBox is the **Voice AI pillar** of the SOMA ecosystem. It interfaces wi
 ---
 
 #### 3.1.9 **apps/realtime**
-**Purpose**: WebSocket server for real-time communication.
+**Purpose**: WebSocket server for real-time communication via Django Channels.
 
-**Modules** (15 files):
-- `consumers.py`: WebSocket consumer classes
+**Modules** (in `backend/realtime/`):
+- `consumers/`: WebSocket consumer classes (EventConsumer, SessionConsumer, STTConsumer, TTSConsumer)
 - `routing.py`: WebSocket URL routing
-- `middleware.py`: WebSocket authentication
-- `protocol.py`: Message protocol definitions
-- `handlers/`: Event-specific message handlers
+- `middleware.py`: WebSocket authentication (Keycloak JWT)
 
-**Supported Channels**:
-1. `/ws/voice/{session_id}` - Voice audio streaming
-2. `/ws/notifications/{user_id}` - Real-time notifications
-3. `/ws/admin/metrics` - Live system metrics
-4. `/ws/transcription/{session_id}` - Live transcription feed
+**Supported Channels** (from `routing.py`):
+1. `/ws/v2/events` - Tenant/user event stream (subscribe/unsubscribe to event types)
+2. `/ws/v2/sessions/{session_id}` - Real-time voice session (audio I/O, transcription, responses)
+3. `/ws/v2/stt/transcription` - Streaming speech-to-text (audio chunks → text)
+4. `/ws/v2/tts/stream` - Streaming text-to-speech (text → audio chunks)
 
-**Protocol**: JSON-RPC 2.0 over WebSocket
+**Authentication**: Keycloak JWT passed as `?token=` query param or `Authorization: Bearer` header
+
+**Protocol**: See `docs/asyncapi.yaml` for full message schemas
 
 ---
 
@@ -500,13 +559,71 @@ AgentVoiceBox is the **Voice AI pillar** of the SOMA ecosystem. It interfaces wi
 **Supported Providers**:
 - OpenAI (GPT-4, GPT-3.5)
 - Anthropic (Claude 3)
+- Groq (Llama 3.x)
 - Local models (via Ollama)
 
-**Use Cases**:
-- Intent classification
-- Slot extraction
-- Response generation
-- Conversation summarization
+**API Endpoints**:
+- `GET /api/v2/llm` - List available LLM providers
+- `POST /api/v2/llm/complete` - Generate completion
+
+---
+
+#### 3.1.16 **apps/stt** (Additional)
+**Purpose**: Speech-to-text service abstraction and API.
+
+**API Endpoints**:
+- `GET /api/v2/stt` - List available STT providers
+- `POST /api/v2/stt/transcribe` - Transcribe audio file
+
+---
+
+#### 3.1.17 **Onboarding Router** (`apps/tenants/api_onboarding.py`)
+**Purpose**: Tenant onboarding flow.
+
+**API Endpoints**:
+- `POST /api/v2/onboarding/start` - Start onboarding wizard
+- `GET /api/v2/onboarding/status` - Get onboarding progress
+- `POST /api/v2/onboarding/complete` - Complete onboarding
+
+---
+
+#### 3.1.18 **User Profile Router** (`apps/users/api_profile.py`)
+**Purpose**: Current authenticated user profile operations.
+
+**API Endpoints**:
+- `GET /api/v2/user` - Get current user profile
+- `PATCH /api/v2/user` - Update current user profile
+- `GET /api/v2/user/preferences` - Get user preferences
+
+---
+
+#### 3.1.19 **Voice Cloning Router** (`apps/voice/api_voice_cloning.py`)
+**Purpose**: Voice cloning and custom voice creation.
+
+**API Endpoints**:
+- `POST /api/v2/voice-cloning/upload` - Upload voice sample
+- `GET /api/v2/voice-cloning/voices` - List cloned voices
+- `DELETE /api/v2/voice-cloning/{id}` - Delete cloned voice
+
+---
+
+#### 3.1.20 **Wake Words Router** (`apps/voice/api_wake_words.py`)
+**Purpose**: Wake word configuration.
+
+**API Endpoints**:
+- `GET /api/v2/wake-words` - List available wake words
+- `POST /api/v2/wake-words` - Create custom wake word
+- `PUT /api/v2/wake-words/{id}` - Update wake word settings
+
+---
+
+#### 3.1.21 **Admin Routers**
+**Purpose**: SYSADMIN-only administrative endpoints.
+
+**Registered Admin Routers**:
+- `/api/v2/admin/tenants` - Admin tenant management (`apps/tenants/api_admin.py`)
+- `/api/v2/admin/users` - Admin user management (`apps/users/api_admin.py`)
+- `/api/v2/admin` - Admin dashboard (`apps/core/api_admin_dashboard.py`)
 
 ---
 
@@ -627,12 +744,13 @@ AgentVoiceBox is the **Voice AI pillar** of the SOMA ecosystem. It interfaces wi
 ## 4. Frontend System Architecture
 
 ### 4.1 Technology Stack
-- **Runtime**: Bun 1.3.5
-- **Framework**: Lit 3.0+
-- **Router**: @lit-labs/router
-- **Build Tool**: Vite 5
-- **Styling**: Tailwind CSS 3.4 (CDN + Vite)
-- **State Management**: Lit Signals (planned)
+- **Runtime**: Bun 1.3.5 (oven/bun:1.3.5-slim Docker image)
+- **Framework**: Lit 3.3.2
+- **Router**: @lit-labs/router 0.1.4
+- **Build Tool**: Vite 7.3.0
+- **Styling**: Tailwind CSS 3.4.13 (CDN in development)
+- **Testing**: Playwright 1.57.0 (E2E tests)
+- **Type System**: TypeScript 5.6.2
 
 ### 4.2 Directory Structure
 
@@ -643,17 +761,22 @@ portal-frontend/src/
 │   ├── saas-glass-modal.ts
 │   ├── saas-status-dot.ts
 │   ├── saas-infra-card.ts
-│   └── ... (38 components total)
+│   └── saas-config-modal.ts
 ├── views/               # Page-level components
 │   ├── view-login.ts
-│   └── view-setup.ts
+│   ├── view-setup.ts
+│   └── view-auth-callback.ts
 ├── services/            # API client services
 │   ├── api-client.ts
 │   ├── auth-service.ts
-│   └── ... (9 services)
-├── contexts/            # Shared state contexts
-│   ├── tenant-context.ts
-│   └── user-context.ts
+│   ├── admin-api.ts
+│   ├── voice-api.ts
+│   ├── permissions.ts
+│   ├── jwt-utils.ts
+│   ├── formatting.ts
+│   ├── serialization.ts
+│   └── hooks.ts
+├── styles/              # CSS styles
 ├── middleware.ts        # Route guards and auth checks
 └── main.ts              # Application entry point
 ```
@@ -904,7 +1027,6 @@ portal-frontend/src/
 
 **Metrics**:
 - Prometheus for metrics collection
-- Grafana for visualization
 - Custom dashboards per module
 
 **Logging**:
@@ -985,14 +1107,17 @@ class APIKey:
 
 ## 8. Deployment Architecture
 
-### 8.1 Container Images
+### 8.1 Container Images (from `docker-compose.yml`)
 
-| Service | Base Image | Exposed Port | Health Check |
-|---------|-----------|--------------|--------------|
-| `portal-backend` | `python:3.11-slim` | 8000 | `/health` |
-| `portal-frontend` | `oven/bun:1.3.5` | 3000 | `/` |
-| `voice-worker` | `python:3.11-slim` | - | N/A (async worker) |
-| `temporal-worker` | `python:3.11-slim` | - | N/A (workflow worker) |
+| Service | Container Name | Base Image | Port | RAM Limit | Health Check |
+|---------|---------------|------------|------|-----------|--------------|
+| `django-api` | `avb-django-api` | `python:3.12-slim` | 65020 | 1.5GB | `/health/` |
+| `portal-frontend` | `avb-portal-frontend` | `oven/bun:1.3.5-slim` | 65027 | 512MB | `/` |
+| `worker-llm` | `avb-worker-llm` | Python container | - | 2GB | N/A |
+| `worker-stt` | `avb-worker-stt` | faster-whisper | - | 1.5GB | N/A |
+| `worker-tts` | `avb-worker-tts` | kokoro ONNX | - | 1GB | N/A |
+
+**Total RAM Budget**: ~7GB for AgentVoiceBox + 8GB for shared services = 15GB
 
 ### 8.2 Tilt Development Orchestration
 
@@ -1094,7 +1219,6 @@ class APIKey:
 - Audio files: Immutable S3 storage with versioning
 
 ### 11.2 Monitoring
-- Grafana dashboards for all services
 - Prometheus alerting rules
 - PagerDuty escalation policies
 - Weekly SRE review meetings

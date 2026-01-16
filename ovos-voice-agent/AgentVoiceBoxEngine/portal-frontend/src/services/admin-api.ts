@@ -1,8 +1,8 @@
 /**
  * Admin API Service - Connects to Portal API & Lago
  * Endpoints: Users, Billing, Audit, Monitoring, System Config
- * Portal API URL: configured via NEXT_PUBLIC_API_URL
- * Lago URL: configured via NEXT_PUBLIC_LAGO_URL
+ * Portal API URL: configured via VITE_API_URL
+ * Lago URL: configured via VITE_LAGO_URL
  */
 
 import { apiClient, ApiResponse } from './api-client';
@@ -439,10 +439,6 @@ export const monitoringApi = {
     return response.text();
   },
 
-  // Grafana dashboard URL
-  getGrafanaUrl(): string {
-    return getEnv('VITE_GRAFANA_URL', 'http://localhost:3001');
-  },
 };
 
 // ============================================================================

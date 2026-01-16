@@ -199,6 +199,30 @@ class Settings(BaseSettings):
     )
 
     # ==========================================================================
+    # PAYPAL PAYMENTS
+    # ==========================================================================
+    paypal_client_id: str = Field(
+        default="",
+        description="PayPal client ID",
+    )
+    paypal_client_secret: str = Field(
+        default="",
+        description="PayPal client secret",
+    )
+    paypal_environment: str = Field(
+        default="sandbox",
+        description="PayPal environment (sandbox or live)",
+    )
+    paypal_webhook_id: str = Field(
+        default="",
+        description="PayPal webhook ID for signature verification",
+    )
+    paypal_enabled: bool = Field(
+        default=False,
+        description="Enable PayPal payment integration",
+    )
+
+    # ==========================================================================
     # OBSERVABILITY
     # ==========================================================================
     log_level: str = Field(default="INFO", description="Logging level")
@@ -527,6 +551,13 @@ kafka_security_protocol = _settings.kafka_security_protocol
 lago_api_url = _settings.lago_api_url
 lago_api_key = _settings.lago_api_key
 lago_webhook_secret = _settings.lago_webhook_secret
+
+# PayPal
+paypal_client_id = _settings.paypal_client_id
+paypal_client_secret = _settings.paypal_client_secret
+paypal_environment = _settings.paypal_environment
+paypal_webhook_id = _settings.paypal_webhook_id
+paypal_enabled = _settings.paypal_enabled
 
 # Observability
 log_level = _settings.log_level

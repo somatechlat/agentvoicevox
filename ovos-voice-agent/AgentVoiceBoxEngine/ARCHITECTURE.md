@@ -1,65 +1,56 @@
-# Enterprise Architecture Plan
+# Architecture Overview
 
-This document describes the enterprise-grade topology for the OVOS voice agent. It enumerates data
-stores, message flows, observability surfaces, and deployment considerations.
+This document summarizes the **implemented** architecture of AgentVoiceBox and aligns it with the
+authoritative requirements in the SRS documents under `docs/srs/`.
 
-## Data Persistence (Postgres)
+## 1. System Boundaries and Entry Points
+- **REST API**: Django Ninja under `/api/v2` (see `backend/config/urls.py`).
+- **WebSockets**: Django Channels under `/ws/v2` (see `backend/realtime/routing.py`).
+- **Portal Frontend**: Lit 3 + Bun app under `portal-frontend/`.
+- **Workers**: LLM/STT/TTS workers under `workers/` and workflow activities under `backend/apps/workflows/`.
 
-Tables | Purpose
----|---
-`sessions` | Track realtime session lifecycle, persona configuration, and timestamps.
-`conversation_items` | Conversation history, structured as JSONB for assistant/user/tool turns.
-`tool_invocations` *(future)* | Audit trail of tool requests/responses executed during a session.
-`policy_audit` *(future)* | Persist OPA decisions and metadata for compliance reviews.
+## 2. Data Persistence (Postgres)
+Core data models are implemented with Django ORM:
+- Sessions: `backend/apps/sessions/models.py`
+- Tenants and scoping: `backend/apps/tenants/models.py`
+- Audit logs: `backend/apps/audit/models.py`
+- Voice personas and TTS metadata: `backend/apps/voice/models.py`
 
-Migrations will be managed via Alembic. All tables should include tenant identifiers when multi-tenant
-support is enabled.
+Multi-tenant isolation is enforced via `TenantScopedModel` in `backend/apps/tenants/models.py`.
 
-## Event Streaming (Kafka)
+## 3. Event Streaming (Kafka, Optional)
+Kafka is an **optional** integration (see `docs/srs/External_Services_Configuration_SRS.md`).
+The standard topic names are defined in `backend/integrations/kafka.py`:
+- `agentvoicebox.audit`
+- `agentvoicebox.sessions`
+- `agentvoicebox.billing`
+- `agentvoicebox.notifications`
+- `agentvoicebox.metrics`
 
-Topic | Key | Description
----|---|---
-`voice.sessions` | `session_id` | Session lifecycle events (created/updated/closed) for downstream consumers.
-`voice.audio.inbound` | `session_id` | PCM16 audio chunks streamed from gateway to speech workers.
-`voice.audio.transcribed` | `session_id` | Transcription results emitted by the speech pipeline.
-`voice.responses` | `session_id` | Assistant responses (text + audio references) destined for clients.
-`voice.audit` | `session_id` | Structured audit records, including policy denials and tool interactions.
+Kafka is enabled/disabled via Django settings (`KAFKA.ENABLED`).
 
-Each topic will use Avro/JSON Schema registry enforcement. Partitioning will follow `session_id` so
-all events for a conversation remain ordered.
+## 4. Policy Enforcement (OPA)
+OPA integration is implemented in `backend/integrations/opa.py` and configured via settings
+(`OPA.URL`, `OPA.DECISION_PATH`, `OPA.TIMEOUT_SECONDS`, `OPA.ENABLED`).
 
-## Policy Enforcement (OPA)
+Current policy rules are defined in `policies/voice.rego` under the `voice` package. The file currently
+includes allow rules for `/v1/realtime/client_secrets` and `/v1/realtime/sessions`; these endpoints are
+part of the roadmap and are not the active API surface (see `ROADMAP.md`).
 
-Policies are housed under `voice/` package with the following entrypoints:
+## 5. Observability
+- **Metrics**: `/metrics` is exposed via `django_prometheus` (see `backend/config/urls.py` and
+  `backend/config/settings/base.py`).
+- **Logging**: Log level/format and Sentry DSN are configured in
+  `backend/config/settings/settings_config.py`.
 
-- `voice/allow` – global request guard (session bootstrap, client secret creation).
-- `voice/tool` – authorize tool usage with actor/tenant metadata.
-- `voice/audio` – optional content moderation pipeline for outbound audio.
+## 6. Deployment Notes
+- The API gateway runs under Gunicorn with Uvicorn workers using `config.asgi:application`
+  (see `backend/Dockerfile`).
+- Environment defaults are defined in `settings.example.env` and `backend/.env.example`.
+- For production secret management, refer to Vault requirements in
+  `docs/srs/External_Services_Configuration_SRS.md`.
 
-OPA will run as a sidecar. Django requests include contextual headers
-(`X-Actor`, `X-Tenant`, `X-Scopes`) and JSON payloads for evaluation. Kafka consumers may also
-consult OPA to validate tool invocations before execution.
-
-## Observability
-
-- **Metrics**: Prometheus endpoint `/metrics` publishes counters/gauges/histograms seeded in
-  `app/observability/metrics.py`. Additional metrics (Kafka lag, TTS latency) will be added in their
-  respective workers using the shared registry.
-- **Logging**: JSON-formatted logs with correlation fields (`session_id`, `trace_id`). Sentry support
-  is available via DSN configuration.
-- **Tracing** *(future)*: When `OBSERVABILITY__ENABLE_TRACING=true`, OpenTelemetry exporters will be
-  wired for distributed tracing across gateway and workers.
-
-## Deployment Notes
-
-- Gateway served via Gunicorn with `config.asgi:application` for ASGI/Channels.
-  For WebSocket/WebRTC, keep Django Channels as the primary transport.
-- Kafka/Postgres/OPA endpoints are read from environment variables; a `settings.example.env` helper is
-  provided.
-- Secrets should be injected via secret management (Vault, AWS SM) rather than `.env` in production.
-
-## Alignment with Somabrain / SomagentHub
-
-While no direct hooks exist in the repository, the modular design keeps integration points at the
-Kafka layer and REST gateway. Somabrain and SomagentHub services can subscribe to the Kafka topics or
-call the gateway APIs to orchestrate downstream workflows without modifying core voice processing.
+## 7. Authoritative References
+- Core SRS: `docs/srs/AgentVoiceBox_SRS.md`
+- MCP SRS: `docs/srs/MCP_Architecture_SRS.md`
+- External services SRS: `docs/srs/External_Services_Configuration_SRS.md`

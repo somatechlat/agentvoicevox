@@ -1,7 +1,7 @@
 /**
  * Voice API Service - Connects to AgentVoiceBox Gateway
  * Endpoints: Sessions, STT, TTS, LLM, Personas, Audio Config
- * Gateway URL: configured via NEXT_PUBLIC_GATEWAY_URL
+ * Gateway URL: configured via VITE_GATEWAY_URL
  */
 
 import { apiClient, ApiResponse } from './api-client';

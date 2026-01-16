@@ -15,6 +15,7 @@ from ninja.files import UploadedFile
 
 from apps.billing.models import UsageEvent
 from apps.core.exceptions import ValidationError
+from apps.core.permissions.decorators import require_granular_role
 from apps.tenants.services import TenantSettingsService
 from apps.workflows.activities.stt import STTActivities, TranscriptionRequest
 
@@ -24,6 +25,7 @@ from .schemas import STTConfigOut, STTConfigUpdate, STTMetricsOut, STTTestOut
 router = Router(tags=["STT Integrations"])
 
 
+@require_granular_role(["agent_admin", "tenant_admin", "saas_admin"])
 @router.get("/config", response=STTConfigOut, summary="Get STT Configuration")
 def get_stt_config(request):
     """
@@ -32,9 +34,8 @@ def get_stt_config(request):
     This includes settings like the STT model, language, VAD (Voice Activity Detection)
     status, and beam size.
 
-    **Permissions:** Assumed to require ADMIN or DEVELOPER role (explicit check missing).
+    **Permissions:** Requires AGENT_ADMIN or TENANT_ADMIN role.
     """
-    # TODO: Implement explicit permission check (e.g., if not request.user.is_admin: raise PermissionDeniedError)
     settings = TenantSettingsService.get_settings(request.tenant.id)
     return STTConfigOut(
         model=settings.default_stt_model,
@@ -44,6 +45,7 @@ def get_stt_config(request):
     )
 
 
+@require_granular_role(["tenant_admin", "saas_admin"])
 @router.patch("/config", response=STTConfigOut, summary="Update STT Configuration")
 def update_stt_config(request, payload: STTConfigUpdate):
     """
@@ -51,9 +53,8 @@ def update_stt_config(request, payload: STTConfigUpdate):
 
     This endpoint handles updates to various STT settings stored in `TenantSettings`.
 
-    **Permissions:** Assumed to require ADMIN or DEVELOPER role (explicit check missing).
+    **Permissions:** Requires TENANT_ADMIN role.
     """
-    # TODO: Implement explicit permission check (e.g., if not request.user.is_admin: raise PermissionDeniedError)
     settings = TenantSettingsService.update_voice_defaults(
         tenant_id=request.tenant.id,
         default_stt_model=payload.model,
@@ -70,17 +71,17 @@ def update_stt_config(request, payload: STTConfigUpdate):
     )
 
 
+@require_granular_role(["operator", "supervisor", "tenant_admin", "saas_admin"])
 @router.get("/metrics", response=STTMetricsOut, summary="Get STT Usage Metrics")
 def get_stt_metrics(request):
     """
     Retrieves aggregated Speech-to-Text (STT) usage metrics for the current tenant.
 
-    Currently, this endpoint calculates the total STT minutes for the current day
+    This endpoint calculates the total STT minutes for the current day
     from `UsageEvent`s. Latency and accuracy are placeholders.
 
-    **Permissions:** Assumed to require OPERATOR role or higher (explicit check missing).
+    **Permissions:** Requires OPERATOR role or higher.
     """
-    # TODO: Implement explicit permission check (e.g., if not request.user.is_operator: raise PermissionDeniedError)
     start_day = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
     total_minutes = (
         UsageEvent.all_objects.filter(
@@ -98,15 +99,15 @@ def get_stt_metrics(request):
     )
 
 
+@require_granular_role(["agent_admin", "tenant_admin", "saas_admin"])
 @router.post("/test", response=STTTestOut, summary="Test STT Transcription")
 async def test_stt(request, audio: UploadedFile):
     """
     Tests the current STT configuration for the authenticated tenant by transcribing
     an uploaded audio file.
 
-    **Permissions:** Assumed to require DEVELOPER role or higher (explicit check missing).
+    **Permissions:** Requires AGENT_ADMIN or TENANT_ADMIN role.
     """
-    # TODO: Implement explicit permission check (e.g., if not request.user.is_developer: raise PermissionDeniedError)
     if audio is None:
         raise ValidationError("Audio file is required.")
 

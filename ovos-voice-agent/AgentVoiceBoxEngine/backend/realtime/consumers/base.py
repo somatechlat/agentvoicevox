@@ -23,14 +23,23 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
     - Tenant context
     - Ping/pong heartbeat
     - Error handling
+
+    **Implements: SECURITY-001**
     """
 
-    # Close codes
+    # Close codes (constants to replace magic numbers)
     CLOSE_NORMAL = 1000
     CLOSE_AUTH_FAILED = 4001
     CLOSE_TENANT_INVALID = 4002
     CLOSE_TENANT_SUSPENDED = 4003
+    CLOSE_SESSION_INVALID = 4004
+    CLOSE_SESSION_ENDED = 4005
     CLOSE_RATE_LIMITED = 4029
+
+    # Configuration constants
+    MAX_AUDIO_CHUNK_SIZE = 8192  # 8KB limit to prevent DoS
+    RATE_LIMIT_WINDOW = 60  # 1 minute window
+    MAX_AUDIO_CHUNKS_PER_MINUTE = 100  # Rate limit
 
     def __init__(self, *args, **kwargs):
         """Initializes the BaseConsumer and sets default auth/context state."""
@@ -40,6 +49,8 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
         self.tenant_id: Optional[str] = None
         self.user_id: Optional[str] = None
         self.authenticated = False
+        self._rate_limit_counter = 0
+        self._rate_limit_reset_time = None
 
     async def connect(self):
         """Handle WebSocket connection."""
@@ -140,19 +151,34 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
             return False
 
     def _get_token(self) -> Optional[str]:
-        """Extract token from connection."""
-        # Try query string first
-        query_string = self.scope.get("query_string", b"").decode()
-        for param in query_string.split("&"):
-            if param.startswith("token="):
-                return param[6:]
-
-        # Try headers
+        """
+        Extract authentication token from connection.
+        
+        Supports both Authorization header (preferred) and query string (deprecated).
+        Query string tokens may be logged by proxies and are logged with warnings.
+        
+        Returns:
+            JWT token string or None
+            
+        **Implements: SECURITY-001**
+        """
         headers = dict(self.scope.get("headers", []))
         auth_header = headers.get(b"authorization", b"").decode()
+        
         if auth_header.startswith("Bearer "):
             return auth_header[7:]
 
+        # Deprecated: Query string token support
+        query_string = self.scope.get("query_string", b"").decode()
+        for param in query_string.split("&"):
+            if param.startswith("token="):
+                logger.warning(
+                    "DEPRECATED: Query string token used. "
+                    "Switch to Authorization header. "
+                    f"Tenant: {self.tenant_id}, User: {self.user_id}"
+                )
+                return param[6:]
+        
         return None
 
     async def _validate_tenant(self) -> bool:
@@ -200,6 +226,35 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
                 "data": data,
             }
         )
+
+    async def _check_rate_limit(self) -> bool:
+        """
+        Check if audio input rate limit is exceeded.
+        
+        Implements token bucket algorithm for rate limiting.
+        
+        Returns:
+            True if within limits, False if rate limited
+        """
+        import time
+        
+        now = time.time()
+        
+        # Reset counter if window expired
+        if self._rate_limit_reset_time and now > self._rate_limit_reset_time:
+            self._rate_limit_counter = 0
+            self._rate_limit_reset_time = now + self.RATE_LIMIT_WINDOW
+        
+        # Initialize if first check
+        if not self._rate_limit_reset_time:
+            self._rate_limit_reset_time = now + self.RATE_LIMIT_WINDOW
+        
+        # Check limit
+        if self._rate_limit_counter >= self.MAX_AUDIO_CHUNKS_PER_MINUTE:
+            return False
+        
+        self._rate_limit_counter += 1
+        return True
 
     # Group message handlers
     async def tenant_message(self, event: dict[str, Any]):

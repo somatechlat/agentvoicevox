@@ -59,12 +59,11 @@ Current solutions fall short:
 
 ### 1. Natural Voice Conversations
 
-AgentVoiceBox enables **speech-to-speech conversations** that feel human:
+AgentVoiceBox enables speech-to-speech conversations with real-time streaming support:
 
-- **Instant responses**: Less than 200 milliseconds from when you stop speaking to when the AI starts responding
-- **Natural interruptions**: Customers can interrupt the AI mid-sentence, just like talking to a real person
-- **Emotional intelligence**: The system detects tone and adjusts responses accordingly
-- **No awkward pauses**: Continuous, flowing dialogue without robotic delays
+- **Realtime streaming**: WebSocket endpoints for session, STT, and TTS streaming
+- **Interruptible flow**: Supports barge-in and turn-taking behaviors in realtime sessions
+- **Low-latency targets**: REST API p95 response time target under 200ms (per SRS)
 
 ### 2. Complete Privacy & Control
 
@@ -78,12 +77,10 @@ As open-source software:
 
 ### 3. Enterprise-Grade Scale
 
-Built for serious business volume:
+Built for production deployments:
 
-- **Millions of simultaneous calls**: Handle Black Friday traffic spikes without breaking a sweat
-- **Global deployment**: Run in multiple regions for low-latency worldwide coverage
-- **99.99% uptime**: Redundant architecture ensures your voice agents never sleep
-- **Instant scaling**: Add capacity in minutes, not months
+- **Availability target**: 99.9% uptime SLA for production tier (per SRS)
+- **Scalable architecture**: Multi-tenant backend with containerized services
 
 ### 4. Intelligent Capabilities
 
@@ -162,15 +159,11 @@ Beyond simple Q&A:
 
 ### Multilingual Support
 
-**What it does**: Serves customers in 15+ languages with native-quality voices
+**What it does**: Supports configurable STT language settings and voice personas.
 
 **Business impact**:
-- Expand to new markets without hiring multilingual staff
-- Provide equal service quality across all languages
-- Automatically detect caller's preferred language
-- Maintain brand voice consistency globally
-
-**Example**: An e-commerce company serves customers across Europe. AgentVoiceBox automatically detects whether a caller speaks German, French, Spanish, or Italian, and responds fluently in their language.
+- Expand to new markets with configured language profiles
+- Maintain consistent brand voice per persona
 
 ---
 
@@ -179,7 +172,7 @@ Beyond simple Q&A:
 | Capability | Traditional IVR | Proprietary Cloud AI (OpenAI) | AgentVoiceBox |
 |------------|-----------------|------------------------------|---------------|
 | Natural conversation | ❌ Menu trees only | ✅ Yes | ✅ Yes |
-| Response latency | N/A | 300-500ms | <200ms |
+| Response latency | N/A | 300-500ms | API p95 <200ms (REST) |
 | Data privacy | ✅ On-premise | ❌ Cloud only | ✅ Your servers |
 | Per-minute costs | Low | $0.06-0.24/min | **Free** |
 | Vendor lock-in | Medium | High | **None** |
@@ -195,11 +188,11 @@ Beyond simple Q&A:
 
 ### Why AgentVoiceBox Is Different
 
-**1. OpenAI-Compatible API**
-- Works with existing tools and integrations built for OpenAI
-- Easy migration path from expensive cloud services
+**1. Active API Surface**
+- REST API under `/api/v2` with Django Ninja
+- WebSockets under `/ws/v2` for realtime sessions
 - Familiar interface for developers
-- Drop-in replacement for OpenAI Realtime API
+- Planned interoperability work is tracked in the project roadmap
 
 **2. State-of-the-Art Voice Quality**
 - Kokoro TTS: Natural, expressive speech synthesis (open-source)
@@ -234,7 +227,7 @@ AgentVoiceBox is built entirely on open-source technologies:
 | Data Persistence | PostgreSQL | PostgreSQL License |
 | Load Balancing | HAProxy | GPL |
 | Orchestration | Kubernetes | Apache 2.0 |
-| Monitoring | Prometheus + Grafana | Apache 2.0 |
+| Monitoring | Prometheus | Apache 2.0 |
 
 **No proprietary dependencies. No license fees. Ever.**
 

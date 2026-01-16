@@ -92,18 +92,15 @@ hypothesis_settings.load_profile(os.getenv("HYPOTHESIS_PROFILE", "dev"))
 
 
 @pytest.fixture(scope="session")
-def django_db_setup(django_db_blocker):
+def django_db_setup(django_db_setup, django_db_blocker):
     """
     Configure Django test database for parallel execution.
-
-    pytest-xdist creates separate test databases per worker (test_agentvoicebox_gw0, etc.)
-    This fixture ensures proper database setup for each worker.
+    
+    pytest-django handles database creation and migration automatically.
+    We just hook into the setup to ensure specific settings if needed.
     """
     with django_db_blocker.unblock():
-        from django.core.management import call_command
-
-        # Ensure migrations are applied
-        call_command("migrate", "--run-syncdb", verbosity=0)
+        pass  # Rely on pytest-django's native test DB management
 
 
 @pytest.fixture(autouse=True)
