@@ -1,0 +1,225 @@
+# ==========================================================================
+# AGENTVOICEBOX APPLICATION STACK (7GB RAM Budget)
+# ==========================================================================
+# Project: agentvoicebox
+#
+# This stack USES shared infrastructure (PostgreSQL, Redis, Keycloak, Vault)
+# running on the shared_services_network.
+#
+# ⚠️  CRITICAL: Start shared-services FIRST!
+# Run: cd shared-services && docker compose -p shared-services up -d
+#
+# ⚠️  PORT POLICY - 65000-65099 ONLY ⚠️
+# ==========================================================================
+#
+# RAM Budget (AgentVoiceBox Services - 7GB Total):
+#   Django API:        1.5GB
+#   Portal Frontend:   512MB
+#   Workers (LLM):     2GB (for large context windows)
+#   Workers (STT):     1.5GB (for Whisper models)
+#   Workers (TTS):     1GB (for Kokoro)
+#   Buffer:            ~512MB
+#
+# TOTAL: Shared (8GB) + AgentVoiceBox (7GB) = 15GB
+# ==========================================================================
+
+version: '3.8'
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+x-healthcheck-defaults: &healthcheck-defaults
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 30s
+
+services:
+  # ==========================================================================
+  # DJANGO API GATEWAY (1.5GB)
+  # ==========================================================================
+  django-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: avb-django-api
+    hostname: django-api
+    ports:
+      - "65020:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.base
+      SECRET_KEY: dev-secret-key-for-local-development-only
+      DEBUG: "true"
+      ALLOWED_HOSTS: "*"
+      # Shared PostgreSQL (65004 internal, postgres hostname on shared network)
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: agentvoicebox
+      DB_USER: shared_admin
+      DB_PASSWORD: shared_secure_2024
+      DB_CONN_MAX_AGE: 60
+      # Shared Redis (65005 internal)
+      REDIS_URL: redis://redis:6379/0
+      REDIS_CACHE_DB: 1
+      REDIS_SESSION_DB: 2
+      REDIS_CHANNEL_DB: 3
+      # Shared Keycloak (65006 internal)
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: agentvoicebox
+      KEYCLOAK_CLIENT_ID: agentvoicebox-api
+      KEYCLOAK_CLIENT_SECRET: dev-secret-12345
+      # Shared Vault (65003 internal)
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: devtoken
+      # Shared Temporal (65007 internal)
+      TEMPORAL_HOST: temporal:7233
+      TEMPORAL_NAMESPACE: agentvoicebox
+      # Logging
+      LOG_LEVEL: DEBUG
+      LOG_FORMAT: console
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+        reservations:
+          memory: 768M
+    networks:
+      - shared-network
+    logging: *default-logging
+    restart: unless-stopped
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1" ]
+
+  # ==========================================================================
+  # PORTAL FRONTEND - Lit 3 / Vite (512MB)
+  # ==========================================================================
+  portal-frontend:
+    build:
+      context: ./portal-frontend
+      dockerfile: Dockerfile
+    container_name: avb-portal-frontend
+    hostname: portal-frontend
+    ports:
+      - "65027:65027"
+    environment:
+      # External URLs (how browser sees them via localhost)
+      VITE_API_URL: http://localhost:65020
+      VITE_KEYCLOAK_URL: http://localhost:65006
+      VITE_KEYCLOAK_REALM: agentvoicebox
+      VITE_KEYCLOAK_CLIENT_ID: portal-frontend
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - shared-network
+    logging: *default-logging
+    restart: unless-stopped
+    healthcheck:
+      <<: *healthcheck-defaults
+      test: [ "CMD-SHELL", "curl -f http://localhost:65027/ || exit 1" ]
+
+  # ==========================================================================
+  # LLM WORKER (2GB for large context)
+  # ==========================================================================
+  worker-llm:
+    build:
+      context: ./workers/llm
+      dockerfile: Dockerfile
+    container_name: avb-worker-llm
+    hostname: worker-llm
+    environment:
+      REDIS_URL: redis://redis:6379/4
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_API_BASE: https://api.groq.com/openai/v1
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_BASE: https://api.openai.com/v1
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      LLM_DEFAULT_PROVIDER: groq
+      LLM_DEFAULT_MODEL: llama-3.3-70b-versatile
+      LLM_MAX_CONTEXT_TOKENS: 8192
+      LLM_CIRCUIT_BREAKER_THRESHOLD: 5
+      LOG_LEVEL: INFO
+    deploy:
+      resources:
+        limits:
+          memory: 2048M
+        reservations:
+          memory: 1024M
+    networks:
+      - shared-network
+    logging: *default-logging
+    restart: unless-stopped
+
+  # ==========================================================================
+  # STT WORKER - Speech-to-Text (1.5GB for Whisper)
+  # ==========================================================================
+  worker-stt:
+    build:
+      context: ./workers/stt
+      dockerfile: Dockerfile
+    container_name: avb-worker-stt
+    hostname: worker-stt
+    environment:
+      REDIS_URL: redis://redis:6379/5
+      STT_ENGINE: faster-whisper
+      WHISPER_MODEL: base
+      WHISPER_DEVICE: cpu
+      WHISPER_COMPUTE_TYPE: int8
+      STT_VAD_ENABLED: "true"
+      STT_VAD_THRESHOLD: 0.5
+      LOG_LEVEL: INFO
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+        reservations:
+          memory: 768M
+    networks:
+      - shared-network
+    logging: *default-logging
+    restart: unless-stopped
+
+  # ==========================================================================
+  # TTS WORKER - Text-to-Speech (1GB for Kokoro)
+  # ==========================================================================
+  worker-tts:
+    build:
+      context: ./workers/tts
+      dockerfile: Dockerfile
+    container_name: avb-worker-tts
+    hostname: worker-tts
+    environment:
+      REDIS_URL: redis://redis:6379/6
+      TTS_ENGINE: kokoro
+      KOKORO_VOICE: af_heart
+      KOKORO_SPEED: 1.0
+      TTS_CHUNK_SIZE: 4096
+      TTS_BUFFER_SIZE: 16384
+      LOG_LEVEL: INFO
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+        reservations:
+          memory: 512M
+    networks:
+      - shared-network
+    logging: *default-logging
+    restart: unless-stopped
+
+# ==========================================================================
+# SHARED NETWORK (Connects to shared-services)
+# ==========================================================================
+networks:
+  shared-network:
+    name: shared_services_network
+    external: true
+
+# No volumes needed - shared services handle persistence

@@ -14,6 +14,7 @@ from apps.core.exceptions import (
     FeatureNotImplementedError,
     ValidationError,
 )
+from apps.core.permissions.decorators import require_granular_role
 from apps.tenants.services import TenantSettingsService
 from apps.workflows.activities.llm import LLMActivities, LLMRequest, Message
 
@@ -24,6 +25,7 @@ from .services import LLMConfigService
 router = Router(tags=["LLM Integrations"])
 
 
+@require_granular_role(["tenant_admin", "saas_admin"])
 @router.get("/config", response=LLMConfigOut, summary="Get LLM Configuration")
 def get_llm_config(request):
     """
@@ -32,9 +34,8 @@ def get_llm_config(request):
     This includes both default settings stored in `TenantSettings` and any
     sensitive API keys/base URLs retrieved from Vault.
 
-    **Permissions:** Assumed to require ADMIN or DEVELOPER role (explicit check missing).
+    **Permissions:** Requires TENANT_ADMIN or SaaS_ADMIN role.
     """
-    # TODO: Implement explicit permission check (e.g., if not request.user.is_admin: raise PermissionDeniedError)
     settings = LLMConfigService.get_tenant_settings(request.tenant.id)
     secrets = LLMConfigService.read_secrets(request.tenant.id)
 
@@ -55,6 +56,7 @@ def get_llm_config(request):
     )
 
 
+@require_granular_role(["tenant_admin", "saas_admin"])
 @router.patch("/config", response=LLMConfigOut, summary="Update LLM Configuration")
 def update_llm_config(request, payload: LLMConfigUpdate):
     """
@@ -66,9 +68,8 @@ def update_llm_config(request, payload: LLMConfigUpdate):
     stored in Vault. A `None` value for an API key in the payload will remove
     that key from Vault.
 
-    **Permissions:** Assumed to require ADMIN or DEVELOPER role (explicit check missing).
+    **Permissions:** Requires TENANT_ADMIN role.
     """
-    # TODO: Implement explicit permission check (e.g., if not request.user.is_admin: raise PermissionDeniedError)
 
     # Update general LLM settings in TenantSettings.
     settings = TenantSettingsService.update_voice_defaults(
@@ -114,6 +115,7 @@ def update_llm_config(request, payload: LLMConfigUpdate):
     )
 
 
+@require_granular_role(["agent_admin", "tenant_admin", "saas_admin"])
 @router.post("/test", response=LLMTestResponse, summary="Test LLM Configuration")
 async def test_llm(request, payload: LLMTestRequest):
     """
@@ -123,9 +125,8 @@ async def test_llm(request, payload: LLMTestRequest):
     This endpoint uses the configured LLM provider and credentials to ensure
     the integration is working correctly.
 
-    **Permissions:** Assumed to require ADMIN or DEVELOPER role (explicit check missing).
+    **Permissions:** Requires AGENT_ADMIN or TENANT_ADMIN role.
     """
-    # TODO: Implement explicit permission check (e.g., if not request.user.is_developer: raise PermissionDeniedError)
     if not payload.prompt.strip():
         raise ValidationError("Prompt is required")
 

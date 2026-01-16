@@ -9,6 +9,6 @@ services:
       - ./portal-frontend:/app
       - /app/node_modules
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:28000
+      VITE_API_URL: http://localhost:28000
     networks:
       - default

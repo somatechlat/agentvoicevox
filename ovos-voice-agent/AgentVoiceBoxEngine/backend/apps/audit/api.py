@@ -5,12 +5,6 @@ Audit Log Viewing and Export API Endpoints
 This module provides API endpoints for viewing and exporting audit logs.
 Due to the immutable nature of audit logs, there are no endpoints for
 creating, updating, or deleting individual log entries via the API.
-
-**Security Note:** Access to these endpoints typically requires a high level
-of privilege (e.g., OPERATOR or ADMIN role). The current implementation relies
-on implicit tenant-scoping through `AuditLog.objects` but **lacks explicit
-permission checks for user roles on individual endpoints**. This should be
-addressed for production security.
 """
 
 from datetime import datetime
@@ -20,9 +14,8 @@ from uuid import UUID
 from django.http import HttpResponse
 from ninja import Query, Router
 
-from apps.core.exceptions import (
-    NotFoundError,
-)  # PermissionDeniedError added for documentation purposes
+from apps.core.exceptions import NotFoundError, PermissionDeniedError
+from apps.core.permissions.decorators import require_granular_role
 
 from .schemas import (
     AuditLogListOut,
@@ -64,6 +57,7 @@ def _log_to_out(log) -> AuditLogOut:
     )
 
 
+@require_granular_role(["operator", "supervisor", "tenant_admin", "saas_admin"])
 @router.get("", response=AuditLogListOut, summary="List Audit Logs")
 def list_audit_logs(
     request,
@@ -94,11 +88,9 @@ def list_audit_logs(
 
     This endpoint allows extensive filtering to pinpoint specific audit trails.
 
-    **Permissions:** Assumed to require OPERATOR role or higher (explicit check missing).
+    **Permissions:** Requires OPERATOR role or higher.
     """
-    # Assuming request.tenant is correctly set by middleware
     tenant = request.tenant
-    # TODO: Implement explicit permission check (e.g., if not request.user.is_operator: raise PermissionDeniedError)
     logs, total = AuditLogService.list_logs(
         tenant=tenant,
         actor_id=actor_id,
@@ -119,6 +111,7 @@ def list_audit_logs(
     )
 
 
+@require_granular_role(["operator", "supervisor", "tenant_admin", "saas_admin"])
 @router.get("/actions", response=list[str], summary="List Available Audit Actions")
 def list_actions(request):
     """
@@ -126,13 +119,13 @@ def list_actions(request):
 
     This is useful for populating filter options in user interfaces.
 
-    **Permissions:** Assumed to require OPERATOR role or higher (explicit check missing).
+    **Permissions:** Requires OPERATOR role or higher.
     """
     tenant = request.tenant
-    # TODO: Implement explicit permission check
     return AuditLogService.get_available_actions(tenant)
 
 
+@require_granular_role(["operator", "supervisor", "tenant_admin", "saas_admin"])
 @router.get(
     "/resource-types", response=list[str], summary="List Available Audit Resource Types"
 )
@@ -142,13 +135,13 @@ def list_resource_types(request):
 
     This is useful for populating filter options in user interfaces.
 
-    **Permissions:** Assumed to require OPERATOR role or higher (explicit check missing).
+    **Permissions:** Requires OPERATOR role or higher.
     """
     tenant = request.tenant
-    # TODO: Implement explicit permission check
     return AuditLogService.get_available_resource_types(tenant)
 
 
+@require_granular_role(["tenant_admin", "saas_admin"])
 @router.get("/export", summary="Export Audit Logs to CSV")
 def export_audit_logs(
     request,
@@ -165,10 +158,9 @@ def export_audit_logs(
     This endpoint generates a downloadable CSV containing a subset of audit log fields,
     suitable for offline analysis.
 
-    **Permissions:** Assumed to require ADMIN role or higher (explicit check missing).
+    **Permissions:** Requires TENANT_ADMIN or SaaS_ADMIN role.
     """
     tenant = request.tenant
-    # TODO: Implement explicit permission check (e.g., if not request.user.is_admin: raise PermissionDeniedError)
     csv_content = AuditLogService.export_csv(
         tenant=tenant,
         start_date=start_date,
@@ -180,6 +172,7 @@ def export_audit_logs(
     return response
 
 
+@require_granular_role(["operator", "supervisor", "tenant_admin", "saas_admin"])
 @router.get(
     "/resource/{resource_type}/{resource_id}",
     response=list[AuditLogOut],
@@ -189,14 +182,14 @@ def get_resource_logs(request, resource_type: str, resource_id: str):
     """
     Retrieves the audit trail for a specific resource within the current tenant.
 
-    **Permissions:** Assumed to require OPERATOR role or higher (explicit check missing).
+    **Permissions:** Requires OPERATOR role or higher.
     """
     tenant = request.tenant
-    # TODO: Implement explicit permission check
     logs = AuditLogService.get_resource_history(tenant, resource_type, resource_id)
     return [_log_to_out(log) for log in logs]
 
 
+@require_granular_role(["operator", "supervisor", "tenant_admin", "saas_admin"])
 @router.get(
     "/actor/{actor_id}",
     response=list[AuditLogOut],
@@ -212,23 +205,22 @@ def get_actor_logs(
     """
     Retrieves recent audit logs for a specific actor (user or API key) within the current tenant.
 
-    **Permissions:** Assumed to require OPERATOR role or higher (explicit check missing).
+    **Permissions:** Requires OPERATOR role or higher.
     """
     tenant = request.tenant
-    # TODO: Implement explicit permission check
     logs = AuditLogService.get_user_activity(tenant, actor_id, days)
     return [_log_to_out(log) for log in logs]
 
 
+@require_granular_role(["operator", "supervisor", "tenant_admin", "saas_admin"])
 @router.get("/{log_id}", response=AuditLogOut, summary="Get a Specific Audit Log by ID")
 def get_audit_log(request, log_id: UUID):
     """
     Retrieves a single, specific audit log entry by its unique ID.
 
-    **Permissions:** Assumed to require OPERATOR role or higher (explicit check missing).
+    **Permissions:** Requires OPERATOR role or higher.
     """
     # Assuming request.tenant is correctly set by middleware
-    # TODO: Implement explicit permission check
     log = AuditLogService.get_log(log_id)
     if not log or (
         log.tenant and log.tenant != request.tenant

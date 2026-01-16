@@ -8,9 +8,12 @@ projected costs, past invoices, and billing alerts. It also includes a webhook
 endpoint for integration with external billing providers like Lago.
 """
 
+import hashlib
+import hmac
 from typing import Optional
 from uuid import UUID
 
+from django.conf import settings
 from ninja import Query, Router
 
 from apps.core.exceptions import PermissionDeniedError
@@ -30,6 +33,45 @@ from .services import BillingService, LagoService
 
 # Router for billing management endpoints, tagged for OpenAPI documentation.
 router = Router(tags=["Billing"])
+
+
+def verify_lago_webhook_signature(request, payload: dict) -> bool:
+    """
+    Verify Lago webhook signature using HMAC-SHA256.
+
+    Validates the X-Lago-Signature header against the request payload
+    using the configured webhook secret.
+
+    Args:
+        request: The HTTP request object
+        payload: The parsed JSON payload
+
+    Returns:
+        True if signature is valid, False otherwise
+
+    **Implements: SEC-001**
+    """
+    signature = request.headers.get("X-Lago-Signature")
+    if not signature:
+        return False
+
+    webhook_secret = settings.LAGO.get("WEBHOOK_SECRET")
+    if not webhook_secret:
+        return False
+
+    # Get raw request body for signature verification
+    try:
+        body = request.body
+        expected_signature = hmac.new(
+            webhook_secret.encode(),
+            body,
+            hashlib.sha256
+        ).hexdigest()
+
+        return hmac.compare_digest(signature, expected_signature)
+    except Exception as e:
+        logger.warning(f"Signature verification failed: {e}")
+        return False
 
 
 @router.get(
@@ -218,21 +260,34 @@ def acknowledge_alert(request, alert_id: UUID):
 
 
 @router.post("/webhooks/lago", response={200: dict}, summary="Handle Lago Webhooks")
-def lago_webhook(request, payload: LagoWebhookPayload):
+async def lago_webhook(request, payload: LagoWebhookPayload):
     """
     Receives and processes webhook events from the Lago billing system.
 
     This endpoint acts as the integration point for Lago to notify the platform
     about billing-related events (e.g., invoice creation, payment status updates).
 
-    **Security Note:** It is critical to implement webhook signature verification
-    to ensure the authenticity and integrity of incoming webhook payloads. This is
-    a `TODO` in the current implementation.
+    **Security:** Implements HMAC-SHA256 signature verification to ensure
+    webhook authenticity and prevent injection attacks.
 
-    **Permissions:** This endpoint typically does not require user authentication
-    as it's called by an external system, but proper access control (e.g., IP whitelisting
-    or API key in headers if supported by Lago) is essential.
+    **Permissions:** This endpoint does not require user authentication
+    as it's called by an external system (Lago).
+
+    **Implements: SEC-001**
     """
-    # TODO: Implement webhook signature verification for security.
+    # Verify webhook signature for security
+    if not verify_lago_webhook_signature(request, payload.dict()):
+        logger.warning(
+            f"Invalid webhook signature from {request.META.get('REMOTE_ADDR')}"
+        )
+        # Return 401 for invalid signature but don't expose details
+        return 401, {"status": "unauthorized"}
+
+    # Process the verified webhook
     LagoService.handle_webhook(payload.webhook_type, payload.data)
     return {"status": "ok"}
+
+
+# Import logger
+import logging
+logger = logging.getLogger(__name__)

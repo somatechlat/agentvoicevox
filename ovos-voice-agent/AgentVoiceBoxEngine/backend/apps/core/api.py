@@ -138,6 +138,10 @@ def register_routers():
     api.add_router("/admin/users", admin_users_router, tags=["Admin - Users"])
     api.add_router("/admin", admin_dashboard_router, tags=["Admin - Dashboard"])
 
+    # MCP Router
+    from apps.mcp.api import router as mcp_router
+    api.add_router("/mcp", mcp_router, tags=["Model Context Protocol"])
+
 
 # Execute router registration on module load to ensure all endpoints are configured.
 register_routers()

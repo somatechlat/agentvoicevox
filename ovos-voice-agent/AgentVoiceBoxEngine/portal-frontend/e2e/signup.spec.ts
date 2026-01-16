@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  * 
  * To run these tests:
  * 1. Rebuild portal-frontend: docker compose -p agentvoicebox up -d --build portal-frontend
- * 2. Run: npx playwright test e2e/signup.spec.ts --project=chromium
+ * 2. Run: bunx playwright test e2e/signup.spec.ts --project=chromium
  */
 
 // Skip all signup tests until container is rebuilt with middleware fix
@@ -73,7 +73,7 @@ test.describe.skip('Signup Page - Form Validation', () => {
     await page.getByLabel('Organization Name').fill('Test Org');
     await page.getByLabel('Password').fill('StrongPass1');
     await page.getByLabel('Confirm Password').fill('StrongPass1');
-    
+
     const submitButton = page.getByRole('button', { name: 'Create Account' });
     await expect(submitButton).toBeEnabled();
   });

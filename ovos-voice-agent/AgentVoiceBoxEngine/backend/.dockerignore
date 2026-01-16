@@ -130,7 +130,6 @@ temp/
 secrets/
 
 # Grafana/Prometheus configs (mounted separately)
-grafana/
 prometheus/
 
 # Nginx configs (mounted separately)

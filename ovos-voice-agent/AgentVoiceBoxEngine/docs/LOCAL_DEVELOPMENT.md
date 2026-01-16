@@ -11,8 +11,12 @@ This guide covers running the Django-based AgentVoiceBox stack with Docker Compo
 ## Quick Start
 
 ```bash
-cd ovos-voice-agent/AgentVoiceBoxEngine
+# Start shared services
+cd ovos-voice-agent/AgentVoiceBoxEngine/infra/standalone
+docker compose -p shared-services up -d
 
+# Start application stack
+cd ../../
 docker compose -p agentvoicebox up -d
 ```
 
@@ -23,14 +27,13 @@ docker compose -p agentvoicebox up -d
 | Django API | http://localhost:65020 | REST and WebSocket entry point |
 | API Docs | http://localhost:65020/api/v2/docs | Django Ninja OpenAPI |
 | Portal Frontend | http://localhost:65027 | Customer portal UI |
-| PostgreSQL | localhost:65022 | Database |
-| Redis | localhost:65023 | Cache/session store |
-| Keycloak | http://localhost:65024 | Identity provider |
-| Lago | http://localhost:65025 | Billing engine |
-| Prometheus | http://localhost:65028 | Metrics |
-| Grafana | http://localhost:65029 | Dashboards |
-| Vault | http://localhost:65032 | Secrets |
-| OPA | http://localhost:65030 | Policy engine |
+| PostgreSQL | localhost:65004 | Database |
+| Redis | localhost:65005 | Cache/session store |
+| Keycloak | http://localhost:65006 | Identity provider |
+| Lago | http://localhost:63690 | Billing engine (isolated cluster) |
+| Vault | http://localhost:65003 | Secrets |
+| Prometheus | http://localhost:65011 | Metrics |
+| OPA | http://localhost:65030 | Policy engine (if running separately) |
 
 ## Health Checks
 
@@ -82,7 +85,7 @@ The Docker Compose file provides sane defaults for local dev; only override valu
 docker compose -p agentvoicebox logs -f
 
 # Django API only
-docker compose -p agentvoicebox logs -f gateway
+docker compose -p agentvoicebox logs -f django-api
 ```
 
 ## Running Tests (Backend)

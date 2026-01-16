@@ -26,11 +26,6 @@ path "secret/data/agentvoicebox/app/*" {
   capabilities = ["read"]
 }
 
-# Grafana credentials
-path "secret/data/agentvoicebox/grafana/*" {
-  capabilities = ["read"]
-}
-
 # Allow token renewal
 path "auth/token/renew-self" {
   capabilities = ["update"]

@@ -1,13 +1,12 @@
-FROM oven/bun:1
+FROM oven/bun:1.3.5-slim
 
 WORKDIR /app
 
 COPY package.json bun.lock* ./
-RUN bun install
+RUN bun install --frozen-lockfile
 
 COPY . .
-COPY src ./src
 
-EXPOSE 3000
+EXPOSE 65027
 
-CMD ["bun", "run", "dev"]
+CMD ["bun", "run", "dev", "--port", "65027"]

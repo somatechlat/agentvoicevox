@@ -60,6 +60,7 @@ LOCAL_APPS = [
     "apps.notifications",  # Notifications
     "apps.workflows",  # Temporal workflows
     "apps.realtime",  # OpenAI Realtime API
+    "apps.mcp",  # Model Context Protocol Server
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -291,6 +292,17 @@ LAGO = {
     "API_URL": env.lago_api_url,
     "API_KEY": env.lago_api_key,
     "WEBHOOK_SECRET": env.lago_webhook_secret,
+}
+
+# ==========================================================================
+# PAYPAL PAYMENT CONFIGURATION
+# ==========================================================================
+PAYPAL = {
+    "CLIENT_ID": env.paypal_client_id,
+    "CLIENT_SECRET": env.paypal_client_secret,
+    "ENVIRONMENT": env.paypal_environment,
+    "WEBHOOK_ID": env.paypal_webhook_id,
+    "ENABLED": env.paypal_enabled,
 }
 
 # ==========================================================================

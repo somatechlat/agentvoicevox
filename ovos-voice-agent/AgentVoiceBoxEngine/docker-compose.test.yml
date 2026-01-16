@@ -8,7 +8,7 @@ services:
   # ==========================================================================
   # CORE INFRASTRUCTURE
   # ==========================================================================
-  
+
   redis:
     image: redis:7.2-alpine
     container_name: avb-test-redis
@@ -16,7 +16,7 @@ services:
       - "16379:6379"
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy volatile-lru
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -33,7 +33,7 @@ services:
       POSTGRES_PASSWORD: agentvoicebox_secure_pwd_2024
       POSTGRES_DB: agentvoicebox
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agentvoicebox"]
+      test: [ "CMD-SHELL", "pg_isready -U agentvoicebox" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -43,7 +43,7 @@ services:
   # ==========================================================================
   # IDENTITY - Keycloak
   # ==========================================================================
-  
+
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
     container_name: avb-test-keycloak
@@ -61,7 +61,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -70,7 +70,7 @@ services:
   # ==========================================================================
   # GATEWAY SERVICE
   # ==========================================================================
-  
+
   gateway:
     build:
       context: .
@@ -79,7 +79,7 @@ services:
     ports:
       - "25000:25000"
     environment:
-      FLASK_ENV: testing
+      DJANGO_ENV: testing
       REDIS_URL: redis://redis:6379/0
       DATABASE_URL: postgresql://agentvoicebox:agentvoicebox_secure_pwd_2024@postgres:5432/agentvoicebox
       KEYCLOAK_SERVER_URL: http://keycloak:8080
@@ -93,7 +93,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:25000/health || exit 1"]
+      test: [ "CMD-SHELL", "curl -f http://localhost:25000/health || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -101,7 +101,7 @@ services:
   # ==========================================================================
   # PORTAL API
   # ==========================================================================
-  
+
   portal:
     build:
       context: .
@@ -124,6 +124,7 @@ services:
 volumes:
   redis-test-data:
   postgres-test-data:
+
 
 networks:
   default:

@@ -1,81 +1,51 @@
-<p align="center">
-  <h1 align="center">AgentVoiceVox Portal</h1>
-  <p align="center">
-    <strong>Self-Service SaaS Portal for AgentVoiceVox</strong>
-  </p>
-</p>
+# AgentVoiceBox Portal Frontend
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Next.js-14-black.svg" alt="Next.js"/>
-  <img src="https://img.shields.io/badge/TypeScript-5.0-blue.svg" alt="TypeScript"/>
-  <img src="https://img.shields.io/badge/Tailwind-3.4-38bdf8.svg" alt="Tailwind"/>
-  <img src="https://img.shields.io/badge/Tests-185%20passing-green.svg" alt="Tests"/>
-</p>
+**Lit 3 + Bun SaaS Portal for AgentVoiceBox**
+
+![Lit](https://img.shields.io/badge/Lit-3.3.2-324fff.svg)
+![Bun](https://img.shields.io/badge/Bun-1.3.5-f9f1e1.svg)
+![Vite](https://img.shields.io/badge/Vite-7.3.0-646cff.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6.2-blue.svg)
 
 ---
 
 ## Overview
 
-The AgentVoiceVox Portal is a dual-portal SaaS application providing:
+The AgentVoiceBox Portal is a self-service SaaS frontend built with:
 
-- **Customer Portal**: Dashboard, API keys, billing, team management
-- **Admin Portal**: Tenant management, billing admin, system monitoring
-
-Built with Next.js 14, TypeScript, and Tailwind CSS with full accessibility (WCAG 2.1 AA) compliance.
-
----
-
-## Features
-
-### Customer Portal
-- 📊 **Dashboard** - Real-time usage metrics, billing summary, system health
-- 🔑 **API Keys** - Create, rotate, revoke keys with scope management
-- 💳 **Billing** - Plan comparison, invoices, payment methods (Stripe)
-- 👥 **Team** - Invite members, assign roles, manage permissions
-- ⚙️ **Settings** - Profile, notifications, webhooks, security
-
-### Admin Portal
-- 📈 **Dashboard** - Platform metrics, revenue, alerts
-- 🏢 **Tenants** - Search, filter, suspend, impersonate
-- 💰 **Billing** - Invoices, refunds, credits, revenue reports
-- 📋 **Plans** - Create, edit, deprecate pricing plans
-- 🖥️ **Monitoring** - Service health, queues, database metrics
-- 📝 **Audit** - Complete audit log with search and export
-
-### Design System
-- 🌙 **Dark/Light/System** themes with smooth transitions
-- 🎨 **Verve-inspired** design language
-- ♿ **WCAG 2.1 AA** accessibility compliance
-- 📱 **Responsive** design for all screen sizes
+- **Lit 3.3.2** - Lightweight web components
+- **Bun 1.3.5** - High-performance JavaScript runtime
+- **Vite 7.3.0** - Fast build tool with HMR
+- **Tailwind CSS 3.4.13** - Utility-first CSS framework
+- **Playwright 1.57.0** - E2E testing
 
 ---
 
 ## Quick Start
 
 ### Prerequisites
-- Node.js 20+
-- npm or yarn
+- Bun 1.3.5+ (https://bun.sh)
 
 ### Development
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
-# Start development server
-npm run dev
+# Start development server (port 65027)
+bun run dev
 
-# Open http://localhost:3000
+# Open http://localhost:65027
 ```
 
 ### Production Build
 
 ```bash
 # Build for production
-npm run build
+bun run build
 
-# Start production server
-npm run start
+# Preview production build
+bun run preview
 ```
 
 ---
@@ -85,86 +55,76 @@ npm run start
 ```
 portal-frontend/
 ├── src/
-│   ├── app/                    # Next.js App Router
-│   │   ├── (auth)/             # Auth pages (login, signup)
-│   │   ├── (customer)/         # Customer portal pages
-│   │   │   ├── dashboard/
-│   │   │   ├── api-keys/
-│   │   │   ├── billing/
-│   │   │   ├── team/
-│   │   │   └── settings/
-│   │   └── (admin)/            # Admin portal pages
-│   │       ├── admin/
-│   │       ├── tenants/
-│   │       ├── billing/
-│   │       ├── plans/
-│   │       ├── monitoring/
-│   │       └── audit/
-│   ├── components/
-│   │   ├── ui/                 # Radix-based primitives
-│   │   ├── layout/             # Layout components
-│   │   └── auth/               # Auth components
-│   ├── services/               # API clients, utilities
-│   ├── contexts/               # React contexts
-│   └── __tests__/              # Test suites
-│       ├── unit/               # Unit tests
-│       └── properties/         # Property-based tests
-├── public/                     # Static assets
-└── e2e/                        # Playwright E2E tests
+│   ├── components/           # Lit web components
+│   │   ├── saas-layout.ts
+│   │   ├── saas-glass-modal.ts
+│   │   ├── saas-status-dot.ts
+│   │   ├── saas-infra-card.ts
+│   │   └── saas-config-modal.ts
+│   ├── views/                # Page-level components
+│   │   ├── view-login.ts
+│   │   ├── view-setup.ts
+│   │   └── view-auth-callback.ts
+│   ├── services/             # API clients
+│   │   ├── api-client.ts
+│   │   ├── auth-service.ts
+│   │   ├── admin-api.ts
+│   │   ├── voice-api.ts
+│   │   └── permissions.ts
+│   └── main.ts               # Entry point
+├── e2e/                      # Playwright E2E tests
+├── index.html                # HTML entry
+├── vite.config.ts            # Vite configuration
+├── tailwind.config.js        # Tailwind configuration
+├── tsconfig.json             # TypeScript configuration
+├── package.json              # Dependencies (Bun)
+└── bun.lock                  # Bun lockfile (ONLY lockfile)
 ```
 
----
-
-## Testing
-
-### Run All Tests
-
-```bash
-# Single run
-npm run test
-
-# Watch mode
-npm run test:watch
-
-# Coverage report
-npm run test:coverage
-```
-
-### Test Stack
-- **Vitest** - Fast unit test runner
-- **Testing Library** - React component testing
-- **fast-check** - Property-based testing (26 properties)
-
-### Test Coverage
-- 185 tests passing
-- 26 correctness properties verified
-- 100+ iterations per property test
-  
 ---
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run type-check` | TypeScript type checking |
-| `npm run test` | Run tests (single run) |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run test:coverage` | Generate coverage report |
+| `bun run dev` | Start dev server (port 65027) |
+| `bun run build` | Production build |
+| `bun run preview` | Preview production build |
+| `bun run lint` | Run ESLint |
+| `bun run type-check` | TypeScript type checking |
+| `bun run test:e2e` | Run Playwright E2E tests |
+| `bun run test:e2e:ui` | Run Playwright with UI |
+
+---
+
+## E2E Testing
+
+```bash
+# Install Playwright browsers
+bunx playwright install
+
+# Run all E2E tests
+bun run test:e2e
+
+# Run with UI mode
+bun run test:e2e:ui
+
+# Run specific test
+bunx playwright test e2e/signup.spec.ts --project=chromium
+```
 
 ---
 
 ## Environment Variables
 
 ```bash
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:25001
-NEXT_PUBLIC_KEYCLOAK_URL=http://localhost:25004
-NEXT_PUBLIC_KEYCLOAK_REALM=agentvoicevox
-NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=agentvoicevox-portal
+# Django API Backend
+VITE_API_URL=http://localhost:65020
+
+# Keycloak Authentication
+VITE_KEYCLOAK_URL=http://localhost:65006
+VITE_KEYCLOAK_REALM=agentvoicebox
+VITE_KEYCLOAK_CLIENT_ID=agentvoicebox-portal
 ```
 
 ---
@@ -173,18 +133,31 @@ NEXT_PUBLIC_KEYCLOAK_CLIENT_ID=agentvoicevox-portal
 
 | Category | Technology |
 |----------|------------|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript (strict mode) |
-| Styling | Tailwind CSS 3.4 |
-| Components | Radix UI primitives |
-| State | TanStack React Query |
-| Forms | react-hook-form + zod |
-| Charts | Recharts |
-| Testing | Vitest + Testing Library + fast-check |
-| E2E | Playwright |
+| Runtime | Bun 1.3.5 |
+| Framework | Lit 3.3.2 |
+| Router | @lit-labs/router 0.1.4 |
+| Build | Vite 7.3.0 |
+| Styling | Tailwind CSS 3.4.13 |
+| E2E Testing | Playwright 1.57.0 |
+| Type System | TypeScript 5.6.2 |
+
+---
+
+## VIBE Compliance
+
+This frontend adheres to:
+- **Rule 217**: Bun Frontend Sovereignty Mandate
+- **Rule 95**: Bun Runtime Mandate (Zero npm Policy)
+- **Rule 119**: Bun-Only Execution Layer
+
+**Prohibited:**
+- ❌ `npm install` / `npm run` / `npx`
+- ❌ `package-lock.json` / `yarn.lock`
+- ❌ `@types/node`
+- ❌ Node.js base images
 
 ---
 
 ## License
 
-Apache License 2.0 - see [LICENSE](../LICENSE) for details.
+Apache License 2.0

@@ -70,4 +70,9 @@ LOGGING["handlers"]["console"]["formatter"] = "console"  # noqa: F405
 #     "default": {
 #         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
 #     }
+#     "default": {
+#         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+#     }
 # }
+
+# Force MCP app in development - REMOVED (inherited from base)

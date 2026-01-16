@@ -21,6 +21,8 @@ class SessionConsumer(BaseConsumer):
     - Transcription results
     - LLM responses
     - Session events
+
+    **Implements: WEBSOCKET-001, WEBSOCKET-002**
     """
 
     def __init__(self, *args, **kwargs):
@@ -35,7 +37,7 @@ class SessionConsumer(BaseConsumer):
         self.session_id = self.scope["url_route"]["kwargs"].get("session_id")
 
         if not self.session_id:
-            await self.close(code=4004)
+            await self.close(code=self.CLOSE_SESSION_INVALID)
             return
 
         await super().connect()
@@ -43,7 +45,7 @@ class SessionConsumer(BaseConsumer):
         if self.authenticated:
             # Validate session belongs to tenant
             if not await self._validate_session():
-                await self.close(code=4004)
+                await self.close(code=self.CLOSE_SESSION_INVALID)
                 return
 
             # Join session group
@@ -95,8 +97,15 @@ class SessionConsumer(BaseConsumer):
             return False
 
     async def _activate_session(self):
-        """Mark session as active."""
-        if self.session:
+        """
+        Mark session as active.
+        
+        **Implements: WEBSOCKET-002**
+        """
+        if not self.session:
+            return
+        
+        try:
             from django.utils import timezone
 
             self.session.status = "active"
@@ -104,10 +113,24 @@ class SessionConsumer(BaseConsumer):
             await self.session.asave(
                 update_fields=["status", "started_at", "updated_at"]
             )
+        except Exception as e:
+            logger.error(f"Failed to activate session {self.session_id}: {e}")
+            await self.send_error(
+                "session_activation_failed",
+                "Could not activate session",
+                {"session_id": self.session_id}
+            )
 
     async def _complete_session(self):
-        """Mark session as completed."""
-        if self.session:
+        """
+        Mark session as completed.
+        
+        **Implements: WEBSOCKET-002**
+        """
+        if not self.session:
+            return
+        
+        try:
             from django.utils import timezone
 
             self.session.status = "completed"
@@ -124,24 +147,64 @@ class SessionConsumer(BaseConsumer):
                     "updated_at",
                 ]
             )
+        except Exception as e:
+            logger.error(f"Failed to complete session {self.session_id}: {e}")
+            # Still send completion event to client
+            await self.send_event(
+                "session.completed",
+                {
+                    "session_id": self.session_id,
+                    "status": "completed_with_errors",
+                },
+            )
 
     # Message handlers
     async def handle_audio_input(self, content: dict[str, Any]):
-        """Handle incoming audio chunk."""
+        """
+        Handle incoming audio chunk with validation.
+        
+        **Implements: WEBSOCKET-001**
+        """
+        # Validate session state
+        if not self.session or self.session.status != "active":
+            await self.send_error("invalid_session", "Session is not active")
+            return
+        
+        # Validate audio data exists
         audio_data = content.get("audio")
         if not audio_data:
+            await self.send_error("missing_audio", "No audio data provided")
             return
-
-        # Forward to STT processing via Temporal workflow
-        # This would trigger the STT workflow
-        await self.channel_layer.group_send(
-            f"stt_worker_{self.tenant_id}",
-            {
-                "type": "process_audio",
-                "session_id": self.session_id,
-                "audio": audio_data,
-            },
-        )
+        
+        # Validate audio size (prevent DoS)
+        if len(audio_data) > self.MAX_AUDIO_CHUNK_SIZE:
+            await self.send_error(
+                "audio_too_large", 
+                f"Audio chunk exceeds {self.MAX_AUDIO_CHUNK_SIZE} bytes"
+            )
+            return
+        
+        # Apply rate limiting
+        if not await self._check_rate_limit():
+            await self.send_error(
+                "rate_limited", 
+                "Too many audio chunks - please slow down"
+            )
+            return
+        
+        # Forward to STT processing
+        try:
+            await self.channel_layer.group_send(
+                f"stt_worker_{self.tenant_id}",
+                {
+                    "type": "process_audio",
+                    "session_id": self.session_id,
+                    "audio": audio_data,
+                },
+            )
+        except Exception as e:
+            logger.error(f"Failed to forward audio to STT worker: {e}")
+            await self.send_error("processing_failed", "Could not process audio")
 
     async def handle_response_create(self, content: dict[str, Any]):
         """Handle request to generate response."""
@@ -163,12 +226,24 @@ class SessionConsumer(BaseConsumer):
         )
 
     async def handle_session_update(self, content: dict[str, Any]):
-        """Handle session configuration update."""
+        """
+        Handle session configuration update.
+        
+        **Implements: WEBSOCKET-002**
+        """
         config = content.get("config", {})
 
         if self.session:
-            self.session.config.update(config)
-            await self.session.asave(update_fields=["config", "updated_at"])
+            try:
+                self.session.config.update(config)
+                await self.session.asave(update_fields=["config", "updated_at"])
+            except Exception as e:
+                logger.error(f"Failed to update session config: {e}")
+                await self.send_error(
+                    "update_failed",
+                    "Could not update session configuration"
+                )
+                return
 
         await self.send_event(
             "session.updated",

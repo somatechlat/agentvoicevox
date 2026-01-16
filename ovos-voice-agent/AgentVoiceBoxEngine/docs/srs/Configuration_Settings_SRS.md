@@ -1227,7 +1227,7 @@ VOICE_AGENT_WS_BASE_URL=ws://localhost:65020
 
 DB_HOST=localhost
 REDIS_URL=redis://localhost:6379/0
-KEYCLOAK_URL=http://localhost:65024
+KEYCLOAK_URL=http://localhost:65006
 TEMPORAL_HOST=localhost:7233
 
 VAULT_FAIL_FAST=false
@@ -1384,7 +1384,38 @@ The Setup Wizard will interact with these backend APIs:
 
 ---
 
-**Document Version:** 1.0.0  
-**Last Updated:** 2026-01-05  
+## 13. Worker Streams Configuration
+
+These settings configure Redis Streams for inter-service communication between Django API and workers.
+
+### 13.1 LLM Stream Settings
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `LLM_STREAM_REQUESTS` | `string` | `llm:requests` | Redis stream name for LLM request queue |
+| `LLM_GROUP_WORKERS` | `string` | `llm-workers` | Redis consumer group name for LLM workers |
+| `LLM_RESPONSE_CHANNEL` | `string` | `llm:response` | Redis pub/sub channel for LLM responses |
+
+### 13.2 STT Stream Settings
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `STT_STREAM_AUDIO` | `string` | `audio:stt` | Redis stream name for audio chunks to STT |
+| `STT_GROUP_WORKERS` | `string` | `stt-workers` | Redis consumer group name for STT workers |
+| `STT_CHANNEL_TRANSCRIPTION` | `string` | `transcription` | Redis pub/sub channel for transcription results |
+
+### 13.3 TTS Stream Settings
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `TTS_STREAM_REQUESTS` | `string` | `tts:requests` | Redis stream name for TTS requests |
+| `TTS_GROUP_WORKERS` | `string` | `tts-workers` | Redis consumer group name for TTS workers |
+| `TTS_CHANNEL_TTS` | `string` | `tts` | Redis pub/sub channel for TTS control |
+| `TTS_CHANNEL_AUDIO_OUT` | `string` | `audio:out` | Redis pub/sub channel for synthesized audio |
+
+---
+
+**Document Version:** 1.1.0  
+**Last Updated:** 2026-01-12  
 **Maintained By:** SOMA Engineering Team  
 **Review Cycle:** Quarterly or when new parameters added

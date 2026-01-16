@@ -51,7 +51,7 @@ k8s_yaml('./k8s/agentvoicebox/postgres.yaml')
 k8s_resource('postgres', 
   new_name='avb-postgres',
   labels=['infra', 'isolated'],
-  port_forwards=['65014:5432']
+  port_forwards=['65004:5432']
 )
 
 # Redis (Isolated)
@@ -59,7 +59,7 @@ k8s_yaml('./k8s/agentvoicebox/redis.yaml')
 k8s_resource('redis', 
   new_name='avb-redis',
   labels=['infra', 'isolated'],
-  port_forwards=['65015:6379'],
+  port_forwards=['65005:6379'],
   resource_deps=['avb-postgres']
 )
 
@@ -68,7 +68,7 @@ k8s_yaml('./k8s/agentvoicebox/keycloak.yaml')
 k8s_resource('keycloak',
   new_name='avb-keycloak',
   labels=['infra', 'isolated'],
-  port_forwards=['65016:8080'],
+  port_forwards=['65006:8080'],
   resource_deps=['avb-postgres']
 )
 

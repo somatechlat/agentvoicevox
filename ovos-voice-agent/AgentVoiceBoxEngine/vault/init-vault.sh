@@ -102,8 +102,8 @@ curl -s -X POST $VAULT_ADDR/v1/secret/data/agentvoicebox/keycloak/admin \
     }
   }'
 
-# Application secrets
-curl -s -X POST $VAULT_ADDR/v1/secret/data/agentvoicebox/app/flask \
+# Application secrets (Django)
+curl -s -X POST $VAULT_ADDR/v1/secret/data/agentvoicebox/app/django \
   -H "X-Vault-Token: $VAULT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -121,16 +121,6 @@ curl -s -X POST $VAULT_ADDR/v1/secret/data/agentvoicebox/lago/app \
       "secret_key_base": "'$(openssl rand -hex 64)'",
       "encryption_primary_key": "'$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)'",
       "encryption_deterministic_key": "'$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)'"
-    }
-  }'
-
-# Grafana admin
-curl -s -X POST $VAULT_ADDR/v1/secret/data/agentvoicebox/grafana/admin \
-  -H "X-Vault-Token: $VAULT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "data": {
-      "password": "'$(openssl rand -base64 16 | tr -d '/+=' | head -c 16)'"
     }
   }'
 

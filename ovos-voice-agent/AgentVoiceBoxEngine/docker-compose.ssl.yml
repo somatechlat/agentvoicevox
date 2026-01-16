@@ -32,13 +32,13 @@ services:
   portal-frontend:
     build:
       args:
-        NEXT_PUBLIC_API_URL: https://localhost:25080/api
-        NEXT_PUBLIC_KEYCLOAK_URL: https://localhost:25443
-        NEXT_PUBLIC_KEYCLOAK_REALM: agentvoicebox
-        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: agentvoicebox-portal
+        VITE_API_URL: https://localhost:25080/api
+        VITE_KEYCLOAK_URL: https://localhost:25443
+        VITE_KEYCLOAK_REALM: agentvoicebox
+        VITE_KEYCLOAK_CLIENT_ID: agentvoicebox-portal
     environment:
-      - NEXT_PUBLIC_API_URL=https://localhost:25080/api
-      - NEXT_PUBLIC_KEYCLOAK_URL=https://localhost:25443
+      - VITE_API_URL=https://localhost:25080/api
+      - VITE_KEYCLOAK_URL=https://localhost:25443
     # Remove direct port exposure - nginx handles it
     ports: !reset []
 

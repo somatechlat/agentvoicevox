@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     "apps.themes",
     "apps.audit",
     "apps.notifications",
-    "apps.workflows",
     "apps.realtime",
 ]
 
@@ -177,46 +176,56 @@ DATABASES = {
 }
 
 # ==========================================================================
-# DISABLE EXTERNAL SERVICES FOR TESTS
+# EXTERNAL SERVICES - INTEGRATION TESTING ON REAL INFRASTRUCTURE
 # ==========================================================================
-# Vault - disable fail-fast and connection
+# Per VIBE rules: Test on real infrastructure (except unit tests)
+
+# Vault - Connect to real shared_vault (65003)
 VAULT = {
-    "ADDR": "",
+    "ADDR": env.vault_addr,
+    "TOKEN": env.vault_token,  # from .env.test
     "FAIL_FAST": False,
 }
 
-# Keycloak - disable for tests
+# Keycloak - Connect to real shared_keycloak (65006)
 KEYCLOAK = {
-    "URL": "",
-    "REALM": "test",
-    "CLIENT_ID": "test",
-    "CLIENT_SECRET": "test",
+    "URL": env.keycloak_url,
+    "REALM": env.keycloak_realm,
+    "CLIENT_ID": env.keycloak_client_id,
+    "CLIENT_SECRET": env.keycloak_client_secret,
     "ALGORITHMS": ["RS256"],
-    "AUDIENCE": "test",
+    "AUDIENCE": "account",
 }
 
-# Temporal - disable for tests
+# Temporal - Connect to real shared_temporal (7233 via Docker)
 TEMPORAL = {
-    "HOST": "",
-    "NAMESPACE": "test",
-    "TASK_QUEUE": "test",
+    "HOST": env.temporal_host,
+    "NAMESPACE": env.temporal_namespace,
+    "TASK_QUEUE": env.temporal_task_queue,
 }
 
-# OPA - disable for tests
+# OPA - Connect to real shared_opa (65030)
 OPA = {
-    "URL": "",
-    "ENABLED": False,
+    "URL": env.opa_url,
+    "DECISION_PATH": env.opa_decision_path,
+    "TIMEOUT_SECONDS": 3,
+    "ENABLED": True,
 }
 
-# Kafka - disable for tests
+# Kafka - Connect to real shared_kafka (65xxx)
 KAFKA = {
-    "ENABLED": False,
+    "BOOTSTRAP_SERVERS": env.kafka_bootstrap_servers,
+    "SECURITY_PROTOCOL": "PLAINTEXT",
+    "SASL_MECHANISM": "PLAIN",
+    "SASL_USERNAME": "",
+    "SASL_PASSWORD": "",
+    "ENABLED": False,  # Optional service
 }
 
-# Lago - disable for tests
+# Lago - Connect to real Lago cluster (63690)
 LAGO = {
-    "API_URL": "",
-    "API_KEY": "",
+    "API_URL": env.lago_api_url,
+    "API_KEY": env.lago_api_key,
 }
 
 # Rate limits for tests (different values to test tier logic)
