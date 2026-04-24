@@ -352,47 +352,6 @@ REDIS_WORKER = {
     "HEALTH_CHECK_INTERVAL": env.redis_health_check_interval,
 }
 
-LLM_WORKER = {
-    "DEFAULT_PROVIDER": env.llm_default_provider,
-    "DEFAULT_MODEL": env.llm_default_model,
-    "MAX_TOKENS": env.llm_max_tokens,
-    "TEMPERATURE": env.llm_temperature,
-    "CIRCUIT_BREAKER_THRESHOLD": env.llm_circuit_breaker_threshold,
-    "CIRCUIT_BREAKER_TIMEOUT": env.llm_circuit_breaker_timeout,
-    "MAX_HISTORY_ITEMS": env.llm_max_history_items,
-    "PROVIDER_PRIORITY": [
-        provider.strip()
-        for provider in env.llm_provider_priority.split(",")
-        if provider.strip()
-    ],
-    "STREAM_REQUESTS": env.llm_stream_requests,
-    "GROUP_WORKERS": env.llm_group_workers,
-    "RESPONSE_CHANNEL": env.llm_response_channel,
-}
-
-STT_WORKER = {
-    "MODEL": env.stt_model,
-    "DEVICE": env.stt_device,
-    "COMPUTE_TYPE": env.stt_compute_type,
-    "BATCH_SIZE": env.stt_batch_size,
-    "SAMPLE_RATE": env.stt_sample_rate,
-    "STREAM_AUDIO": env.stt_stream_audio,
-    "GROUP_WORKERS": env.stt_group_workers,
-    "CHANNEL_TRANSCRIPTION": env.stt_channel_transcription,
-}
-
-TTS_WORKER = {
-    "MODEL_DIR": env.tts_model_dir,
-    "MODEL_FILE": env.tts_model_file,
-    "VOICES_FILE": env.tts_voices_file,
-    "DEFAULT_VOICE": env.tts_default_voice,
-    "DEFAULT_SPEED": env.tts_default_speed,
-    "CHUNK_SIZE": env.tts_chunk_size,
-    "STREAM_REQUESTS": env.tts_stream_requests,
-    "GROUP_WORKERS": env.tts_group_workers,
-    "CHANNEL_TTS": env.tts_channel_tts,
-    "CHANNEL_AUDIO_OUT": env.tts_channel_audio_out,
-}
 
 # ==========================================================================
 # LOGGING (Standard Python logging)

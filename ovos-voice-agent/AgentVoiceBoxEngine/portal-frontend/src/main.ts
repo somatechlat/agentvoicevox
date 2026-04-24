@@ -3,6 +3,7 @@ import './components/saas-layout';
 import './views/view-login';
 import './views/view-setup';
 import './views/view-auth-callback';
+import './views/view-voice-playground';
 
 // Get the app container
 const appContainer = document.getElementById('app');
@@ -21,6 +22,8 @@ function navigate() {
         template = html`<view-setup></view-setup>`;
     } else if (path === '/auth/callback') {
         template = html`<view-auth-callback></view-auth-callback>`;
+    } else if (path === '/voice-playground') {
+        template = html`<view-voice-playground></view-voice-playground>`;
     } else {
         // Default to login for all other paths
         template = html`<view-login></view-login>`;

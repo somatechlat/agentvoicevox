@@ -43,7 +43,7 @@ services:
   # ==========================================================================
   django-api:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     container_name: avb-django-api
     hostname: django-api
@@ -77,9 +77,9 @@ services:
       # Shared Temporal (65007 internal)
       TEMPORAL_HOST: temporal:7233
       TEMPORAL_NAMESPACE: agentvoicebox
-      # Logging
-      LOG_LEVEL: DEBUG
-      LOG_FORMAT: console
+      # OVOS Bus Configuration
+      OVOS_BUS_HOST: ovos-bus
+      OVOS_BUS_PORT: 8181
     deploy:
       resources:
         limits:
@@ -156,90 +156,45 @@ services:
       <<: *healthcheck-defaults
       test: [ "CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy" ]
 
+
+
   # ==========================================================================
-  # LLM WORKER (2GB for large context)
+  # OVOS MESSAGE BUS - Intelligence Backbone (128MB)
   # ==========================================================================
-  worker-llm:
-    build:
-      context: ./workers/llm
-      dockerfile: Dockerfile
-    container_name: avb-worker-llm
-    hostname: worker-llm
-    environment:
-      REDIS_URL: redis://redis:6379/4
-      GROQ_API_KEY: ${GROQ_API_KEY:-}
-      GROQ_API_BASE: https://api.groq.com/openai/v1
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_API_BASE: https://api.openai.com/v1
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      LLM_DEFAULT_PROVIDER: groq
-      LLM_DEFAULT_MODEL: llama-3.3-70b-versatile
-      LLM_MAX_CONTEXT_TOKENS: 8192
-      LLM_CIRCUIT_BREAKER_THRESHOLD: 5
-      LOG_LEVEL: INFO
+  ovos-bus:
+    image: smartgic/ovos-messagebus:latest
+    container_name: avb-ovos-bus
+    hostname: ovos-bus
+    ports:
+      - "65081:8181"
     deploy:
       resources:
         limits:
-          memory: 2048M
+          memory: 128M
         reservations:
-          memory: 1024M
+          memory: 64M
     networks:
       - shared-network
     logging: *default-logging
     restart: unless-stopped
 
   # ==========================================================================
-  # STT WORKER - Speech-to-Text (1.5GB for Whisper)
+  # OVOS CORE - Intent Engine (512MB)
   # ==========================================================================
-  worker-stt:
-    build:
-      context: ./workers/stt
-      dockerfile: Dockerfile
-    container_name: avb-worker-stt
-    hostname: worker-stt
+  ovos-core:
+    image: smartgic/ovos-core:latest
+    container_name: avb-ovos-core
+    hostname: ovos-core
     environment:
-      REDIS_URL: redis://redis:6379/5
-      STT_ENGINE: faster-whisper
-      WHISPER_MODEL: base
-      WHISPER_DEVICE: cpu
-      WHISPER_COMPUTE_TYPE: int8
-      STT_VAD_ENABLED: "true"
-      STT_VAD_THRESHOLD: 0.5
-      LOG_LEVEL: INFO
+      BUS_HOST: ovos-bus
+    depends_on:
+      - ovos-bus
     deploy:
       resources:
         limits:
-          memory: 1536M
-        reservations:
-          memory: 768M
-    networks:
-      - shared-network
-    logging: *default-logging
-    restart: unless-stopped
-
-  # ==========================================================================
-  # TTS WORKER - Text-to-Speech (1GB for Kokoro)
-  # ==========================================================================
-  worker-tts:
-    build:
-      context: ./workers/tts
-      dockerfile: Dockerfile
-    container_name: avb-worker-tts
-    hostname: worker-tts
-    environment:
-      REDIS_URL: redis://redis:6379/6
-      TTS_ENGINE: kokoro
-      KOKORO_VOICE: af_heart
-      KOKORO_SPEED: 1.0
-      TTS_CHUNK_SIZE: 4096
-      TTS_BUFFER_SIZE: 16384
-      LOG_LEVEL: INFO
-    deploy:
-      resources:
-        limits:
-          memory: 1024M
-        reservations:
           memory: 512M
+        reservations:
+          memory: 256M
     networks:
       - shared-network
     logging: *default-logging

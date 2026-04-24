@@ -5,11 +5,16 @@ Handles real-time voice communication for sessions.
 """
 
 import logging
+import uuid
 from typing import Any, Optional
 
 from .base import BaseConsumer
+from apps.realtime.ovos_bus import OVOSIntelligenceBridge
 
 logger = logging.getLogger(__name__)
+
+# Shared OVOS Bridge instance
+ovos_bridge = OVOSIntelligenceBridge()
 
 
 class SessionConsumer(BaseConsumer):
@@ -57,6 +62,10 @@ class SessionConsumer(BaseConsumer):
             # Mark session as active
             await self._activate_session()
 
+            # Connect to OVOS Bridge
+            await ovos_bridge.connect()
+            ovos_bridge.register_session(self.session_id, self.handle_ovos_speak)
+
             # Send session info
             await self.send_event(
                 "session.connected",
@@ -77,6 +86,9 @@ class SessionConsumer(BaseConsumer):
             # Complete session if normal close
             if close_code == self.CLOSE_NORMAL:
                 await self._complete_session()
+            
+            # Unregister from OVOS Bridge
+            ovos_bridge.unregister_session(self.session_id)
 
         await super().disconnect(close_code)
 
@@ -159,9 +171,9 @@ class SessionConsumer(BaseConsumer):
             )
 
     # Message handlers
-    async def handle_audio_input(self, content: dict[str, Any]):
+    async def handle_input_audio_buffer_append(self, content: dict[str, Any]):
         """
-        Handle incoming audio chunk with validation.
+        Handle input_audio_buffer.append event.
         
         **Implements: WEBSOCKET-001**
         """
@@ -176,23 +188,7 @@ class SessionConsumer(BaseConsumer):
             await self.send_error("missing_audio", "No audio data provided")
             return
         
-        # Validate audio size (prevent DoS)
-        if len(audio_data) > self.MAX_AUDIO_CHUNK_SIZE:
-            await self.send_error(
-                "audio_too_large", 
-                f"Audio chunk exceeds {self.MAX_AUDIO_CHUNK_SIZE} bytes"
-            )
-            return
-        
-        # Apply rate limiting
-        if not await self._check_rate_limit():
-            await self.send_error(
-                "rate_limited", 
-                "Too many audio chunks - please slow down"
-            )
-            return
-        
-        # Forward to STT processing
+        # Forward to STT processing via Redis Stream (simplified for now to match current worker)
         try:
             await self.channel_layer.group_send(
                 f"stt_worker_{self.tenant_id}",
@@ -204,43 +200,62 @@ class SessionConsumer(BaseConsumer):
             )
         except Exception as e:
             logger.error(f"Failed to forward audio to STT worker: {e}")
-            await self.send_error("processing_failed", "Could not process audio")
+            await self.send_error("server_error", "Could not process audio buffer")
+
+    async def handle_input_audio_buffer_commit(self, content: dict[str, Any]):
+        """Handle input_audio_buffer.commit event."""
+        await self.send_event("input_audio_buffer.committed", {
+            "session_id": self.session_id,
+            "item_id": f"item_{uuid.uuid4().hex[:12]}"
+        })
+
+    async def handle_input_audio_buffer_clear(self, content: dict[str, Any]):
+        """Handle input_audio_buffer.clear event."""
+        await self.send_event("input_audio_buffer.cleared", {})
 
     async def handle_response_create(self, content: dict[str, Any]):
-        """Handle request to generate response."""
+        """Handle response.create event."""
         # Trigger LLM response generation
         await self.send_event(
-            "response.started",
+            "response.created",
             {
-                "session_id": self.session_id,
+                "response": {
+                    "id": f"resp_{uuid.uuid4().hex[:12]}",
+                    "object": "realtime.response",
+                    "status": "in_progress",
+                    "output": []
+                }
             },
         )
 
     async def handle_response_cancel(self, content: dict[str, Any]):
-        """Handle response cancellation."""
+        """Handle response.cancel event."""
         await self.send_event(
             "response.cancelled",
             {
-                "session_id": self.session_id,
+                "response_id": content.get("response_id", "unknown"),
             },
         )
 
     async def handle_session_update(self, content: dict[str, Any]):
         """
-        Handle session configuration update.
+        Handle session.update event.
         
         **Implements: WEBSOCKET-002**
         """
-        config = content.get("config", {})
+        config = content.get("session", {})
 
         if self.session:
             try:
-                self.session.config.update(config)
+                # Merge config
+                current_config = self.session.config or {}
+                current_config.update(config)
+                self.session.config = current_config
                 await self.session.asave(update_fields=["config", "updated_at"])
             except Exception as e:
                 logger.error(f"Failed to update session config: {e}")
                 await self.send_error(
-                    "update_failed",
+                    "server_error",
                     "Could not update session configuration"
                 )
                 return
@@ -248,24 +263,123 @@ class SessionConsumer(BaseConsumer):
         await self.send_event(
             "session.updated",
             {
-                "session_id": self.session_id,
-                "config": self.session.config if self.session else {},
+                "session": {
+                    "id": self.session_id,
+                    "object": "realtime.session",
+                    "model": self.session.config.get("model", "gpt-4o-realtime-preview"),
+                    "modalities": self.session.config.get("modalities", ["text", "audio"]),
+                    "instructions": self.session.config.get("instructions", ""),
+                    "voice": self.session.config.get("voice", "alloy"),
+                    "input_audio_format": self.session.config.get("input_audio_format", "pcm16"),
+                    "output_audio_format": self.session.config.get("output_audio_format", "pcm16"),
+                    "turn_detection": self.session.config.get("turn_detection"),
+                    "tools": self.session.config.get("tools", []),
+                    "tool_choice": self.session.config.get("tool_choice", "auto"),
+                    "temperature": self.session.config.get("temperature", 0.8),
+                    "max_response_output_tokens": self.session.config.get("max_response_output_tokens", "inf"),
+                }
             },
         )
 
-    # Group message handlers
+    # Group message handlers (Server-originated events via channel layer)
     async def transcription_result(self, event: dict[str, Any]):
         """Handle transcription result from STT worker."""
-        await self.send_event("transcription.completed", event["data"])
+        data = event["data"]
+        transcript = data.get("text", "")
+        
+        # 1. Send to client
+        await self.send_event("conversation.item.input_audio_transcription.completed", {
+            "item_id": data.get("correlation_id", "unknown"),
+            "content_index": 0,
+            "transcript": transcript
+        })
+
+        # 2. Forward to OVOS Skill Bus
+        if transcript:
+            await ovos_bridge.send_utterance(
+                session_id=self.session_id,
+                text=transcript,
+                context={"correlation_id": data.get("correlation_id")}
+            )
+
+    async def session_event(self, event: dict[str, Any]):
+        """Handle lifecycle events from STT/TTS workers (e.g. speech_started)."""
+        data = event["data"]
+        await self.send_event(data["type"], {
+            "session_id": data["session_id"]
+        })
+
+    async def handle_ovos_speak(self, utterance: str, context: dict[str, Any]):
+        """
+        Callback handler for OVOS 'speak' messages.
+        Forwards the response to the client and triggers TTS.
+        """
+        response_id = f"resp_{uuid.uuid4().hex[:12]}"
+        correlation_id = context.get("correlation_id", "unknown")
+
+        # 1. Send transcript delta to client (OpenAI spec)
+        await self.send_event("response.audio_transcript.delta", {
+            "response_id": response_id,
+            "delta": utterance
+        })
+
+        # 2. Trigger TTS Worker via Redis Stream
+        try:
+            from apps.workflows.redis_client import RedisClient
+            redis = RedisClient()
+            await redis.connect()
+            
+            await redis.client.xadd(
+                settings.TTS_WORKER["STREAM_REQUESTS"],
+                {
+                    "session_id": self.session_id,
+                    "text": utterance,
+                    "response_id": response_id,
+                    "correlation_id": correlation_id,
+                    "voice": self.session.config.get("voice", settings.TTS_WORKER["DEFAULT_VOICE"]),
+                    "speed": str(self.session.config.get("speed", settings.TTS_WORKER["DEFAULT_SPEED"])),
+                }
+            )
+            await redis.disconnect()
+        except Exception as e:
+            logger.error(f"Failed to trigger TTS for session {self.session_id}: {e}")
+            await self.send_error("server_error", "Could not synthesize speech")
 
     async def response_chunk(self, event: dict[str, Any]):
         """Handle response chunk from LLM worker."""
-        await self.send_event("response.chunk", event["data"])
+        # Align with OpenAI response.audio_transcript.delta or response.audio.delta
+        data = event["data"]
+        if "text" in data:
+            await self.send_event("response.text.delta", {
+                "response_id": data.get("response_id"),
+                "item_id": data.get("item_id"),
+                "output_index": 0,
+                "content_index": 0,
+                "delta": data["text"]
+            })
+        elif "audio" in data:
+            await self.send_event("response.audio.delta", {
+                "response_id": data.get("response_id"),
+                "item_id": data.get("item_id"),
+                "output_index": 0,
+                "content_index": 0,
+                "delta": data["audio"]
+            })
 
     async def response_completed(self, event: dict[str, Any]):
         """Handle response completion."""
-        await self.send_event("response.completed", event["data"])
+        data = event["data"]
+        await self.send_event("response.done", {
+            "response": {
+                "id": data.get("response_id"),
+                "object": "realtime.response",
+                "status": "completed",
+                "output": [],
+                "usage": data.get("usage", {})
+            }
+        })
 
     async def audio_output(self, event: dict[str, Any]):
         """Handle audio output from TTS worker."""
-        await self.send_event("audio.output", event["data"])
+        # Handled by response_chunk in OpenAI spec as response.audio.delta
+        pass

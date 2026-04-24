@@ -310,29 +310,43 @@ class SessionEvent(models.Model):
     class EventType(models.TextChoices):
         """Defines the types of events that can be logged within a session."""
 
+        # Session Events
         SESSION_CREATED = "session.created", "Session Created"
+        SESSION_UPDATED = "session.updated", "Session Updated"
         SESSION_STARTED = "session.started", "Session Started"
         SESSION_COMPLETED = "session.completed", "Session Completed"
         SESSION_ERROR = "session.error", "Session Error"
-        SESSION_TERMINATED = "session.terminated", "Session Terminated"
-        AUDIO_INPUT = "audio.input", "Audio Input"  # User's speech segment.
-        AUDIO_OUTPUT = "audio.output", "Audio Output"  # Agent's spoken response.
-        TRANSCRIPTION = "transcription", "Transcription"  # STT transcription result.
-        LLM_REQUEST = "llm.request", "LLM Request"  # Query sent to the LLM.
-        LLM_RESPONSE = "llm.response", "LLM Response"  # Response received from the LLM.
-        TTS_REQUEST = "tts.request", "TTS Request"  # Request to the TTS engine.
-        TTS_RESPONSE = "tts.response", "TTS Response"  # Audio bytes received from TTS.
-        TURN_START = (
-            "turn.start",
-            "Turn Start",
-        )  # Beginning of a new conversational turn.
-        TURN_END = "turn.end", "Turn End"  # End of a conversational turn.
-        ERROR = "error", "Error"  # Any general error during the session.
+        
+        # Audio Buffer Events
+        INPUT_AUDIO_BUFFER_APPEND = "input_audio_buffer.append", "Input Audio Append"
+        INPUT_AUDIO_BUFFER_COMMIT = "input_audio_buffer.commit", "Input Audio Commit"
+        INPUT_AUDIO_BUFFER_CLEARED = "input_audio_buffer.cleared", "Input Audio Cleared"
+        INPUT_AUDIO_BUFFER_SPEECH_STARTED = "input_audio_buffer.speech_started", "Speech Started"
+        INPUT_AUDIO_BUFFER_SPEECH_STOPPED = "input_audio_buffer.speech_stopped", "Speech Stopped"
+        
+        # Conversation Item Events
+        ITEM_CREATED = "conversation.item.created", "Item Created"
+        ITEM_DELETED = "conversation.item.delete", "Item Deleted"
+        ITEM_TRUNCATED = "conversation.item.truncate", "Item Truncated"
+        ITEM_TRANSCRIPTION_COMPLETED = "conversation.item.input_audio_transcription.completed", "Transcription Completed"
+        ITEM_TRANSCRIPTION_FAILED = "conversation.item.input_audio_transcription.failed", "Transcription Failed"
+        
+        # Response Events
+        RESPONSE_CREATED = "response.created", "Response Created"
+        RESPONSE_DONE = "response.done", "Response Done"
+        RESPONSE_CANCELLED = "response.cancelled", "Response Cancelled"
+        RESPONSE_AUDIO_DELTA = "response.audio.delta", "Audio Delta"
+        RESPONSE_AUDIO_DONE = "response.audio.done", "Audio Done"
+        RESPONSE_TEXT_DELTA = "response.text.delta", "Text Delta"
+        RESPONSE_TEXT_DONE = "response.text.done", "Text Done"
+
+        # General / Error
+        ERROR = "error", "Error"
 
     # --- Core Identification ---
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # --- Session Association ---
+    # --- Event Association ---
     session = models.ForeignKey(
         Session,
         on_delete=models.CASCADE,  # If the session is deleted, delete its events.
@@ -342,7 +356,7 @@ class SessionEvent(models.Model):
 
     # --- Event Data ---
     event_type = models.CharField(
-        max_length=50,
+        max_length=100,
         choices=EventType.choices,
         db_index=True,
         help_text="The type of event that occurred.",

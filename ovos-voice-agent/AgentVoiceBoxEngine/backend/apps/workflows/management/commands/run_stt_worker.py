@@ -37,61 +37,50 @@ class STTWorker:
     """Speech-to-Text worker using Faster-Whisper."""
 
     def __init__(self) -> None:
-        """Initializes the STT worker with Redis client, Whisper model, and internal state."""
+        """Initializes the STT worker with Redis client, Whisper model, and VAD."""
         self._redis = RedisClient()
         self._model: Optional[WhisperModel] = None
+        self._vad_model: Any = None
         self._running = False
         self._tasks: set[asyncio.Task] = set()
         self._semaphore: Optional[asyncio.Semaphore] = None
         self._worker_id = f"stt-{uuid.uuid4().hex[:8]}"
+
+        # Session buffers for VAD and accumulation
+        self._buffers: dict[str, list[bytes]] = {}
+        self._speech_states: dict[str, bool] = {}
 
         self._transcriptions_total = 0
         self._transcriptions_failed = 0
         self._total_audio_seconds = 0.0
 
     async def start(self) -> None:
-        """
-        Starts the STT worker, establishing Redis connection, loading the Whisper model,
-        and ensuring the consumer group exists.
-        """
+        """Starts the STT worker, loading Whisper and VAD models."""
         await self._redis.connect()
         self._semaphore = asyncio.Semaphore(settings.STT_WORKER["BATCH_SIZE"])
         self._load_model()
+        self._load_vad()
         await self._ensure_consumer_group()
         self._running = True
         logger.info("STT worker started", extra={"worker_id": self._worker_id})
 
-    async def stop(self) -> None:
-        """
-        Stops the STT worker, gracefully shutting down all active tasks
-        and closing the Redis connection.
-        """
-        self._running = False
-        if self._tasks:
-            await asyncio.gather(*self._tasks, return_exceptions=True)
-        await self._redis.disconnect()
-        logger.info(
-            "STT worker stopped",
-            extra={
-                "worker_id": self._worker_id,
-                "transcriptions_total": self._transcriptions_total,
-                "transcriptions_failed": self._transcriptions_failed,
-                "total_audio_seconds": self._total_audio_seconds,
-            },
+    def _load_vad(self) -> None:
+        """Loads Silero VAD model."""
+        import torch
+        self._vad_model, _ = torch.hub.load(
+            repo_or_dir='snakers4/silero-vad',
+            model='silero_vad',
+            force_reload=False,
+            onnx=True
         )
+        logger.info("Silero VAD model loaded")
 
     def _load_model(self) -> None:
-        """
-        Loads the Faster-Whisper model into memory.
-
-        Determines the appropriate device (CUDA or CPU) and compute type
-        based on settings and hardware availability.
-        """
+        """Loads the Faster-Whisper model into memory."""
         device = settings.STT_WORKER["DEVICE"]
         if device == "auto":
             try:
                 import torch
-
                 device = "cuda" if torch.cuda.is_available() else "cpu"
             except ImportError:
                 device = "cpu"
@@ -109,6 +98,107 @@ class STTWorker:
             "Whisper model loaded",
             extra={"model": settings.STT_WORKER["MODEL"], "device": device},
         )
+
+    async def _process_message(self, message_id: str, data: dict[str, Any]) -> None:
+        """
+        Processes a single audio chunk message using VAD and buffering.
+        """
+        if not self._semaphore:
+            return
+
+        async with self._semaphore:
+            session_id = data.get("session_id", "")
+            correlation_id = data.get("correlation_id", "")
+            
+            try:
+                audio_b64 = data.get("audio", "")
+                if not audio_b64:
+                    raise ValueError("No audio data in message")
+
+                audio_bytes = base64.b64decode(audio_b64)
+                
+                # Run VAD on this chunk
+                is_speech = await self._run_vad(audio_bytes)
+                
+                # Update session state and emit events
+                was_speech = self._speech_states.get(session_id, False)
+                if is_speech and not was_speech:
+                    self._speech_states[session_id] = True
+                    await self._publish_event(session_id, "input_audio_buffer.speech_started")
+                elif not is_speech and was_speech:
+                    # Silence detected after speech - trigger transcription
+                    self._speech_states[session_id] = False
+                    await self._publish_event(session_id, "input_audio_buffer.speech_stopped")
+                    
+                    # Accumulate and transcribe
+                    full_audio = b"".join(self._buffers.get(session_id, []))
+                    if full_audio:
+                        text, language, confidence = await self._transcribe(
+                            full_audio,
+                            language_hint=data.get("language") or None,
+                        )
+                        await self._publish_result(
+                            session_id=session_id,
+                            text=text,
+                            language=language,
+                            confidence=confidence,
+                            correlation_id=correlation_id,
+                        )
+                        # Clear buffer after transcription
+                        self._buffers[session_id] = []
+
+                # Accumulate buffer
+                if session_id not in self._buffers:
+                    self._buffers[session_id] = []
+                self._buffers[session_id].append(audio_bytes)
+
+                await self._redis.client.xack(
+                    settings.STT_WORKER["STREAM_AUDIO"],
+                    settings.STT_WORKER["GROUP_WORKERS"],
+                    message_id,
+                )
+
+            except Exception as exc:
+                self._transcriptions_failed += 1
+                logger.error(
+                    "Error processing audio chunk",
+                    extra={"session_id": session_id, "error": str(exc)},
+                    exc_info=True,
+                )
+                await self._redis.client.xack(
+                    settings.STT_WORKER["STREAM_AUDIO"],
+                    settings.STT_WORKER["GROUP_WORKERS"],
+                    message_id,
+                )
+
+    async def _run_vad(self, audio_bytes: bytes) -> bool:
+        """Run Silero VAD on audio chunk."""
+        # Simplified VAD check - in production you'd want proper windowing
+        import torch
+        import numpy as np
+        
+        # Convert bytes to tensor
+        audio_io = io.BytesIO(audio_bytes)
+        audio_data, _ = sf.read(audio_io)
+        if len(audio_data) == 0:
+            return False
+            
+        tensor = torch.from_numpy(audio_data.astype(np.float32))
+        if self._vad_model:
+            # Silero VAD returns probability
+            speech_prob = self._vad_model(tensor, 16000).item()
+            return speech_prob > 0.5
+        return False
+
+    async def _publish_event(self, session_id: str, event_type: str) -> None:
+        """Publishes a lifecycle event to the session channel."""
+        channel = f"{settings.STT_WORKER['CHANNEL_TRANSCRIPTION']}:{session_id}"
+        message = json.dumps({
+            "type": event_type,
+            "session_id": session_id,
+            "timestamp": time.time()
+        })
+        await self._redis.publish(channel, message)
 
     async def _ensure_consumer_group(self) -> None:
         """
@@ -165,71 +255,24 @@ class STTWorker:
                 )
                 await asyncio.sleep(1)
 
-    async def _process_message(self, message_id: str, data: dict[str, Any]) -> None:
+    async def stop(self) -> None:
         """
-        Processes a single audio chunk message from the Redis stream.
-
-        This method transcribes the audio, publishes the result, and acknowledges
-        the message in the stream.
+        Stops the STT worker, gracefully shutting down all active tasks
+        and closing the Redis connection.
         """
-        if not self._semaphore:
-            return
-
-        async with self._semaphore:
-            session_id = data.get("session_id", "")
-            correlation_id = data.get("correlation_id", "")
-            start_time = time.time()
-
-            try:
-                audio_b64 = data.get("audio", "")
-                if not audio_b64:
-                    raise ValueError("No audio data in message")
-
-                audio_bytes = base64.b64decode(audio_b64)
-                text, language, confidence = await self._transcribe(
-                    audio_bytes,
-                    language_hint=data.get("language") or None,
-                )
-
-                await self._publish_result(
-                    session_id=session_id,
-                    text=text,
-                    language=language,
-                    confidence=confidence,
-                    correlation_id=correlation_id,
-                )
-
-                await self._redis.client.xack(
-                    settings.STT_WORKER["STREAM_AUDIO"],
-                    settings.STT_WORKER["GROUP_WORKERS"],
-                    message_id,
-                )
-
-                self._transcriptions_total += 1
-                duration = time.time() - start_time
-                logger.info(
-                    "Transcription completed",
-                    extra={
-                        "session_id": session_id,
-                        "text_length": len(text),
-                        "language": language,
-                        "duration_ms": int(duration * 1000),
-                    },
-                )
-
-            except Exception as exc:
-                self._transcriptions_failed += 1
-                logger.error(
-                    "Transcription failed",
-                    extra={"session_id": session_id, "error": str(exc)},
-                    exc_info=True,
-                )
-                await self._publish_error(session_id, str(exc), correlation_id)
-                await self._redis.client.xack(
-                    settings.STT_WORKER["STREAM_AUDIO"],
-                    settings.STT_WORKER["GROUP_WORKERS"],
-                    message_id,
-                )
+        self._running = False
+        if self._tasks:
+            await asyncio.gather(*self._tasks, return_exceptions=True)
+        await self._redis.disconnect()
+        logger.info(
+            "STT worker stopped",
+            extra={
+                "worker_id": self._worker_id,
+                "transcriptions_total": self._transcriptions_total,
+                "transcriptions_failed": self._transcriptions_failed,
+                "total_audio_seconds": self._total_audio_seconds,
+            },
+        )
 
     async def _transcribe(
         self,
@@ -302,36 +345,56 @@ class STTWorker:
         confidence: float,
         correlation_id: str,
     ) -> None:
-        """Publishes the transcription result to the appropriate Redis channel."""
-        channel = f"{settings.STT_WORKER['CHANNEL_TRANSCRIPTION']}:{session_id}"
-        message = json.dumps(
+        """Publishes the transcription result to the session group via Channels layer."""
+        from channels.layers import get_channel_layer
+        channel_layer = get_channel_layer()
+        
+        await channel_layer.group_send(
+            f"session_{session_id}",
             {
-                "type": "transcription.completed",
-                "session_id": session_id,
-                "text": text,
-                "language": language,
-                "confidence": confidence,
-                "correlation_id": correlation_id,
-                "timestamp": time.time(),
+                "type": "transcription_result",
+                "data": {
+                    "text": text,
+                    "language": language,
+                    "confidence": confidence,
+                    "correlation_id": correlation_id,
+                }
             }
         )
-        await self._redis.publish(channel, message)
 
     async def _publish_error(
         self, session_id: str, error: str, correlation_id: str
     ) -> None:
-        """Publishes an error message to the appropriate Redis channel if transcription fails."""
-        channel = f"{settings.STT_WORKER['CHANNEL_TRANSCRIPTION']}:{session_id}"
-        message = json.dumps(
+        """Publishes an error message to the session group via Channels layer."""
+        from channels.layers import get_channel_layer
+        channel_layer = get_channel_layer()
+
+        await channel_layer.group_send(
+            f"session_{session_id}",
             {
-                "type": "transcription.failed",
-                "session_id": session_id,
-                "error": error,
-                "correlation_id": correlation_id,
-                "timestamp": time.time(),
+                "type": "transcription_error",
+                "data": {
+                    "error": error,
+                    "correlation_id": correlation_id,
+                }
             }
         )
-        await self._redis.publish(channel, message)
+
+    async def _publish_event(self, session_id: str, event_type: str) -> None:
+        """Publishes a lifecycle event to the session group via Channels layer."""
+        from channels.layers import get_channel_layer
+        channel_layer = get_channel_layer()
+
+        await channel_layer.group_send(
+            f"session_{session_id}",
+            {
+                "type": "session_event",
+                "data": {
+                    "type": event_type,
+                    "session_id": session_id,
+                }
+            }
+        )
 
 
 class Command(BaseCommand):

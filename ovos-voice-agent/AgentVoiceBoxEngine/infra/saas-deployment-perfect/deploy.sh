@@ -158,6 +158,7 @@ echo "  🔑 Vault:             http://localhost:65003"
 echo "  ⚙️  Temporal:          http://localhost:65007"
 echo "  📊 PostgreSQL:        localhost:65004"
 echo "  📊 Redis:             localhost:65005"
+echo "  📈 Prometheus:        http://localhost:65011"
 
 # Health check Django API
 echo ""
@@ -172,6 +173,12 @@ if curl -s http://localhost:65027/ > /dev/null 2>&1; then
     echo "  ✅ Portal Frontend: HEALTHY"
 else
     echo "  ⚠️  Portal Frontend: Starting..."
+fi
+
+if curl -s http://localhost:65011/-/healthy > /dev/null 2>&1; then
+    echo "  ✅ Prometheus: HEALTHY"
+else
+    echo "  ⚠️  Prometheus: Starting..."
 fi
 
 # =============================================================================

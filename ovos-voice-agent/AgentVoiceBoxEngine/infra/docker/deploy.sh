@@ -251,6 +251,20 @@ run_health_checks() {
         echo -e "${RED}✗${NC}"
         all_healthy=false
     fi
+
+    # Check OVOS Message Bus
+    echo -n "OVOS Bus (65081): "
+    if curl -f http://localhost:65081 &> /dev/null; then
+        echo -e "${GREEN}✓${NC}"
+    else
+        # Note: OVOS bus returns 404 or connection reset on root, but if it responds it's alive
+        if nc -z localhost 65081 &> /dev/null; then
+             echo -e "${GREEN}✓${NC}"
+        else
+             echo -e "${RED}✗${NC}"
+             all_healthy=false
+        fi
+    fi
     
     # Check API Docs
     echo -n "API Docs: "

@@ -320,32 +320,39 @@ class TTSWorker:
         sample_rate: int,
         is_final: bool,
     ) -> None:
-        """Publishes a synthesized audio chunk to the appropriate Redis stream."""
-        stream_name = f"{settings.TTS_WORKER['CHANNEL_AUDIO_OUT']}:{session_id}"
-        await self._redis.client.xadd(
-            stream_name,
+        """Publishes a synthesized audio chunk to the session group via Channels layer."""
+        from channels.layers import get_channel_layer
+        channel_layer = get_channel_layer()
+
+        await channel_layer.group_send(
+            f"session_{session_id}",
             {
-                "chunk": chunk_b64,
-                "sequence": str(sequence),
-                "sample_rate": str(sample_rate),
-                "is_final": "1" if is_final else "0",
-                "timestamp": str(time.time()),
-            },
-            maxlen=1000,
+                "type": "audio_output",
+                "data": {
+                    "audio": chunk_b64,
+                    "sequence": sequence,
+                    "sample_rate": sample_rate,
+                    "is_final": is_final,
+                    "timestamp": time.time(),
+                }
+            }
         )
 
     async def _publish_cancelled(self, session_id: str, response_id: str) -> None:
-        """Publishes a cancellation message to the appropriate Redis channel."""
-        channel = f"{settings.TTS_WORKER['CHANNEL_TTS']}:{session_id}"
-        message = json.dumps(
+        """Publishes a cancellation message to the session group via Channels layer."""
+        from channels.layers import get_channel_layer
+        channel_layer = get_channel_layer()
+
+        await channel_layer.group_send(
+            f"session_{session_id}",
             {
-                "type": "tts.cancelled",
-                "session_id": session_id,
-                "response_id": response_id,
-                "timestamp": time.time(),
+                "type": "response_cancelled",
+                "data": {
+                    "response_id": response_id,
+                    "session_id": session_id,
+                }
             }
         )
-        await self._redis.publish(channel, message)
 
     async def _publish_error(
         self,
@@ -354,19 +361,21 @@ class TTSWorker:
         response_id: str,
         correlation_id: str,
     ) -> None:
-        """Publishes an error message to the appropriate Redis channel if TTS synthesis fails."""
-        channel = f"{settings.TTS_WORKER['CHANNEL_TTS']}:{session_id}"
-        message = json.dumps(
+        """Publishes an error message to the session group via Channels layer."""
+        from channels.layers import get_channel_layer
+        channel_layer = get_channel_layer()
+
+        await channel_layer.group_send(
+            f"session_{session_id}",
             {
-                "type": "tts.failed",
-                "session_id": session_id,
-                "response_id": response_id,
-                "correlation_id": correlation_id,
-                "error": error,
-                "timestamp": time.time(),
+                "type": "response_error",
+                "data": {
+                    "error": error,
+                    "response_id": response_id,
+                    "correlation_id": correlation_id,
+                }
             }
         )
-        await self._redis.publish(channel, message)
 
 
 class Command(BaseCommand):

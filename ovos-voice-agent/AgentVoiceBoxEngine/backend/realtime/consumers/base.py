@@ -111,17 +111,19 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
             await self.send_json({"type": "pong"})
             return
 
-        # Dispatch to handler
-        handler = getattr(self, f"handle_{message_type}", None)
+        # Sanitize handler name (e.g., session.update -> handle_session_update)
+        sanitized_type = message_type.replace(".", "_")
+        handler = getattr(self, f"handle_{sanitized_type}", None)
+
         if handler:
             try:
                 await handler(content)
             except Exception as e:
                 logger.error(f"Error handling {message_type}: {e}")
-                await self.send_error("internal_error", str(e))
+                await self.send_error("server_error", f"Internal error during event processing: {str(e)}")
         else:
             await self.send_error(
-                "unknown_message_type", f"Unknown type: {message_type}"
+                "unknown_event", f"The server does not support the event type: {message_type}"
             )
 
     async def _authenticate(self) -> bool:
@@ -206,26 +208,54 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
             return False
 
     async def send_error(self, code: str, message: str, details: dict = None):
-        """Send error message to client."""
+        """
+        Send error message to client matching OpenAI error structure.
+        
+        Format:
+        {
+          "type": "error",
+          "error": {
+            "type": "invalid_request_error" | "server_error",
+            "code": "code",
+            "message": "message",
+            "param": null
+          }
+        }
+        """
+        error_type = "invalid_request_error"
+        if code == "server_error":
+            error_type = "server_error"
+
         await self.send_json(
             {
                 "type": "error",
                 "error": {
+                    "type": error_type,
                     "code": code,
                     "message": message,
-                    "details": details or {},
+                    "param": details.get("param") if details else None,
                 },
             }
         )
 
     async def send_event(self, event_type: str, data: dict[str, Any]):
-        """Send event to client."""
-        await self.send_json(
-            {
-                "type": event_type,
-                "data": data,
-            }
-        )
+        """
+        Send event to client in flat OpenAI structure.
+        
+        Format:
+        {
+          "event_id": "...",
+          "type": "...",
+          ...data fields...
+        }
+        """
+        import uuid
+        payload = {
+            "event_id": f"evt_{uuid.uuid4().hex[:12]}",
+            "type": event_type,
+        }
+        payload.update(data)
+        await self.send_json(payload)
 
     async def _check_rate_limit(self) -> bool:
         """

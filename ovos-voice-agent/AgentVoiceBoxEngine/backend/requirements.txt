@@ -44,11 +44,17 @@ confluent-kafka>=2.3,<3.0  # Kafka
 mcp>=1.0,<2.0
 temporalio>=1.4.0
 kokoro>=0.0.4
-numpy>=1.24.0  # Model Context Protocol SDK
+numpy>=1.24.0
+ovos-bus-client>=0.0.7
 
 # ASGI Server
 uvicorn[standard]>=0.27,<1.0
 gunicorn>=21.0,<23.0
+
+# VAD and Audio Processing
+onnxruntime>=1.17.0
+silero-vad>=5.1.0
+pydub>=0.25.1
 
 # Development
 ruff>=0.3,<1.0

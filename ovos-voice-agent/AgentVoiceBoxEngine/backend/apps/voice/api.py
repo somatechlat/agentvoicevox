@@ -26,8 +26,6 @@ from apps.core.exceptions import (
     NotFoundError,
     ValidationError,
 )
-from apps.llm.services import LLMConfigService
-from apps.workflows.activities.llm import LLMActivities, LLMRequest, Message
 
 from .schemas import (
     VoiceLanguagesOut,
@@ -39,8 +37,6 @@ from .schemas import (
     VoicePersonaCreate,
     VoicePersonaListOut,
     VoicePersonaOut,
-    VoicePersonaTestRequest,
-    VoicePersonaTestResponse,
     VoicePersonaUpdate,
     VoiceProvidersOut,
 )
@@ -334,60 +330,6 @@ def delete_persona(request, persona_id: UUID):
     return 204, None
 
 
-@router.post(
-    "/personas/{persona_id}/test",
-    response=VoicePersonaTestResponse,
-    summary="Test a Voice Persona's LLM",
-)
-async def test_persona(request, persona_id: UUID, payload: VoicePersonaTestRequest):
-    """
-    Tests a voice persona by sending a message to its configured LLM.
-
-    This endpoint provides a way to quickly verify that the persona's LLM
-    configuration (provider, model, system prompt, etc.) is working as expected.
-    This operation is tenant-scoped.
-
-    Args:
-        persona_id: The UUID of the persona to test.
-        payload: A request object containing the test message.
-
-    Returns:
-        An object containing the LLM's response text.
-
-    Raises:
-        NotFoundError: If the persona is not found.
-        ValidationError: If the message is empty.
-        FeatureNotImplementedError: If the persona's LLM provider is not supported.
-    """
-    if not payload.message.strip():
-        raise ValidationError("Message is required")
-
-    persona = VoicePersonaService.get_persona(persona_id, tenant=request.tenant)
-    if not persona:
-        raise NotFoundError(f"Voice persona {persona_id} not found")
-
-    if persona.llm_provider not in {"groq", "openai", "ollama"}:
-        raise FeatureNotImplementedError("Unsupported LLM provider")
-
-    secrets = LLMConfigService.read_secrets(request.tenant.id)
-    llm_request = LLMRequest(
-        tenant_id=str(request.tenant.id),
-        session_id=f"persona-test-{persona.id}",
-        messages=[Message(role="user", content=payload.message)],
-        model=persona.llm_model,
-        provider=persona.llm_provider,
-        max_tokens=persona.max_tokens,
-        temperature=persona.temperature,
-        system_prompt=persona.system_prompt,
-        api_keys={
-            "groq": secrets.get("groq_api_key", ""),
-            "openai": secrets.get("openai_api_key", ""),
-        },
-        ollama_base_url=secrets.get("ollama_base_url", ""),
-    )
-
-    result = await LLMActivities().generate_response(llm_request)
-    return VoicePersonaTestResponse(response=result.content)
 
 
 # ==========================================================================

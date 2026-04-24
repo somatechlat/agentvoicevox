@@ -311,6 +311,18 @@ class Settings(BaseSettings):
     )
 
     # ==========================================================================
+    # OVOS (OpenVoiceOS)
+    # ==========================================================================
+    ovos_bus_host: str = Field(
+        default="localhost",
+        description="OVOS message bus host",
+    )
+    ovos_bus_port: int = Field(
+        default=8181,
+        description="OVOS message bus port",
+    )
+
+    # ==========================================================================
     # TTS
     # ==========================================================================
     tts_model_dir: str = Field(
@@ -618,6 +630,10 @@ redis_health_check_interval = _settings.redis_health_check_interval
 cors_allowed_origins = _settings.cors_allowed_origins
 cors_allow_credentials = _settings.cors_allow_credentials
 cors_origins_list = _settings.cors_origins_list
+
+# OVOS
+ovos_bus_host = _settings.ovos_bus_host
+ovos_bus_port = _settings.ovos_bus_port
 
 # Rate Limiting
 rate_limit_default = _settings.rate_limit_default

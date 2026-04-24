@@ -1,6 +1,6 @@
 # Software Requirements Specification (SRS)
 **Project**: AgentVoiceBox  
-**Version**: 1.1.6  
+**Version**: 1.1.7  
 **Date**: 2026-01-12  
 **Standard**: ISO/IEC 29148:2018  
 **Authors**: SOMA Engineering Team
