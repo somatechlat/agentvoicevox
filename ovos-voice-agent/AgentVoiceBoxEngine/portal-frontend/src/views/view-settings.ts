@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { ovosApi } from '../services/voice-api';
+import { t, setLanguage, getCurrentLanguage, onLanguageChange, SupportedLanguage } from '../utils/i18n';
 
 @customElement('view-settings')
 export class ViewSettings extends LitElement {
@@ -10,6 +11,8 @@ export class ViewSettings extends LitElement {
   @state() private showRawJson = false;
   @state() private rawJsonText = '';
   @state() private saveStatus: 'idle' | 'saving' | 'success' | 'error' = 'idle';
+
+  private unsubscribeI18n!: () => void;
 
   static styles = css`
     :host {
@@ -22,6 +25,9 @@ export class ViewSettings extends LitElement {
     }
 
     .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
       margin-bottom: 2rem;
     }
 
@@ -39,6 +45,14 @@ export class ViewSettings extends LitElement {
       margin-top: 0.5rem;
     }
 
+    .lang-switcher select {
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      font-weight: 600;
+      background: white;
+    }
+
     .glass-card {
       background: rgba(255, 255, 255, 0.7);
       backdrop-filter: blur(10px);
@@ -46,13 +60,8 @@ export class ViewSettings extends LitElement {
       border: 1px solid rgba(255, 255, 255, 0.5);
       border-radius: 16px;
       padding: 2rem;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
       margin-bottom: 2rem;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .glass-card:hover {
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
     }
 
     h2 {
@@ -69,7 +78,7 @@ export class ViewSettings extends LitElement {
     }
 
     label {
-      display: block;
+      display: inline-block;
       font-size: 0.95rem;
       font-weight: 600;
       color: #475569;
@@ -85,7 +94,6 @@ export class ViewSettings extends LitElement {
       font-size: 1rem;
       color: #334155;
       font-family: inherit;
-      transition: border-color 0.2s, box-shadow 0.2s;
       box-sizing: border-box;
     }
 
@@ -93,6 +101,15 @@ export class ViewSettings extends LitElement {
       outline: none;
       border-color: #6366f1;
       box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+    
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .checkbox-group input {
+      width: auto;
     }
 
     .toggle-container {
@@ -114,67 +131,45 @@ export class ViewSettings extends LitElement {
       border-radius: 8px;
       border: none;
       cursor: pointer;
-      transition: all 0.2s;
       font-family: inherit;
-      font-size: 1rem;
     }
 
     .btn-primary {
       background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
       color: white;
-      box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
     }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-secondary { background: #e2e8f0; color: #475569; }
+    .btn-secondary:hover { background: #cbd5e1; }
 
-    .btn-primary:hover {
-      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 8px -1px rgba(99, 102, 241, 0.4);
-    }
-
-    .btn-secondary {
-      background: #e2e8f0;
-      color: #475569;
-    }
-
-    .btn-secondary:hover {
-      background: #cbd5e1;
-    }
-
-    .flex-row {
-      display: flex;
-      gap: 1rem;
-    }
-    
-    .flex-1 {
-      flex: 1;
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
     }
 
     .spinner {
-      display: inline-block;
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(99, 102, 241, 0.2);
+      width: 40px; height: 40px;
+      border: 4px solid rgba(99,102,241,0.2);
       border-radius: 50%;
       border-top-color: #6366f1;
-      animation: spin 1s ease-in-out infinite;
+      animation: spin 1s infinite;
     }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .status-msg {
-      margin-left: 1rem;
-      font-weight: 600;
-    }
-
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-msg { margin-left: 1rem; font-weight: 600; }
     .success { color: #10b981; }
     .error { color: #ef4444; }
   `;
 
   async connectedCallback() {
     super.connectedCallback();
+    this.unsubscribeI18n = onLanguageChange(() => this.requestUpdate());
     await this.loadData();
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this.unsubscribeI18n) this.unsubscribeI18n();
   }
 
   async loadData() {
@@ -193,45 +188,54 @@ export class ViewSettings extends LitElement {
         this.plugins = pluginsRes.data;
       }
     } catch (e) {
-      console.error('Failed to load OVOS configuration', e);
+      console.error('Failed to load configuration', e);
     } finally {
       this.loading = false;
     }
   }
 
-  handleInputChange(e: Event, section: string, key: string) {
+  handleInputChange(e: Event, section: string, key: string, type: string = 'text') {
     const target = e.target as HTMLInputElement | HTMLSelectElement;
-    const val = target.type === 'number' ? Number(target.value) : target.value;
+    let val: any = target.value;
+    if (type === 'number') val = Number(target.value);
+    if (type === 'checkbox') val = (target as HTMLInputElement).checked;
+    if (type === 'list') val = target.value.split(',').map(s => s.trim()).filter(Boolean);
     
-    if (!this.config[section]) {
-      this.config[section] = {};
-    }
+    if (!this.config[section]) this.config[section] = {};
     this.config[section][key] = val;
+    this.requestUpdate();
+  }
+  
+  handleNestedChange(e: Event, section: string, subSection: string, key: string) {
+    const target = e.target as HTMLInputElement;
+    if (!this.config[section]) this.config[section] = {};
+    if (!this.config[section][subSection]) this.config[section][subSection] = {};
+    this.config[section][subSection][key] = target.value;
     this.requestUpdate();
   }
 
   handleJsonChange(e: Event) {
-    const target = e.target as HTMLTextAreaElement;
-    this.rawJsonText = target.value;
+    this.rawJsonText = (e.target as HTMLTextAreaElement).value;
   }
 
   async saveConfig() {
     this.saveStatus = 'saving';
     try {
       let patchPayload = this.config;
-      
       if (this.showRawJson) {
         patchPayload = JSON.parse(this.rawJsonText);
         this.config = patchPayload;
       }
-      
       await ovosApi.updateConfig(patchPayload);
       this.saveStatus = 'success';
       setTimeout(() => this.saveStatus = 'idle', 3000);
     } catch (e) {
-      console.error('Save failed', e);
       this.saveStatus = 'error';
     }
+  }
+
+  changeLang(e: Event) {
+    setLanguage((e.target as HTMLSelectElement).value as SupportedLanguage);
   }
 
   renderForm() {
@@ -240,18 +244,37 @@ export class ViewSettings extends LitElement {
     const lang = this.config?.lang || 'en-us';
     const log_level = this.config?.log_level || 'INFO';
     const listenerEnergy = this.config?.listener?.energy_ratio || 1.5;
+    const blacklistedSkills = (this.config?.skills?.blacklisted_skills || []).join(', ');
+    const prioritySkills = (this.config?.skills?.priority_skills || []).join(', ');
+    const autoUpdate = this.config?.skills?.auto_update ?? true;
+    const city = this.config?.location?.city?.name || 'LocalCity';
+    const timezone = this.config?.location?.timezone?.code || 'UTC';
+    const idleScreen = this.config?.gui?.idle_display_skill || '';
 
     return html`
-      <div class="flex-row">
-        <div class="glass-card flex-1">
-          <h2>Core Intelligence</h2>
+      <div class="grid-2">
+        <!-- Core & Audio -->
+        <div class="glass-card">
+          <h2>${t('settings.core')}</h2>
+          
           <div class="form-group">
-            <label>Primary Language</label>
-            <input type="text" .value="${lang}" @change="${(e: Event) => { this.config.lang = (e.target as HTMLInputElement).value; this.requestUpdate(); }}" placeholder="en-us">
+            <label>${t('settings.lang')}</label>
+            <ui-tooltip text="${t('tooltip.lang')}"></ui-tooltip>
+            <input type="text" .value="${lang}" @change="${(e: Event) => { this.config.lang = (e.target as HTMLInputElement).value; this.requestUpdate(); }}">
           </div>
           
           <div class="form-group">
-            <label>Text-to-Speech (TTS) Engine</label>
+            <label>${t('settings.log_level')}</label>
+            <ui-tooltip text="${t('tooltip.log_level')}"></ui-tooltip>
+            <select @change="${(e: Event) => { this.config.log_level = (e.target as HTMLSelectElement).value; this.requestUpdate(); }}">
+              ${['DEBUG', 'INFO', 'WARNING', 'ERROR'].map(l => html`<option value="${l}" ?selected="${log_level === l}">${l}</option>`)}
+            </select>
+          </div>
+
+          <h2 style="margin-top:2rem;">${t('settings.vad')}</h2>
+          <div class="form-group">
+            <label>${t('settings.tts')}</label>
+            <ui-tooltip text="${t('tooltip.tts')}"></ui-tooltip>
             <select @change="${(e: Event) => this.handleInputChange(e, 'tts', 'module')}">
               ${this.plugins.tts.map(p => html`<option value="${p}" ?selected="${p === ttsModule}">${p}</option>`)}
               ${!this.plugins.tts.includes(ttsModule) ? html`<option value="${ttsModule}" selected>${ttsModule}</option>` : ''}
@@ -259,30 +282,60 @@ export class ViewSettings extends LitElement {
           </div>
 
           <div class="form-group">
-            <label>Speech-to-Text (STT) Engine</label>
+            <label>${t('settings.stt')}</label>
+            <ui-tooltip text="${t('tooltip.stt')}"></ui-tooltip>
             <select @change="${(e: Event) => this.handleInputChange(e, 'stt', 'module')}">
               ${this.plugins.stt.map(p => html`<option value="${p}" ?selected="${p === sttModule}">${p}</option>`)}
               ${!this.plugins.stt.includes(sttModule) ? html`<option value="${sttModule}" selected>${sttModule}</option>` : ''}
             </select>
           </div>
+
+          <div class="form-group">
+            <label>${t('settings.vad_energy')}</label>
+            <ui-tooltip text="${t('tooltip.vad_energy')}"></ui-tooltip>
+            <input type="number" step="0.1" .value="${listenerEnergy}" @change="${(e: Event) => this.handleInputChange(e, 'listener', 'energy_ratio', 'number')}">
+          </div>
         </div>
 
-        <div class="glass-card flex-1">
-          <h2>Listener & Audio (VAD)</h2>
+        <!-- Skills & Location -->
+        <div class="glass-card">
+          <h2>${t('settings.skills')}</h2>
+          
+          <div class="form-group checkbox-group">
+            <input type="checkbox" .checked="${autoUpdate}" @change="${(e: Event) => this.handleInputChange(e, 'skills', 'auto_update', 'checkbox')}">
+            <label style="margin:0;">${t('settings.skills.auto_update')}</label>
+            <ui-tooltip text="${t('tooltip.skills.auto_update')}"></ui-tooltip>
+          </div>
+
           <div class="form-group">
-            <label>Energy Ratio Threshold</label>
-            <input type="number" step="0.1" .value="${listenerEnergy}" @change="${(e: Event) => this.handleInputChange(e, 'listener', 'energy_ratio')}">
-            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.25rem;">Adjusts Voice Activity Detection sensitivity. Higher = less sensitive.</p>
+            <label>${t('settings.skills.blacklisted')}</label>
+            <ui-tooltip text="${t('tooltip.skills.blacklisted')}"></ui-tooltip>
+            <input type="text" .value="${blacklistedSkills}" @change="${(e: Event) => this.handleInputChange(e, 'skills', 'blacklisted_skills', 'list')}">
           </div>
           
           <div class="form-group">
-            <label>System Log Level</label>
-            <select @change="${(e: Event) => { this.config.log_level = (e.target as HTMLSelectElement).value; this.requestUpdate(); }}">
-              <option value="DEBUG" ?selected="${log_level === 'DEBUG'}">DEBUG</option>
-              <option value="INFO" ?selected="${log_level === 'INFO'}">INFO</option>
-              <option value="WARNING" ?selected="${log_level === 'WARNING'}">WARNING</option>
-              <option value="ERROR" ?selected="${log_level === 'ERROR'}">ERROR</option>
-            </select>
+            <label>${t('settings.skills.priority')}</label>
+            <ui-tooltip text="${t('tooltip.skills.priority')}"></ui-tooltip>
+            <input type="text" .value="${prioritySkills}" @change="${(e: Event) => this.handleInputChange(e, 'skills', 'priority_skills', 'list')}">
+          </div>
+
+          <h2 style="margin-top:2rem;">${t('settings.location')}</h2>
+          <div class="form-group">
+            <label>${t('settings.location.city')}</label>
+            <ui-tooltip text="${t('tooltip.location.city')}"></ui-tooltip>
+            <input type="text" .value="${city}" @change="${(e: Event) => this.handleNestedChange(e, 'location', 'city', 'name')}">
+          </div>
+          <div class="form-group">
+            <label>${t('settings.location.timezone')}</label>
+            <ui-tooltip text="${t('tooltip.location.timezone')}"></ui-tooltip>
+            <input type="text" .value="${timezone}" @change="${(e: Event) => this.handleNestedChange(e, 'location', 'timezone', 'code')}">
+          </div>
+
+          <h2 style="margin-top:2rem;">${t('settings.gui')}</h2>
+          <div class="form-group">
+            <label>${t('settings.gui.idle')}</label>
+            <ui-tooltip text="${t('tooltip.gui.idle')}"></ui-tooltip>
+            <input type="text" .value="${idleScreen}" @change="${(e: Event) => this.handleInputChange(e, 'gui', 'idle_display_skill')}">
           </div>
         </div>
       </div>
@@ -300,23 +353,27 @@ export class ViewSettings extends LitElement {
 
   render() {
     if (this.loading) {
-      return html`
-        <div style="display:flex; justify-content:center; align-items:center; height: 50vh;">
-          <div class="spinner"></div>
-        </div>
-      `;
+      return html`<div style="display:flex; justify-content:center; align-items:center; height: 50vh;"><div class="spinner"></div></div>`;
     }
 
     return html`
       <div class="header">
-        <h1>OVOS Configuration</h1>
-        <p class="subtitle">Directly manage the OpenVoiceOS cognitive core parameters.</p>
+        <div>
+          <h1>${t('settings.title')}</h1>
+          <p class="subtitle">${t('settings.subtitle')}</p>
+        </div>
+        <div class="lang-switcher">
+          <select @change="${this.changeLang}">
+            <option value="en" ?selected="${getCurrentLanguage() === 'en'}">English</option>
+            <option value="es" ?selected="${getCurrentLanguage() === 'es'}">Español</option>
+          </select>
+        </div>
       </div>
 
       <div class="toggle-container">
-        <span style="font-weight: 600; color: #334155;">Advanced Mode (Raw JSON)</span>
+        <span style="font-weight: 600; color: #334155;">${t('settings.advanced_mode')}</span>
         <button class="btn btn-secondary" @click="${() => this.showRawJson = !this.showRawJson}">
-          ${this.showRawJson ? 'Switch to UI Forms' : 'Edit Raw JSON'}
+          ${this.showRawJson ? t('settings.switch_ui') : t('settings.edit_json')}
         </button>
       </div>
 
@@ -324,7 +381,7 @@ export class ViewSettings extends LitElement {
 
       <div style="display: flex; align-items: center; margin-bottom: 3rem;">
         <button class="btn btn-primary" @click="${this.saveConfig}" ?disabled="${this.saveStatus === 'saving'}">
-          ${this.saveStatus === 'saving' ? 'Applying...' : 'Apply Configuration to Node'}
+          ${this.saveStatus === 'saving' ? t('settings.btn_applying') : t('settings.btn_apply')}
         </button>
         ${this.saveStatus === 'success' ? html`<span class="status-msg success">✓ Live patched successfully!</span>` : ''}
         ${this.saveStatus === 'error' ? html`<span class="status-msg error">✗ Failed to patch config.</span>` : ''}

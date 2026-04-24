@@ -6,6 +6,7 @@ import './views/view-auth-callback';
 import './views/view-voice-playground';
 import './views/view-settings';
 import './views/view-voice-cloning';
+import './components/ui-tooltip';
 
 // Get the app container
 const appContainer = document.getElementById('app');
