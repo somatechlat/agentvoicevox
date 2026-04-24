@@ -41,6 +41,7 @@ from .schemas import (
     VoiceProvidersOut,
 )
 from .services import VoiceModelService, VoicePersonaService
+from .ovos_bridge import ovos_config_bridge
 
 router = Router(tags=["Voice"])
 
@@ -492,3 +493,28 @@ def delete_model(request, model_id: str):
         raise NotFoundError(f"Voice model '{model_id}' not found")
     VoiceModelService.delete_model(model)
     return 204, None
+
+# ==========================================================================
+# OVOS ADMIN ENDPOINTS
+# ==========================================================================
+@router.get("/ovos/config", summary="Get Active OVOS Configuration")
+def get_ovos_config(request):
+    """
+    Retrieves the complete active configuration directly from the OVOS message bus.
+    """
+    return ovos_config_bridge.get_active_configuration()
+
+@router.patch("/ovos/config", summary="Update Active OVOS Configuration")
+def patch_ovos_config(request, payload: dict):
+    """
+    Patches the live OVOS configuration via the message bus.
+    """
+    ovos_config_bridge.emit_configuration_patch(payload)
+    return {"status": "success", "patched": payload}
+
+@router.get("/ovos/plugins", summary="Get Available OVOS Plugins")
+def get_ovos_plugins(request):
+    """
+    Retrieves the available TTS and STT plugins installed in the OVOS environment.
+    """
+    return ovos_config_bridge.get_available_plugins()

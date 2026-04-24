@@ -1,26 +1,9 @@
 # ==========================================================================
-# AGENTVOICEBOX APPLICATION STACK (7GB RAM Budget)
+# AGENTVOICEBOX APPLICATION STACK - STANDALONE (7GB RAM Budget)
 # ==========================================================================
 # Project: agentvoicebox
 #
-# This stack USES shared infrastructure (PostgreSQL, Redis, Keycloak, Vault)
-# running on the shared_services_network.
-#
-# ⚠️  CRITICAL: Start shared-services FIRST!
-# Run: cd shared-services && docker compose -p shared-services up -d
-#
 # ⚠️  PORT POLICY - 65000-65099 ONLY ⚠️
-# ==========================================================================
-#
-# RAM Budget (AgentVoiceBox Services - 7GB Total):
-#   Django API:        1.5GB
-#   Portal Frontend:   512MB
-#   Workers (LLM):     2GB (for large context windows)
-#   Workers (STT):     1.5GB (for Whisper models)
-#   Workers (TTS):     1GB (for Kokoro)
-#   Buffer:            ~512MB
-#
-# TOTAL: Shared (8GB) + AgentVoiceBox (7GB) = 15GB
 # ==========================================================================
 
 version: '3.8'
@@ -39,6 +22,49 @@ x-healthcheck-defaults: &healthcheck-defaults
 
 services:
   # ==========================================================================
+  # INFRASTRUCTURE: Postgres & Redis
+  # ==========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: avb-postgres
+    hostname: postgres
+    environment:
+      POSTGRES_DB: agentvoicebox
+      POSTGRES_USER: shared_admin
+      POSTGRES_PASSWORD: shared_secure_2024
+    ports:
+      - "65004:5432"
+    volumes:
+      - avb_postgres_data:/var/lib/postgresql/data
+    networks:
+      - avb-network
+    logging: *default-logging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shared_admin -d agentvoicebox"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: avb-redis
+    hostname: redis
+    ports:
+      - "65005:6379"
+    volumes:
+      - avb_redis_data:/data
+    networks:
+      - avb-network
+    logging: *default-logging
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================================================
   # DJANGO API GATEWAY (1.5GB)
   # ==========================================================================
   django-api:
@@ -54,32 +80,28 @@ services:
       SECRET_KEY: dev-secret-key-for-local-development-only
       DEBUG: "true"
       ALLOWED_HOSTS: "*"
-      # Shared PostgreSQL (65004 internal, postgres hostname on shared network)
+      # Local PostgreSQL
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: agentvoicebox
       DB_USER: shared_admin
       DB_PASSWORD: shared_secure_2024
       DB_CONN_MAX_AGE: 60
-      # Shared Redis (65005 internal)
+      # Local Redis
       REDIS_URL: redis://redis:6379/0
       REDIS_CACHE_DB: 1
       REDIS_SESSION_DB: 2
       REDIS_CHANNEL_DB: 3
-      # Shared Keycloak (65006 internal)
-      KEYCLOAK_URL: http://keycloak:8080
-      KEYCLOAK_REALM: agentvoicebox
-      KEYCLOAK_CLIENT_ID: agentvoicebox-api
-      KEYCLOAK_CLIENT_SECRET: dev-secret-12345
-      # Shared Vault (65003 internal)
-      VAULT_ADDR: http://vault:8200
-      VAULT_TOKEN: devtoken
-      # Shared Temporal (65007 internal)
-      TEMPORAL_HOST: temporal:7233
-      TEMPORAL_NAMESPACE: agentvoicebox
+      # Disable Keycloak locally
+      AUTH_BYPASS: "true"
       # OVOS Bus Configuration
       OVOS_BUS_HOST: ovos-bus
       OVOS_BUS_PORT: 8181
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     deploy:
       resources:
         limits:
@@ -87,12 +109,9 @@ services:
         reservations:
           memory: 768M
     networks:
-      - shared-network
+      - avb-network
     logging: *default-logging
     restart: unless-stopped
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: [ "CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1" ]
 
   # ==========================================================================
   # PORTAL FRONTEND - Lit 3 / Vite (512MB)
@@ -106,11 +125,10 @@ services:
     ports:
       - "65027:65027"
     environment:
-      # External URLs (how browser sees them via localhost)
       VITE_API_URL: http://localhost:65020
-      VITE_KEYCLOAK_URL: http://localhost:65006
-      VITE_KEYCLOAK_REALM: agentvoicebox
-      VITE_KEYCLOAK_CLIENT_ID: portal-frontend
+      VITE_AUTH_BYPASS: "true"
+    depends_on:
+      - django-api
     deploy:
       resources:
         limits:
@@ -118,45 +136,9 @@ services:
         reservations:
           memory: 256M
     networks:
-      - shared-network
+      - avb-network
     logging: *default-logging
     restart: unless-stopped
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: [ "CMD-SHELL", "curl -f http://localhost:65027/ || exit 1" ]
-
-  # ==========================================================================
-  # PROMETHEUS (512MB)
-  # ==========================================================================
-  prometheus:
-    image: prom/prometheus:v2.48.0
-    container_name: avb-prometheus
-    hostname: prometheus
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=15d"
-    ports:
-      - "65011:9090"
-    volumes:
-      - ./backend/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./backend/prometheus/alerts:/etc/prometheus/alerts:ro
-      - avb_prometheus_data:/prometheus
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-        reservations:
-          memory: 256M
-    networks:
-      - shared-network
-    logging: *default-logging
-    restart: unless-stopped
-    healthcheck:
-      <<: *healthcheck-defaults
-      test: [ "CMD-SHELL", "wget -q --spider http://localhost:9090/-/healthy" ]
-
-
 
   # ==========================================================================
   # OVOS MESSAGE BUS - Intelligence Backbone (128MB)
@@ -174,7 +156,7 @@ services:
         reservations:
           memory: 64M
     networks:
-      - shared-network
+      - avb-network
     logging: *default-logging
     restart: unless-stopped
 
@@ -196,17 +178,58 @@ services:
         reservations:
           memory: 256M
     networks:
-      - shared-network
+      - avb-network
     logging: *default-logging
     restart: unless-stopped
 
-# ==========================================================================
-# SHARED NETWORK (Connects to shared-services)
-# ==========================================================================
+  # ==========================================================================
+  # OVOS LISTENER - STT (512MB)
+  # ==========================================================================
+  ovos-listener:
+    image: smartgic/ovos-listener:latest
+    container_name: avb-ovos-listener
+    hostname: ovos-listener
+    environment:
+      BUS_HOST: ovos-bus
+    depends_on:
+      - ovos-bus
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - avb-network
+    logging: *default-logging
+    restart: unless-stopped
+
+  # ==========================================================================
+  # OVOS AUDIO - TTS / Playback Routing (512MB)
+  # ==========================================================================
+  ovos-audio:
+    image: smartgic/ovos-audio:latest
+    container_name: avb-ovos-audio
+    hostname: ovos-audio
+    environment:
+      BUS_HOST: ovos-bus
+    depends_on:
+      - ovos-bus
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    networks:
+      - avb-network
+    logging: *default-logging
+    restart: unless-stopped
+
 networks:
-  shared-network:
-    name: shared_services_network
-    external: true
+  avb-network:
+    name: avb_internal_network
 
 volumes:
-  avb_prometheus_data:
+  avb_postgres_data:
+  avb_redis_data:

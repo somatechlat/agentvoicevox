@@ -17,6 +17,7 @@ class CustomVoiceOut(Schema):
     created_at: datetime
     sample_duration_seconds: float
     is_default: bool
+    sample_url: str | None = None
     error_message: str | None = None
 
 
@@ -31,3 +32,4 @@ class CustomVoiceCreateOut(Schema):
     created_at: datetime
     sample_duration_seconds: float
     is_default: bool
+    sample_url: str | None = None

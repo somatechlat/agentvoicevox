@@ -43,6 +43,7 @@ def _custom_voice_out(voice: CustomVoice) -> CustomVoiceOut:
         created_at=voice.created_at,
         sample_duration_seconds=voice.sample_duration_seconds,
         is_default=voice.is_default,
+        sample_url=voice.sample_audio.url if voice.sample_audio else None,
         error_message=voice.error_message or None,
     )
 

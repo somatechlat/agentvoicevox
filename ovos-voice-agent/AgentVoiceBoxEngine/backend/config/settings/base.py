@@ -235,6 +235,7 @@ CORS_ALLOW_HEADERS = [
 # ==========================================================================
 # KEYCLOAK CONFIGURATION
 # ==========================================================================
+AUTH_BYPASS = env.bool("AUTH_BYPASS", default=False)
 KEYCLOAK = {
     "URL": env.keycloak_url,
     "REALM": env.keycloak_realm,

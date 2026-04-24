@@ -96,5 +96,59 @@ class OVOSConfigBridge:
         self.client.emit(message)
         logger.info(f"Emitted session configuration for {session_id}")
 
+    def get_active_configuration(self) -> Dict[str, Any]:
+        """
+        Synchronously requests the active configuration from the OVOS bus.
+        
+        Returns:
+            A dictionary containing the active mycroft.conf settings, or empty dict if timeout.
+        """
+        if not self.connected:
+            self.connect()
+            
+        request_msg = Message("configuration.request")
+        response = self.client.wait_for_response(request_msg, timeout=3.0)
+        
+        if response and response.data:
+            return response.data.get("config", {})
+            
+        logger.warning("OVOS configuration.request timed out or returned no data.")
+        return {}
+        
+    def get_available_plugins(self) -> Dict[str, Any]:
+        """
+        Queries the OVOS bus for available TTS and STT plugins.
+        This provides a dynamic list of installed capabilities.
+        
+        Returns:
+            Dictionary with installed plugins, e.g. {"tts": [], "stt": []}
+        """
+        if not self.connected:
+            self.connect()
+            
+        # Try to query TTS plugins
+        tts_req = Message("opm.tts.query")
+        tts_resp = self.client.wait_for_response(tts_req, timeout=2.0)
+        
+        # Try to query STT plugins
+        stt_req = Message("opm.stt.query")
+        stt_resp = self.client.wait_for_response(stt_req, timeout=2.0)
+        
+        # Fallback to configuration if plugins not responding (Vibe Coding Rule 1)
+        fallback_config = self.get_active_configuration()
+        
+        plugins = {
+            "tts": tts_resp.data.get("plugins", []) if tts_resp else [],
+            "stt": stt_resp.data.get("plugins", []) if stt_resp else []
+        }
+        
+        if not plugins["tts"] and "tts" in fallback_config:
+            plugins["tts"] = [fallback_config["tts"].get("module", "default")]
+            
+        if not plugins["stt"] and "stt" in fallback_config:
+            plugins["stt"] = [fallback_config["stt"].get("module", "default")]
+            
+        return plugins
+
 # Global singleton instance
 ovos_config_bridge = OVOSConfigBridge()

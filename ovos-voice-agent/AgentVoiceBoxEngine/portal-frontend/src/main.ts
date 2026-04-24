@@ -4,6 +4,8 @@ import './views/view-login';
 import './views/view-setup';
 import './views/view-auth-callback';
 import './views/view-voice-playground';
+import './views/view-settings';
+import './views/view-voice-cloning';
 
 // Get the app container
 const appContainer = document.getElementById('app');
@@ -24,6 +26,12 @@ function navigate() {
         template = html`<view-auth-callback></view-auth-callback>`;
     } else if (path === '/voice-playground') {
         template = html`<view-voice-playground></view-voice-playground>`;
+    } else if (path === '/settings') {
+        template = html`<saas-layout><view-settings></view-settings></saas-layout>`;
+    } else if (path === '/cloning') {
+        template = html`<saas-layout><view-voice-cloning></view-voice-cloning></saas-layout>`;
+    } else if (path === '/dashboard') {
+        template = html`<saas-layout><view-dashboard></view-dashboard></saas-layout>`;
     } else {
         // Default to login for all other paths
         template = html`<view-login></view-login>`;

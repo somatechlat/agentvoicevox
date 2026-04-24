@@ -125,8 +125,10 @@ export class ViewDashboard extends LitElement {
 
       <div class="quick-actions">
         <h2>Quick Actions</h2>
-        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-          <a href="/voice-manager" class="btn">Manage Voices</a>
+        <div style="display: flex; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+          <a href="/voice-manager" class="btn">Manage Personas</a>
+          <a href="/cloning" class="btn" style="background: #8b5cf6;">Voice Cloning Library</a>
+          <a href="/settings" class="btn" style="background: #3b82f6;">OVOS Core Settings</a>
           <a href="/playground" class="btn" style="background: #10b981;">Test Realtime WebSocket</a>
         </div>
       </div>

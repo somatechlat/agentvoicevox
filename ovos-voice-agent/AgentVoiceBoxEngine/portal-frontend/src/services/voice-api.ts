@@ -321,4 +321,68 @@ export const healthApi = {
   },
 };
 
+// ============================================================================
+// OVOS Settings API
+// ============================================================================
+export const ovosApi = {
+  async getConfig(): Promise<ApiResponse<Record<string, unknown>>> {
+    return gatewayClient.get('/v1/voice/ovos/config');
+  },
+  async updateConfig(config: Record<string, unknown>): Promise<ApiResponse<Record<string, unknown>>> {
+    return gatewayClient.patch('/v1/voice/ovos/config', config);
+  },
+  async getPlugins(): Promise<ApiResponse<{tts: string[], stt: string[]}>> {
+    return gatewayClient.get('/v1/voice/ovos/plugins');
+  }
+};
+
+// ============================================================================
+// Custom Voices (Cloning) API
+// ============================================================================
+export interface CustomVoice {
+  id: string;
+  name: string;
+  language: string;
+  quality: string;
+  status: string;
+  created_at: string;
+  sample_duration_seconds: number;
+  is_default: boolean;
+  sample_url?: string;
+  error_message?: string;
+}
+
+export const customVoicesApi = {
+  async list(): Promise<ApiResponse<CustomVoice[]>> {
+    return gatewayClient.get('/v1/voice/voices');
+  },
+  async get(id: string): Promise<ApiResponse<CustomVoice>> {
+    return gatewayClient.get(`/v1/voice/voices/${id}`);
+  },
+  async create(formData: FormData): Promise<ApiResponse<CustomVoice>> {
+    const url = `${GATEWAY_URL}/v1/voice/voices`;
+    const token = localStorage.getItem('auth_token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    const data = await response.json();
+    return { data, status: response.status } as ApiResponse<CustomVoice>;
+  },
+  async delete(id: string): Promise<ApiResponse<void>> {
+    return gatewayClient.delete(`/v1/voice/voices/${id}`);
+  },
+  async setDefault(id: string): Promise<ApiResponse<CustomVoice>> {
+    return gatewayClient.post(`/v1/voice/voices/${id}/default`, {});
+  }
+};
+
 export { gatewayClient };
