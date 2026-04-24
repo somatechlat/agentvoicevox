@@ -4,9 +4,13 @@ WebSocket URL routing for Django Channels.
 
 from django.urls import path, re_path
 
+from apps.realtime.consumers.openai_gateway import OpenAIGatewayConsumer
 from .consumers import EventConsumer, SessionConsumer, STTConsumer, TTSConsumer
 
 websocket_urlpatterns = [
+    # OpenAI Realtime Gateway
+    path("ws/v1/realtime", OpenAIGatewayConsumer.as_asgi()),
+    
     # Event streaming
     path("ws/v2/events", EventConsumer.as_asgi()),
     # Voice session

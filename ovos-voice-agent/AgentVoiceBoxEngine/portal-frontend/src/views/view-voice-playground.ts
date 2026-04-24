@@ -211,25 +211,8 @@ export class ViewVoicePlayground extends LitElement {
   async startSession() {
     this.status = 'connecting';
     try {
-      // 1. Create a session on the backend
-      const sessionRes = await sessionsApi.create({
-        model: 'gpt-4o-realtime-preview',
-        instructions: 'You are a helpful assistant from AgentVoiceBox.'
-      });
-      
-      if (!sessionRes.data) throw new Error('Failed to create session');
-      const session = sessionRes.data;
-
-      // 2. Get client secret (standard OpenAI-like flow)
-      const tokenRes = await sessionsApi.createClientSecret({
-        session: { id: session.id }
-      });
-      
-      if (!tokenRes.data) throw new Error('Failed to get token');
-      const token = tokenRes.data.value;
-
-      // 3. Connect WebSocket
-      const wsUrl = `ws://localhost:65020/ws/v2/sessions/${session.id}?token=${token}`;
+      // Direct connection to the new OpenAI Realtime Gateway
+      const wsUrl = `ws://localhost:65020/ws/v1/realtime?session_id=playground-session`;
       this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
@@ -273,20 +256,17 @@ export class ViewVoicePlayground extends LitElement {
 
   handleServerEvent(event: any) {
     switch (event.type) {
-      case 'conversation.item.input_audio_transcription.completed':
-        this.transcription = event.transcript;
-        break;
-      case 'response.audio_transcript.delta':
-        this.responseText += event.delta;
-        this.status = 'speaking';
+      case 'session.created':
+        console.log('Session created:', event.session);
         break;
       case 'response.audio.delta':
+        this.status = 'speaking';
         this.audioQueue.push(event.delta);
         if (!this.isPlaying) {
           this.playNextChunk();
         }
         break;
-      case 'response.done':
+      case 'response.audio.done':
         if (!this.isPlaying) this.status = 'listening';
         break;
       case 'input_audio_buffer.speech_started':

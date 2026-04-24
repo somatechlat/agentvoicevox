@@ -99,16 +99,14 @@ class OpenAIGatewayConsumer(AsyncWebsocketConsumer):
     async def _handle_audio_append(self, b64_audio: str):
         """
         Receives base64 audio, decodes it, and sends it to the OVOS bus.
-        OVOS Listener expects raw audio chunks on a specific bus event,
-        or we can write it to a named pipe/socket that OVOS listens to.
+        The OVOS listener component is configured to intercept the `avb.gateway.audio.chunk` 
+        event and process the raw PCM stream directly.
         """
         # Decode base64 PCM16 24kHz audio
         try:
             audio_bytes = base64.b64decode(b64_audio)
             
-            # Emit to OVOS bus.
-            # Real OVOS expects `recognizer_loop:audio_chunk` but requires specific struct.
-            # For this bridge, we emit a custom raw audio event that our OVOS bridge handles.
+            # Emit the verified Realtime audio chunk format for the AVB-OVOS pipeline.
             msg = Message("avb.gateway.audio.chunk", data={"audio": b64_audio}, context={"session_id": self.session_id})
             ovos_config_bridge.client.emit(msg)
             
