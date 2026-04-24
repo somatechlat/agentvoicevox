@@ -14,7 +14,7 @@ from uuid import UUID
 from django.http import HttpResponse
 from ninja import Query, Router
 
-from apps.core.exceptions import NotFoundError, PermissionDeniedError
+from apps.core.exceptions import NotFoundError
 from apps.core.permissions.decorators import require_granular_role
 
 from .schemas import (

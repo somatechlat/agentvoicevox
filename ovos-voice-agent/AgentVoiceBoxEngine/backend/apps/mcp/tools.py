@@ -12,18 +12,18 @@ to provide a simplified, type-safe interface for MCP clients. They handle:
 """
 
 import base64
-
 import logging
 from uuid import uuid4
 
 from mcp.server.fastmcp import Context
 
 from apps.voice.services import VoiceModelService
-from apps.workflows.activities.tts import TTSActivities, SynthesisRequest
+from apps.workflows.activities.tts import SynthesisRequest, TTSActivities
 
 logger = logging.getLogger(__name__)
 
 from asgiref.sync import sync_to_async
+
 
 async def list_voices() -> list[dict]:
     """
@@ -31,7 +31,7 @@ async def list_voices() -> list[dict]:
     """
     # Wrap blocking DB call
     models, _ = await sync_to_async(VoiceModelService.list_models)(active_only=True)
-    
+
     # Since models is a QuerySet/List of ORM objects, accessing fields might lazily trigger DB
     # But list_models returns a list, so data is already fetched.
     return [
@@ -78,13 +78,13 @@ async def generate_speech(
 
     # Instantiate activities directly (since they don't depend on Temporal context for this method)
     activities = TTSActivities()
-    
+
     try:
         result = await activities.synthesize_speech(request)
-        
+
         # Encode audio bytes to base64 string for safe transport
         audio_b64 = base64.b64encode(result.audio_data).decode("utf-8")
-        
+
         logger.info(f"Generated speech for '{text[:20]}...' using {voice_id}")
         return audio_b64
     except Exception as e:

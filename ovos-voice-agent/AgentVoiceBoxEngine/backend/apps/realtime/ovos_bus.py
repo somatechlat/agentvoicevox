@@ -3,11 +3,12 @@ OVOS Intelligence Bridge.
 Connects AgentVoiceBox realtime sessions to the OpenVoiceOS (OVOS) Message Bus.
 """
 
-import json
 import asyncio
 import logging
-from typing import Dict, Callable, Any, Optional
-from ovos_bus_client import MessageBusClient, Message
+from typing import Any, Callable, Dict, Optional
+
+from ovos_bus_client import Message, MessageBusClient
+
 from config.settings import settings_config as env
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ class OVOSIntelligenceBridge:
     def __init__(self):
         if self._initialized:
             return
-            
+
         self.host = env.ovos_bus_host
         self.port = env.ovos_bus_port
         self.client = MessageBusClient(host=self.host, port=self.port)
@@ -60,7 +61,7 @@ class OVOSIntelligenceBridge:
         """
         context = context or {}
         context["session_id"] = session_id
-        
+
         message = Message(
             "recognizer_loop:utterance",
             data={"utterances": [text]},
@@ -76,7 +77,7 @@ class OVOSIntelligenceBridge:
         """
         utterance = message.data.get("utterance")
         session_id = message.context.get("session_id")
-        
+
         if not utterance or not session_id:
             return
 

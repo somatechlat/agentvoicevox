@@ -13,9 +13,9 @@ Usage:
 """
 
 import logging
-from typing import Any, Optional
 
 from django.core.management.base import BaseCommand
+
 from apps.mcp.server_factory import create_mcp_server
 
 logger = logging.getLogger(__name__)
@@ -29,9 +29,9 @@ class Command(BaseCommand):
     requests from external MCP clients. It supports command-line
     configuration of server parameters.
     """
-    
+
     help = "Starts the MCP (Model Context Protocol) server"
-    
+
     def add_arguments(self, parser):
         """
         Adds command-line arguments for the MCP server.
@@ -46,13 +46,13 @@ class Command(BaseCommand):
             choices=["stdio", "sse"],
             help="Transport mechanism to use (default: stdio)",
         )
-    
+
     def handle(self, *args, **options):
         """
         Handles the MCP server startup logic.
         """
         transport = options["transport"]
-        
+
         self.stdout.write(f"Starting AgentVoiceBox MCP Server via {transport}...")
 
         # Initialize the MCP Server using the shared factory

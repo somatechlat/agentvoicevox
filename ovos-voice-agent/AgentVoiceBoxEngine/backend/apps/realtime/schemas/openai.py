@@ -7,8 +7,10 @@ These Pydantic schemas define the structures for messages exchanged over the
 specification, allowing AVB to act as a drop-in replacement.
 """
 
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel
+
 
 class OpenAIBaseEvent(BaseModel):
     """Base event structure for all OpenAI realtime messages."""

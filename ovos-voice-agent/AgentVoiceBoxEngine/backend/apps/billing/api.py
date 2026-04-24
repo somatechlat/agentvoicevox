@@ -290,4 +290,5 @@ async def lago_webhook(request, payload: LagoWebhookPayload):
 
 # Import logger
 import logging
+
 logger = logging.getLogger(__name__)

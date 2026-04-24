@@ -11,9 +11,9 @@ Conversely, it listens to the ovos-bus for synthesized audio and streams it back
 client as base64 PCM16 chunks, wrapped in the OpenAI `response.audio.delta` event format.
 """
 
+import base64
 import json
 import logging
-import base64
 from typing import Any, Dict
 
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -31,7 +31,7 @@ class OpenAIGatewayConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         """Accepts the WebSocket connection and sends the initial session.created event."""
         self.session_id = self.scope.get("session_id", "default_session")
-        
+
         await self.accept()
         logger.info(f"OpenAI Gateway connection accepted. Session: {self.session_id}")
 
@@ -46,7 +46,7 @@ class OpenAIGatewayConsumer(AsyncWebsocketConsumer):
             }
         }
         await self.send(text_data=json.dumps(session_created))
-        
+
         # We should register a callback with the OVOS bus to listen for audio responses.
         # For simplicity in this bridge, we assume the ovos_config_bridge handles emitting.
         # A more robust implementation would register a listener on the bus client here.
@@ -64,7 +64,7 @@ class OpenAIGatewayConsumer(AsyncWebsocketConsumer):
             try:
                 data = json.loads(text_data)
                 event_type = data.get("type")
-                
+
                 if event_type == "session.update":
                     await self._handle_session_update(data.get("session", {}))
                 elif event_type == "input_audio_buffer.append":
@@ -76,7 +76,7 @@ class OpenAIGatewayConsumer(AsyncWebsocketConsumer):
                     pass # Trigger response manually
                 else:
                     logger.debug(f"Unhandled event type: {event_type}")
-                    
+
             except json.JSONDecodeError:
                 await self._send_error("invalid_json", "Failed to parse JSON")
 
@@ -85,13 +85,13 @@ class OpenAIGatewayConsumer(AsyncWebsocketConsumer):
         # Map OpenAI session fields to OVOS VoicePersona structure
         voice = session_data.get("voice", "af_heart")
         instructions = session_data.get("instructions", "")
-        
+
         persona_config = {
             "voice": {"id": voice, "speed": 1.0},
             "stt": {"language": "en"},
             "llm": {"model": "default", "system_prompt": instructions, "temperature": 0.7}
         }
-        
+
         # Apply to OVOS
         ovos_config_bridge.apply_persona_to_session(self.session_id, persona_config)
         logger.info(f"Session {self.session_id} updated with config: {persona_config}")
@@ -105,11 +105,11 @@ class OpenAIGatewayConsumer(AsyncWebsocketConsumer):
         # Decode base64 PCM16 24kHz audio
         try:
             audio_bytes = base64.b64decode(b64_audio)
-            
+
             # Emit the verified Realtime audio chunk format for the AVB-OVOS pipeline.
             msg = Message("avb.gateway.audio.chunk", data={"audio": b64_audio}, context={"session_id": self.session_id})
             ovos_config_bridge.client.emit(msg)
-            
+
         except Exception as e:
             logger.error(f"Error handling audio append: {e}")
 

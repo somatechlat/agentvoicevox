@@ -1,7 +1,8 @@
 
+import asyncio
 import os
 import sys
-import asyncio
+
 import django
 
 # Setup Django environment
@@ -10,19 +11,20 @@ sys.path.append('/Users/macbookpro201916i964gb1tb/Documents/GitHub/agentVoiceBox
 os.environ['DJANGO_SETTINGS_MODULE'] = 'config.settings.testing'
 django.setup()
 
-from apps.mcp.tools import list_voices, generate_speech
+from apps.mcp.tools import generate_speech, list_voices
 from apps.voice.models import VoiceModel
+
 
 async def verify_mcp():
     print("--- Verifying MCP Tools on Real Infrastructure ---")
-    
+
     # 1. Verify list_voices (Database Access)
     print("\n[Action] Listing voices via MCP tool...")
     voices = await list_voices()
     print(f"[Result] Found {len(voices)} voices.")
     for v in voices[:3]:
         print(f" - {v['name']} ({v['provider']})")
-        
+
     if not voices:
         print("[Setup] Database might be empty. creating a test voice...")
         from asgiref.sync import sync_to_async

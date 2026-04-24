@@ -22,11 +22,10 @@ from uuid import UUID
 from ninja import Query, Router
 
 from apps.core.exceptions import (
-    FeatureNotImplementedError,
     NotFoundError,
-    ValidationError,
 )
 
+from .ovos_bridge import ovos_config_bridge
 from .schemas import (
     VoiceLanguagesOut,
     VoiceModelCreate,
@@ -41,7 +40,6 @@ from .schemas import (
     VoiceProvidersOut,
 )
 from .services import VoiceModelService, VoicePersonaService
-from .ovos_bridge import ovos_config_bridge
 
 router = Router(tags=["Voice"])
 

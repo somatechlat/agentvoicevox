@@ -273,5 +273,6 @@ def cached(
 
 # Import logger after class definition
 import logging
+
 logger = logging.getLogger(__name__)
 

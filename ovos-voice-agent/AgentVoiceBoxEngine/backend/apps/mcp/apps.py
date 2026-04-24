@@ -22,10 +22,10 @@ class MCPConfig(AppConfig):
         name: The app name
         verbose_name: Human-readable app name
     """
-    
+
     name = "apps.mcp"
     verbose_name = "Model Context Protocol Integration"
-    
+
     def ready(self):
         """
         App initialization hook.

@@ -11,7 +11,8 @@ maintaining consistency across different transport mechanisms.
 import logging
 
 from mcp.server.fastmcp import FastMCP
-from apps.mcp.tools import list_voices, generate_speech
+
+from apps.mcp.tools import generate_speech, list_voices
 
 logger = logging.getLogger(__name__)
 

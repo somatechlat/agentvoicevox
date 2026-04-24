@@ -316,21 +316,21 @@ class SessionEvent(models.Model):
         SESSION_STARTED = "session.started", "Session Started"
         SESSION_COMPLETED = "session.completed", "Session Completed"
         SESSION_ERROR = "session.error", "Session Error"
-        
+
         # Audio Buffer Events
         INPUT_AUDIO_BUFFER_APPEND = "input_audio_buffer.append", "Input Audio Append"
         INPUT_AUDIO_BUFFER_COMMIT = "input_audio_buffer.commit", "Input Audio Commit"
         INPUT_AUDIO_BUFFER_CLEARED = "input_audio_buffer.cleared", "Input Audio Cleared"
         INPUT_AUDIO_BUFFER_SPEECH_STARTED = "input_audio_buffer.speech_started", "Speech Started"
         INPUT_AUDIO_BUFFER_SPEECH_STOPPED = "input_audio_buffer.speech_stopped", "Speech Stopped"
-        
+
         # Conversation Item Events
         ITEM_CREATED = "conversation.item.created", "Item Created"
         ITEM_DELETED = "conversation.item.delete", "Item Deleted"
         ITEM_TRUNCATED = "conversation.item.truncate", "Item Truncated"
         ITEM_TRANSCRIPTION_COMPLETED = "conversation.item.input_audio_transcription.completed", "Transcription Completed"
         ITEM_TRANSCRIPTION_FAILED = "conversation.item.input_audio_transcription.failed", "Transcription Failed"
-        
+
         # Response Events
         RESPONSE_CREATED = "response.created", "Response Created"
         RESPONSE_DONE = "response.done", "Response Done"

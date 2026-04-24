@@ -4,12 +4,12 @@ Handles transcoding between various audio formats (PCM16, G.711 u-law/a-law)
 and prepares audio for STT/TTS workers.
 """
 
-import io
 import base64
+import io
+
 import numpy as np
 import soundfile as sf
 from pydub import AudioSegment
-from typing import Optional
 
 
 class AudioProcessor:
@@ -103,13 +103,13 @@ class AudioProcessor:
         """Extracts basic features like RMS power (utility for visualizers/VAD)."""
         audio_io = io.BytesIO(audio_data)
         data, _ = sf.read(audio_io)
-        
+
         if len(data) == 0:
             return {"rms": 0.0, "peak": 0.0}
-            
+
         rms = np.sqrt(np.mean(data**2))
         peak = np.max(np.abs(data))
-        
+
         return {
             "rms": float(rms),
             "peak": float(peak)

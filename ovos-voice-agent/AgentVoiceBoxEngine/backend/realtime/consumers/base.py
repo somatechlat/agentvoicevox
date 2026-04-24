@@ -166,7 +166,7 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
         """
         headers = dict(self.scope.get("headers", []))
         auth_header = headers.get(b"authorization", b"").decode()
-        
+
         if auth_header.startswith("Bearer "):
             return auth_header[7:]
 
@@ -180,7 +180,7 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
                     f"Tenant: {self.tenant_id}, User: {self.user_id}"
                 )
                 return param[6:]
-        
+
         return None
 
     async def _validate_tenant(self) -> bool:
@@ -267,22 +267,22 @@ class BaseConsumer(AsyncJsonWebsocketConsumer):
             True if within limits, False if rate limited
         """
         import time
-        
+
         now = time.time()
-        
+
         # Reset counter if window expired
         if self._rate_limit_reset_time and now > self._rate_limit_reset_time:
             self._rate_limit_counter = 0
             self._rate_limit_reset_time = now + self.RATE_LIMIT_WINDOW
-        
+
         # Initialize if first check
         if not self._rate_limit_reset_time:
             self._rate_limit_reset_time = now + self.RATE_LIMIT_WINDOW
-        
+
         # Check limit
         if self._rate_limit_counter >= self.MAX_AUDIO_CHUNKS_PER_MINUTE:
             return False
-        
+
         self._rate_limit_counter += 1
         return True
 

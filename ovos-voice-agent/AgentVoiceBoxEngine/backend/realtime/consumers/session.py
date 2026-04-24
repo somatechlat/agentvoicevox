@@ -8,8 +8,10 @@ import logging
 import uuid
 from typing import Any, Optional
 
-from .base import BaseConsumer
+from django.conf import settings
 from apps.realtime.ovos_bus import OVOSIntelligenceBridge
+
+from .base import BaseConsumer
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +88,7 @@ class SessionConsumer(BaseConsumer):
             # Complete session if normal close
             if close_code == self.CLOSE_NORMAL:
                 await self._complete_session()
-            
+
             # Unregister from OVOS Bridge
             ovos_bridge.unregister_session(self.session_id)
 
@@ -116,7 +118,7 @@ class SessionConsumer(BaseConsumer):
         """
         if not self.session:
             return
-        
+
         try:
             from django.utils import timezone
 
@@ -141,7 +143,7 @@ class SessionConsumer(BaseConsumer):
         """
         if not self.session:
             return
-        
+
         try:
             from django.utils import timezone
 
@@ -181,13 +183,13 @@ class SessionConsumer(BaseConsumer):
         if not self.session or self.session.status != "active":
             await self.send_error("invalid_session", "Session is not active")
             return
-        
+
         # Validate audio data exists
         audio_data = content.get("audio")
         if not audio_data:
             await self.send_error("missing_audio", "No audio data provided")
             return
-        
+
         # Forward to STT processing via Redis Stream (simplified for now to match current worker)
         try:
             await self.channel_layer.group_send(
@@ -286,7 +288,7 @@ class SessionConsumer(BaseConsumer):
         """Handle transcription result from STT worker."""
         data = event["data"]
         transcript = data.get("text", "")
-        
+
         # 1. Send to client
         await self.send_event("conversation.item.input_audio_transcription.completed", {
             "item_id": data.get("correlation_id", "unknown"),
@@ -328,7 +330,7 @@ class SessionConsumer(BaseConsumer):
             from apps.workflows.redis_client import RedisClient
             redis = RedisClient()
             await redis.connect()
-            
+
             await redis.client.xadd(
                 settings.TTS_WORKER["STREAM_REQUESTS"],
                 {

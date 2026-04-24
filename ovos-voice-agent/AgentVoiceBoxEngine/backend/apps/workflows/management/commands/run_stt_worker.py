@@ -109,17 +109,17 @@ class STTWorker:
         async with self._semaphore:
             session_id = data.get("session_id", "")
             correlation_id = data.get("correlation_id", "")
-            
+
             try:
                 audio_b64 = data.get("audio", "")
                 if not audio_b64:
                     raise ValueError("No audio data in message")
 
                 audio_bytes = base64.b64decode(audio_b64)
-                
+
                 # Run VAD on this chunk
                 is_speech = await self._run_vad(audio_bytes)
-                
+
                 # Update session state and emit events
                 was_speech = self._speech_states.get(session_id, False)
                 if is_speech and not was_speech:
@@ -129,7 +129,7 @@ class STTWorker:
                     # Silence detected after speech - trigger transcription
                     self._speech_states[session_id] = False
                     await self._publish_event(session_id, "input_audio_buffer.speech_stopped")
-                    
+
                     # Accumulate and transcribe
                     full_audio = b"".join(self._buffers.get(session_id, []))
                     if full_audio:
@@ -174,15 +174,15 @@ class STTWorker:
     async def _run_vad(self, audio_bytes: bytes) -> bool:
         """Run Silero VAD on audio chunk."""
         # Simplified VAD check - in production you'd want proper windowing
-        import torch
         import numpy as np
-        
+        import torch
+
         # Convert bytes to tensor
         audio_io = io.BytesIO(audio_bytes)
         audio_data, _ = sf.read(audio_io)
         if len(audio_data) == 0:
             return False
-            
+
         tensor = torch.from_numpy(audio_data.astype(np.float32))
         if self._vad_model:
             # Silero VAD returns probability
@@ -348,7 +348,7 @@ class STTWorker:
         """Publishes the transcription result to the session group via Channels layer."""
         from channels.layers import get_channel_layer
         channel_layer = get_channel_layer()
-        
+
         await channel_layer.group_send(
             f"session_{session_id}",
             {
