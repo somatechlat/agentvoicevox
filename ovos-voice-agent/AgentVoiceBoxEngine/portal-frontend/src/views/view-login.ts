@@ -5,13 +5,13 @@ import { authService } from '../services/auth-service';
 
 /**
  * REAL LOGIN PAGE
- * 
+ *
  * Authentication via Keycloak OAuth2/OIDC:
  * - SSO Login (redirects to Keycloak)
  * - Register (redirects to Keycloak registration)
  * - Forgot Password (redirects to Keycloak password reset)
  * - Social Login (Google, GitHub via Keycloak)
- * 
+ *
  * All URLs are configured via environment variables (VITE_KEYCLOAK_URL, etc.)
  */
 
@@ -22,6 +22,8 @@ export class ViewLogin extends LitElement {
   @state() private view: LoginView = 'login';
   @state() private loading = false;
   @state() private error: string | null = null;
+  @state() private email = '';
+  @state() private password = '';
 
   createRenderRoot() { return this; }
 
@@ -72,6 +74,24 @@ export class ViewLogin extends LitElement {
     window.location.href = socialLoginUrl;
   }
 
+  private async handlePasswordLogin(e: Event) {
+    e.preventDefault();
+    if (!this.email || !this.password) {
+      this.error = 'Please enter both email and password.';
+      return;
+    }
+
+    this.loading = true;
+    this.error = null;
+    this.requestUpdate();
+
+    const success = await authService.loginWithPassword(this.email, this.password);
+    if (!success) {
+      this.error = 'Invalid email or password.';
+      this.loading = false;
+    }
+  }
+
   render() {
     return html`
       <saas-layout>
@@ -84,7 +104,7 @@ export class ViewLogin extends LitElement {
             <span class="font-bold text-lg tracking-tight text-gray-900">AgentVoiceBox</span>
           </div>
           ${this.view !== 'login' ? html`
-            <button 
+            <button
               @click="${() => { this.view = 'login'; this.error = null; }}"
               class="text-sm text-gray-600 hover:text-gray-900 font-medium"
             >
@@ -96,7 +116,7 @@ export class ViewLogin extends LitElement {
         <!-- Main Card -->
         <main class="flex min-h-screen flex-1 flex-col items-center justify-center px-4 bg-gradient-to-br from-gray-50 to-white">
           <div class="relative w-full max-w-[420px]">
-            
+
             ${this.error ? html`
               <div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-200">
                 <p class="text-sm text-red-700">${this.error}</p>
@@ -104,7 +124,7 @@ export class ViewLogin extends LitElement {
             ` : ''}
 
             <div class="overflow-hidden rounded-2xl bg-white p-10 shadow-2xl border border-gray-100">
-              
+
               ${this.view === 'login' ? this.renderLoginView() : ''}
               ${this.view === 'register' ? this.renderRegisterView() : ''}
               ${this.view === 'forgot-password' ? this.renderForgotPasswordView() : ''}
@@ -114,14 +134,14 @@ export class ViewLogin extends LitElement {
                 <p>🔒 Secure Enterprise Gateway v2.0</p>
                 <p class="mt-1">Powered by Keycloak OAuth2/OIDC</p>
               </div>
-              
+
             </div>
 
             ${this.view === 'login' ? html`
               <div class="mt-6 text-center">
                 <p class="text-sm text-gray-600">
-                  Don't have an account? 
-                  <button 
+                  Don't have an account?
+                  <button
                     @click="${() => { this.view = 'register'; this.error = null; }}"
                     class="font-semibold text-black hover:underline"
                   >
@@ -144,25 +164,71 @@ export class ViewLogin extends LitElement {
       </div>
 
       <div class="space-y-4">
+        <!-- Password Login Form -->
+        <form @submit="${this.handlePasswordLogin}" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              .value="${this.email}"
+              @input="${(e: Event) => this.email = (e.target as HTMLInputElement).value}"
+              class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+              placeholder="admin@example.com"
+              required
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password"
+              .value="${this.password}"
+              @input="${(e: Event) => this.password = (e.target as HTMLInputElement).value}"
+              class="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-black focus:ring-1 focus:ring-black outline-none transition-all"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            ?disabled="${this.loading}"
+            class="relative flex w-full items-center justify-center gap-3 rounded-xl bg-black px-4 py-4 text-sm font-semibold text-white transition-all hover:bg-gray-900 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-black/20"
+          >
+            ${this.loading ? html`
+              <span class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Signing in...
+              </span>
+            ` : 'Sign In'}
+          </button>
+        </form>
+
+        <div class="relative py-2 mt-4">
+          <div class="absolute inset-0 flex items-center"><span class="w-full border-t border-gray-200"></span></div>
+          <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-3 text-gray-400 font-medium">Or continue with SSO</span></div>
+        </div>
+
         <!-- SSO Login -->
         <button
           @click="${this.handleSSOLogin}"
           ?disabled="${this.loading}"
-          class="relative flex w-full items-center justify-center gap-3 rounded-xl bg-black px-4 py-4 text-sm font-semibold text-white transition-all hover:bg-gray-900 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-black/20"
+          class="relative flex w-full items-center justify-center gap-3 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 px-4 py-4 text-sm font-semibold text-gray-700 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
         >
           ${this.loading ? html`
             <span class="flex items-center gap-2">
-              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Redirecting to Keycloak...
+              Redirecting...
             </span>
           ` : html`
             <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor">
               <path d="M234-276q51-39 114-61.5T480-360q69 0 132 22.5T726-276q35-41 54.5-93T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 59 19.5 111t54.5 93Zm246-164q-59 0-99.5-40.5T340-580q0-59 40.5-99.5T480-720q59 0 99.5 40.5T620-580q0 59-40.5 99.5T480-440Zm0 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Z"/>
             </svg>
-            Sign in with SSO
+            Sign in with Enterprise SSO
           `}
         </button>
 
@@ -173,7 +239,7 @@ export class ViewLogin extends LitElement {
 
         <!-- Social Login -->
         <div class="grid grid-cols-2 gap-3">
-          <button 
+          <button
             @click="${() => this.handleSocialLogin('google')}"
             ?disabled="${this.loading}"
             class="flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50"
@@ -186,8 +252,8 @@ export class ViewLogin extends LitElement {
             </svg>
             <span class="text-sm font-medium text-gray-700">Google</span>
           </button>
-          
-          <button 
+
+          <button
             @click="${() => this.handleSocialLogin('github')}"
             ?disabled="${this.loading}"
             class="flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50"
@@ -201,7 +267,7 @@ export class ViewLogin extends LitElement {
 
         <!-- Forgot Password -->
         <div class="text-center pt-2">
-          <button 
+          <button
             @click="${() => { this.view = 'forgot-password'; this.error = null; }}"
             class="text-sm text-gray-600 hover:text-black font-medium"
           >
@@ -247,7 +313,7 @@ export class ViewLogin extends LitElement {
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <button 
+          <button
             @click="${() => this.handleSocialLogin('google')}"
             ?disabled="${this.loading}"
             class="flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50"
@@ -260,8 +326,8 @@ export class ViewLogin extends LitElement {
             </svg>
             <span class="text-sm font-medium text-gray-700">Google</span>
           </button>
-          
-          <button 
+
+          <button
             @click="${() => this.handleSocialLogin('github')}"
             ?disabled="${this.loading}"
             class="flex h-12 items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50"

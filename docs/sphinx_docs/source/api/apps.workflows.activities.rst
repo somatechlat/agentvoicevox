@@ -1,61 +1,14 @@
-apps.workflows.activities package
-=================================
+apps.workflows.activities
+=========================
 
-Submodules
-----------
-
-apps.workflows.activities.billing module
-----------------------------------------
-
-.. automodule:: apps.workflows.activities.billing
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.workflows.activities.cleanup module
-----------------------------------------
-
-.. automodule:: apps.workflows.activities.cleanup
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.workflows.activities.llm module
-------------------------------------
-
-.. automodule:: apps.workflows.activities.llm
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.workflows.activities.notifications module
-----------------------------------------------
-
-.. automodule:: apps.workflows.activities.notifications
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.workflows.activities.stt module
-------------------------------------
-
-.. automodule:: apps.workflows.activities.stt
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.workflows.activities.tts module
-------------------------------------
-
-.. automodule:: apps.workflows.activities.tts
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.workflows.activities
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Workflow activities for billing, cleanup, and notifications.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

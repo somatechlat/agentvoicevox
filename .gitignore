@@ -101,6 +101,7 @@ yarn-error.log*
 # -----------------------------------------------------------------------------
 .vscode/
 .idea/
+.kiro/
 *.sublime-project
 *.sublime-workspace
 *.swp

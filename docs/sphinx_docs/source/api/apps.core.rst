@@ -1,74 +1,14 @@
-apps.core package
-=================
+apps.core
+=========
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.core.management
-   apps.core.middleware
-   apps.core.migrations
-   apps.core.permissions
-   apps.core.urls
-   apps.core.views
-
-Submodules
-----------
-
-apps.core.api module
---------------------
-
-.. automodule:: apps.core.api
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.api\_admin\_dashboard module
---------------------------------------
-
-.. automodule:: apps.core.api_admin_dashboard
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.apps module
----------------------
-
-.. automodule:: apps.core.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.cache module
-----------------------
-
-.. automodule:: apps.core.cache
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.exceptions module
----------------------------
-
-.. automodule:: apps.core.exceptions
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.models module
------------------------
-
-.. automodule:: apps.core.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.core
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Core API registration, middleware, cache, exceptions, permissions, and health support.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

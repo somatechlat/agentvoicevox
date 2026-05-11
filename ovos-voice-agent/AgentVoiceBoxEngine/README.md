@@ -1,75 +1,95 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/OpenVoiceOS/ovos-media/main/logos/ovos-logo.png" alt="AgentVoiceBox Logo" width="200"/>
-</p>
+# AgentVoiceBox Documentation Baseline
 
-<h1 align="center">AgentVoiceBox</h1>
+**Document status:** Code-aligned baseline
+**Revision date:** 2026-05-11
+**Source of truth:** Repository source code under `ovos-voice-agent/AgentVoiceBoxEngine`
+**Documentation style:** ISO/IEC/IEEE 29148-style structure for clarity; this repository does not claim external ISO certification.
 
-<p align="center">
-  <strong>Sovereign Voice AI Platform (Powered by OVOS)</strong>
-</p>
+## 1. Purpose
+This document records the implemented AgentVoiceBox system as reflected by the code. Requirements, plans, and claims in this file are subordinate to the running implementation.
 
----
+## 2. Implemented Product Scope
+AgentVoiceBox is a Django-based voice AI platform with a Lit 3 administration frontend and OVOS message-bus integration.
 
-## What is AgentVoiceBox?
+Implemented runtime surfaces:
+- REST API: Django Ninja mounted at `/api/v2/`.
+- REST API documentation: `/api/v2/docs` and `/api/v2/openapi.json`.
+- Health checks: `/health/` and `/health/ready/`.
+- WebSockets: Django Channels routes under `/ws/v2/*` plus an experimental OpenAI-like gateway at `/ws/v1/realtime`.
+- Frontend: Lit 3 + Vite application in `portal-frontend/`.
+- Persistence/cache: PostgreSQL and Redis.
+- Voice integration: OVOS message bus through `ovos-bus-client`.
 
-AgentVoiceBox is a production-hardened, standalone voice AI gateway built on the OpenVoiceOS (OVOS) intelligence bus. It provides a drop-in, sovereign replacement for external voice APIs, managed through a comprehensive Lit 3 administration portal and orchestrated via a Django Ninja backend.
+## 3. Implemented Backend Modules
+The active Django apps are:
+- `apps.core`: API registration, middleware, exceptions, cache, permissions, health views.
+- `apps.tenants`: tenant records, tenant settings, onboarding, tenant-scoped access.
+- `apps.users`: custom user model, profile, user administration.
+- `apps.projects`: project CRUD and voice configuration.
+- `apps.api_keys`: API key lifecycle and validation.
+- `apps.sessions`: voice session lifecycle and session events.
+- `apps.billing`: usage events, invoices, billing alerts, Lago integration.
+- `apps.voice`: voice personas, voice models, custom voices, wake words, OVOS configuration bridge.
+- `apps.themes`: tenant theme management.
+- `apps.audit`: audit log records and export.
+- `apps.notifications`: notifications and preferences.
+- `apps.workflows`: Temporal workflow definitions, activities, schedules, and management commands.
+- `apps.realtime`: realtime sessions, conversations, responses, ephemeral tokens, OVOS bridge, and OpenAI-like schemas.
+- `apps.mcp`: MCP tools and SSE/message endpoints.
 
-This cluster enforces strict **10 GB memory limits** and isolates all traffic within the `65000-65099` port range.
+## 4. Implemented API Baseline
+All REST paths below are mounted under `/api/v2` unless noted otherwise.
 
-## Architecture (Production Hardened)
+Router prefixes:
+- `/tenants`
+- `/onboarding`
+- `/users`
+- `/user`
+- `/projects`
+- `/api-keys`
+- `/sessions`
+- `/billing`
+- `/voice`
+- `/voice-cloning`
+- `/wake-words`
+- `/themes`
+- `/audit`
+- `/notifications`
+- `/admin/tenants`
+- `/admin/users`
+- `/admin`
+- `/mcp`
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                 Portal Frontend (Admin UX & i18n)               │
-│                  (Lit 3 + Vite, port 65027, 512MB)              │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Django API Gateway (Ninja)                   │
-│          REST: /v1/voice/ovos/* (port 65020, 2GB)               │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        OVOS Message Bus                         │
-│                  (Intelligence Backbone, 256MB)                 │
-└─────────────────────────────────────────────────────────────────┘
-            │                 │                 │
-            ▼                 ▼                 ▼
-  ┌─────────────────┐ ┌───────────────┐ ┌─────────────────┐
-  │   OVOS Core     │ │ OVOS Listener │ │   OVOS Audio    │
-  │ (Intent, 2GB)   │ │  (STT, 1.5GB) │ │   (TTS, 1.5GB)  │
-  └─────────────────┘ └───────────────┘ └─────────────────┘
-```
+WebSocket routes:
+- `/ws/v2/events`
+- `/ws/v2/sessions/{session_id}`
+- `/ws/v2/stt/transcription`
+- `/ws/v2/tts/stream`
+- `/ws/v1/realtime`
 
-## Key Components
+## 5. Implemented Frontend Baseline
+The frontend is not Next.js or React. It is a Lit 3/Vite TypeScript application with custom elements for layout, login, dashboard, setup, settings, voice management, voice cloning, and voice playground views. API access is centralized through TypeScript services in `portal-frontend/src/services`.
 
-- **Django REST API (Ninja)**: Provides synchronous config patching and voice cloning bridges.
-- **Portal Frontend**: Lit 3 app providing exhaustive configuration of `mycroft.conf` (Skills, Audio, VAD) with native i18n (English/Spanish).
-- **OVOS Engine**: Complete sovereign stack (Bus, Core, Listener, Audio) operating entirely offline.
-- **Storage**: PostgreSQL (1.5GB) and Redis (256MB) for agent state and cache persistence.
+## 6. Operational Baseline
+The primary compose file defines these local services:
+- PostgreSQL on host port `65004`.
+- Redis on host port `65005`.
+- Django API on host port `65020`.
+- Portal frontend on host port `65027`.
+- OVOS message bus on host port `65081`.
+- OVOS core, listener, and audio containers on the internal Docker network.
 
-## Quick Start (Docker)
+The primary compose file documents a 10 GB memory budget. This documentation states that budget as an implementation target, not as a verified runtime measurement.
 
-```bash
-cd ovos-voice-agent/AgentVoiceBoxEngine
+## 7. Constraints
+- New REST APIs must use Django Ninja.
+- New WebSocket handlers must use Django Channels.
+- New UI must use Lit 3 Web Components.
+- New database models must use Django ORM and migrations.
+- Documentation must not claim unsupported routes, frameworks, or production guarantees.
 
-docker compose -p agentvoicebox up -d
-```
-
-### Service URLs
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Portal Frontend** | http://localhost:65027 | Administration UI, Voice Cloning, Settings |
-| **Django API** | http://localhost:65020/api/v2 | Agent API & Gateway endpoints |
-| **API Docs (Ninja)** | http://localhost:65020/api/v2/docs | Swagger UI |
-| **OVOS Bus** | ws://localhost:65081 | Raw websocket event bus |
-
-## Configuration & Standards
-
-- **Memory:** The cluster must not exceed 10GB total RAM. Swap memory is matched to container memory limits to prevent thrashing (`memswap_limit = memory`).
-- **Frameworks:** Strictly **Django Ninja** for APIs and **Lit 3** for web components. No FastAPI, no Alpine.js.
-- **Documentation:** See `SRS_ISO_AgentVoiceBox.md` for the complete ISO/IEC 29148:2018 Software Requirements Specification.
-- **Agent Rules:** See `agent.md` for mandatory Vibe Coding compliance directives.
+## 8. Known Gaps And Risks
+- `/ws/v1/realtime` is an experimental OpenAI-like gateway, not a complete OpenAI Realtime API replacement.
+- Some generated/cache/local files are present in the repository and should not be treated as source documentation.
+- Some infrastructure manifests describe optional deployments that are not the primary local compose stack.
+- Security-sensitive local files are present in the working tree; these should be reviewed separately before publication.

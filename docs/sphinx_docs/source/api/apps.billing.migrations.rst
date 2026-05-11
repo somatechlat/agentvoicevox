@@ -1,29 +1,14 @@
-apps.billing.migrations package
-===============================
+apps.billing.migrations
+=======================
 
-Submodules
-----------
-
-apps.billing.migrations.0001\_initial module
---------------------------------------------
-
-.. automodule:: apps.billing.migrations.0001_initial
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.billing.migrations.0002\_initial module
---------------------------------------------
-
-.. automodule:: apps.billing.migrations.0002_initial
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.billing.migrations
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Django migrations for billing models.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

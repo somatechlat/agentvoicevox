@@ -32,7 +32,6 @@ ENV PATH="/opt/venv/bin:$PATH"
 WORKDIR /build
 COPY requirements.txt .
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu && \
     pip install -r requirements.txt
 
 # --------------------------------------------------------------------------

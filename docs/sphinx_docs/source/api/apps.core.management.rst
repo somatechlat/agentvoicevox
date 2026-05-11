@@ -1,18 +1,14 @@
-apps.core.management package
-============================
+apps.core.management
+====================
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.core.management.commands
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.core.management
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Core Django management package.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

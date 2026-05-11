@@ -1,61 +1,14 @@
-apps.notifications package
-==========================
+apps.notifications
+==================
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.notifications.migrations
-
-Submodules
-----------
-
-apps.notifications.api module
------------------------------
-
-.. automodule:: apps.notifications.api
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.notifications.apps module
-------------------------------
-
-.. automodule:: apps.notifications.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.notifications.models module
---------------------------------
-
-.. automodule:: apps.notifications.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.notifications.schemas module
----------------------------------
-
-.. automodule:: apps.notifications.schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.notifications.services module
-----------------------------------
-
-.. automodule:: apps.notifications.services
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.notifications
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Notification models, schemas, services, preferences, and routes.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

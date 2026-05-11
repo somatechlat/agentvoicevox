@@ -1,28 +1,22 @@
 # Django Compliance Report
 
-Scope: Python files that are not inside Django backend apps or Django runtime infrastructure.
-Rule: All Python files must be part of Django infra/framework.
+**Document status:** Code-aligned baseline
+**Revision date:** 2026-05-11
 
-## Violations (non-Django locations)
-1. (removed) ovos_voice_agent/__init__.py
-2. (migrated) ovos-voice-agent/audio_codecs.py -> `ovos-voice-agent/AgentVoiceBoxEngine/backend/apps/realtime/services/audio_codecs.py`
-3. (migrated) ovos-voice-agent/config.py -> `ovos-voice-agent/AgentVoiceBoxEngine/backend/config/voice_agent.py`
-4. (migrated) ovos-voice-agent/rate_limiter.py -> `ovos-voice-agent/AgentVoiceBoxEngine/backend/apps/realtime/services/rate_limiter.py`
-5. (migrated) ovos-voice-agent/llm_integration.py -> `ovos-voice-agent/AgentVoiceBoxEngine/backend/apps/realtime/services/llm_integration.py`
-6. (migrated) ovos-voice-agent/function_calling.py -> `ovos-voice-agent/AgentVoiceBoxEngine/backend/apps/realtime/services/function_calling.py`
-7. (removed) ovos-voice-agent/AgentVoiceBoxEngine/workers/__init__.py
-8. (migrated) ovos-voice-agent/AgentVoiceBoxEngine/workers/llm_worker.py -> `ovos-voice-agent/AgentVoiceBoxEngine/backend/apps/workflows/management/commands/run_llm_worker.py`
-9. (migrated) ovos-voice-agent/AgentVoiceBoxEngine/workers/tts_worker.py -> `ovos-voice-agent/AgentVoiceBoxEngine/backend/apps/workflows/management/commands/run_tts_worker.py`
-10. (migrated) ovos-voice-agent/AgentVoiceBoxEngine/workers/stt_worker.py -> `ovos-voice-agent/AgentVoiceBoxEngine/backend/apps/workflows/management/commands/run_stt_worker.py`
-11. (migrated) ovos-voice-agent/AgentVoiceBoxEngine/workers/worker_config.py -> `ovos-voice-agent/AgentVoiceBoxEngine/backend/apps/workflows/redis_client.py`
-12. (migrated) ovos-voice-agent/AgentVoiceBoxEngine/workers/worker_redis.py -> `ovos-voice-agent/AgentVoiceBoxEngine/backend/apps/workflows/redis_client.py`
-13. (migrated) seed_lago command moved to Django management command
+## 1. Purpose
+This report records whether the repository follows the project rule that application backend code uses Django, Django Ninja, Django Channels, and Django ORM.
 
-## Django Infra (compliant)
-- All Python under `ovos-voice-agent/AgentVoiceBoxEngine/backend/` (apps, config, integrations, migrations, tests).
+## 2. Findings
+- REST API implementation uses Django Ninja through `backend/apps/core/api.py`.
+- WebSocket implementation uses Django Channels through `backend/config/asgi.py` and `backend/realtime/routing.py`.
+- Domain data models use Django ORM under `backend/apps/*/models.py`.
+- The active frontend uses Lit 3, not React or Next.js.
+- The active backend is not Flask or FastAPI.
 
-## Required Remediation (next actions)
-- Review for any remaining non-Django Python files and remove or migrate.
+## 3. Exceptions And Notes
+- `uvicorn` is present as an ASGI server dependency. That is not FastAPI usage.
+- Historical planning docs were removed from the repository; code and the current SRS are authoritative.
+- Generated, cached, or local environment artifacts are not evidence of application architecture.
 
-## Notes
-- Migrated modules now rely on Django settings for all configuration (no hardcoded defaults).
+## 4. Conclusion
+The active application code is aligned with the Django/Ninja/Channels/ORM architecture requirement. Documentation must continue to reject stale Flask/FastAPI/React/Next.js claims unless explicitly describing historical plans.

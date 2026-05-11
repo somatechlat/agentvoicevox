@@ -1,21 +1,14 @@
-apps.core.management.commands package
-=====================================
+apps.core.management.commands
+=============================
 
-Submodules
-----------
-
-apps.core.management.commands.seed\_permission\_matrix module
--------------------------------------------------------------
-
-.. automodule:: apps.core.management.commands.seed_permission_matrix
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.core.management.commands
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Core management commands including permission matrix seeding.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

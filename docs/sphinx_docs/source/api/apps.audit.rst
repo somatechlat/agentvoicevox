@@ -1,61 +1,14 @@
-apps.audit package
-==================
+apps.audit
+==========
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.audit.migrations
-
-Submodules
-----------
-
-apps.audit.api module
----------------------
-
-.. automodule:: apps.audit.api
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.audit.apps module
-----------------------
-
-.. automodule:: apps.audit.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.audit.models module
-------------------------
-
-.. automodule:: apps.audit.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.audit.schemas module
--------------------------
-
-.. automodule:: apps.audit.schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.audit.services module
---------------------------
-
-.. automodule:: apps.audit.services
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.audit
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Audit log models, schemas, services, and routes.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

@@ -88,6 +88,8 @@ services:
     hostname: django-api
     ports:
       - "65020:8000"
+    env_file:
+      - .env
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.base
       SECRET_KEY: dev-secret-key-for-local-development-only

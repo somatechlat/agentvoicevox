@@ -1,61 +1,14 @@
-apps.projects package
-=====================
+apps.projects
+=============
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.projects.migrations
-
-Submodules
-----------
-
-apps.projects.api module
-------------------------
-
-.. automodule:: apps.projects.api
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.projects.apps module
--------------------------
-
-.. automodule:: apps.projects.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.projects.models module
----------------------------
-
-.. automodule:: apps.projects.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.projects.schemas module
-----------------------------
-
-.. automodule:: apps.projects.schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.projects.services module
------------------------------
-
-.. automodule:: apps.projects.services
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.projects
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Project models, schemas, services, and routes.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

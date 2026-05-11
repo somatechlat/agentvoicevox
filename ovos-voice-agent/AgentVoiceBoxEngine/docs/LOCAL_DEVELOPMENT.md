@@ -1,97 +1,57 @@
-# AgentVoiceBox Local Development (Django)
+# AgentVoiceBox Local Development Specification
 
-This guide covers running the Django-based AgentVoiceBox stack with Docker Compose.
+**Document status:** Code-aligned baseline
+**Revision date:** 2026-05-11
+**Source of truth:** `docker-compose.yml`, `backend/`, and `portal-frontend/`.
 
-## Prerequisites
+## 1. Purpose
+This document defines the local development baseline for the implemented AgentVoiceBox stack.
 
-- Docker Desktop 4.x+ with Docker Compose v2
-- 10GB+ available RAM for Docker
-- Git
+## 2. Prerequisites
+- Docker and Docker Compose.
+- Python tooling for backend-only development.
+- Bun or Node-compatible tooling for the Vite/Lit frontend.
 
-## Quick Start
-
+## 3. Primary Stack Startup
 ```bash
-# Start shared services
-cd ovos-voice-agent/AgentVoiceBoxEngine/infra/standalone
-docker compose -p shared-services up -d
-
-# Start application stack
-cd ../../
+cd ovos-voice-agent/AgentVoiceBoxEngine
 docker compose -p agentvoicebox up -d
 ```
 
-## Service URLs
+## 4. Local Services
+- Portal frontend: http://localhost:65027
+- Django API: http://localhost:65020/api/v2
+- API docs: http://localhost:65020/api/v2/docs
+- API schema: http://localhost:65020/api/v2/openapi.json
+- Health: http://localhost:65020/health/
+- Readiness: http://localhost:65020/health/ready/
+- WebSockets: ws://localhost:65020/ws/v2/...
+- Experimental realtime gateway: ws://localhost:65020/ws/v1/realtime
+- PostgreSQL: localhost:65004
+- Redis: localhost:65005
+- OVOS bus: localhost:65081
 
-| Service | URL | Description |
-|---------|-----|-------------|
-| Django API | http://localhost:65020 | REST and WebSocket entry point |
-| API Docs | http://localhost:65020/api/v2/docs | Django Ninja OpenAPI |
-| Portal Frontend | http://localhost:65027 | Customer portal UI |
-| PostgreSQL | localhost:65004 | Database |
-| Redis | localhost:65005 | Cache/session store |
-| Keycloak | http://localhost:65006 | Identity provider |
-| Lago | http://localhost:63690 | Billing engine (isolated cluster) |
-| Vault | http://localhost:65003 | Secrets |
-| Prometheus | http://localhost:65011 | Metrics |
-| OPA | http://localhost:65030 | Policy engine (if running separately) |
+## 5. Backend Development
+Backend source is under `backend/`. The Django API is registered in `apps.core.api`. Settings are split under `backend/config/settings`.
 
-## Health Checks
-
+Useful commands from `backend/`:
 ```bash
-curl http://localhost:65020/health/
-curl http://localhost:65020/health/ready/
+python manage.py check
+python manage.py migrate
+pytest
 ```
 
-## REST API
+## 6. Frontend Development
+Frontend source is under `portal-frontend/` and uses Lit 3 with Vite.
 
-The REST API is served under `/api/v2`:
-
-- `GET /api/v2/tenants`
-- `GET /api/v2/users`
-- `GET /api/v2/projects`
-- `GET /api/v2/api-keys`
-- `GET /api/v2/sessions`
-- `GET /api/v2/voice`
-- `GET /api/v2/themes`
-- `GET /api/v2/notifications`
-- `GET /api/v2/audit`
-- `GET /api/v2/billing`
-
-See the live API docs for full request/response schemas:
-
-`http://localhost:65020/api/v2/docs`
-
-## WebSocket Endpoints
-
-- `ws://localhost:65020/ws/v2/events`
-- `ws://localhost:65020/ws/v2/sessions/{session_id}`
-- `ws://localhost:65020/ws/v2/stt/transcription`
-- `ws://localhost:65020/ws/v2/tts/stream`
-
-Auth uses Keycloak JWTs passed as `?token=` or `Authorization: Bearer`.
-
-## Environment Configuration
-
-The Django backend reads environment variables defined in:
-
-- `backend/.env.example` (copy to `.env` for local overrides)
-
-The Docker Compose file provides sane defaults for local dev; only override values if needed.
-
-## Logs
-
+Useful commands from `portal-frontend/`:
 ```bash
-# All services
-docker compose -p agentvoicebox logs -f
-
-# Django API only
-docker compose -p agentvoicebox logs -f django-api
+bun install
+bun run dev
+bun run build
+bun run type-check
+bun run test:e2e
 ```
 
-## Running Tests (Backend)
-
-```bash
-cd ovos-voice-agent/AgentVoiceBoxEngine/backend
-pip install -r requirements.txt -r ../requirements-dev.txt
-pytest -v
-```
+## 7. Documentation Rules
+If local behavior changes, update this file and the SRS in the same change. Do not document planned routes or services as implemented.

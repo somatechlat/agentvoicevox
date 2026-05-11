@@ -1,65 +1,47 @@
-<!-- WARNING: This documentation uses real data. Do NOT mock or use fake data. -->
 # AgentVoiceBox Monorepo
 
-## 1. Purpose
-This repository contains the **AgentVoiceBox** platform stack (Django + Channels + Django Ninja + Lit 3/Bun)
-and its supporting documentation. The production-ready stack lives under
-`ovos-voice-agent/AgentVoiceBoxEngine`.
+**Document status:** Code-aligned baseline
+**Revision date:** 2026-05-11
+**Source of truth:** Code under `ovos-voice-agent/AgentVoiceBoxEngine`.
 
-## 2. System Overview
-**Active API surface**: `/api/v2` (REST) and `/ws/v2` (WebSockets).  
-**OpenAI-compatible `/v1` endpoints**: not implemented in this codebase.
+## 1. Purpose
+This repository contains the AgentVoiceBox platform stack and supporting documentation. The active platform implementation is in `ovos-voice-agent/AgentVoiceBoxEngine`.
+
+## 2. Implemented System Overview
+AgentVoiceBox is implemented as:
+- Django 5.1 + Django Ninja REST API at `/api/v2`.
+- Django Channels WebSocket API at `/ws/v2/*` with an experimental OpenAI-like gateway at `/ws/v1/realtime`.
+- Lit 3 + Vite portal frontend.
+- PostgreSQL and Redis persistence/cache infrastructure.
+- OVOS message-bus integration for voice configuration and voice event flow.
+
+No root Next.js blog application is active in this repository.
 
 ## 3. Repository Layout
-- `ovos-voice-agent/AgentVoiceBoxEngine/`: Main platform (backend, frontend, Docker stack, infra, SRS).
-- `ovos-voice-agent/`: Legacy sprint artifacts and experiments (not production, not wired to the Django stack).
-- `docs/`: Project notes (architecture notes, compliance report, model selection).
-- `documents/`: Marketing content.
+- `ovos-voice-agent/AgentVoiceBoxEngine/`: active platform source, Docker stack, frontend, backend, infrastructure, and SRS documents.
+- `docs/`: supporting project notes and generated Sphinx source.
+- `documents/`: marketing/reference material.
 
-## 4. Quick Start (Docker)
+## 4. Local Quick Start
 ```bash
 cd ovos-voice-agent/AgentVoiceBoxEngine
 docker compose -p agentvoicebox up -d
 ```
 
-Default service URLs (shared services + app stack):
-- Portal Frontend: http://localhost:65027
+Default service URLs from the primary compose file:
+- Portal frontend: http://localhost:65027
 - Django API: http://localhost:65020/api/v2
+- API docs: http://localhost:65020/api/v2/docs
 - WebSockets: ws://localhost:65020/ws/v2/...
-- Keycloak: http://localhost:65006
-- Prometheus: http://localhost:65011
-
-Local overrides: `ovos-voice-agent/AgentVoiceBoxEngine/backend/.env.example`.
+- Experimental realtime gateway: ws://localhost:65020/ws/v1/realtime
+- OVOS bus host port: ws://localhost:65081
 
 ## 5. Canonical Documentation
-- Platform overview: `ovos-voice-agent/AgentVoiceBoxEngine/README.md`
+- Platform SRS: `ovos-voice-agent/AgentVoiceBoxEngine/docs/srs/AgentVoiceBox_SRS.md`
+- Architecture: `ovos-voice-agent/AgentVoiceBoxEngine/ARCHITECTURE.md`
 - Local development: `ovos-voice-agent/AgentVoiceBoxEngine/docs/LOCAL_DEVELOPMENT.md`
-- OpenAPI (runtime): `http://localhost:65020/api/v2/docs`
-- WebSocket reference: `ovos-voice-agent/AgentVoiceBoxEngine/docs/asyncapi.yaml`
-
-## 6. Requirements (SRS)
-- Core SRS: `ovos-voice-agent/AgentVoiceBoxEngine/docs/srs/AgentVoiceBox_SRS.md`
-- MCP SRS: `ovos-voice-agent/AgentVoiceBoxEngine/docs/srs/MCP_Architecture_SRS.md`
-- Configuration SRS: `ovos-voice-agent/AgentVoiceBoxEngine/docs/srs/Configuration_Settings_SRS.md`
-- Developer Mode SRS: `ovos-voice-agent/AgentVoiceBoxEngine/docs/srs/Developer_Mode_Configuration_SRS.md`
-- External Services SRS: `ovos-voice-agent/AgentVoiceBoxEngine/docs/srs/External_Services_Configuration_SRS.md`
-
-## 7. Infrastructure References
-- Infrastructure overview (standalone + SaaS): `ovos-voice-agent/AgentVoiceBoxEngine/infra/README.md`
-- Docker deployment (shared services + app stack): `ovos-voice-agent/AgentVoiceBoxEngine/infra/docker/README.md`
-- Lago billing cluster: `ovos-voice-agent/AgentVoiceBoxEngine/infra/lago-deployments/README.md`
-
-## 8. Frontend
 - Portal frontend: `ovos-voice-agent/AgentVoiceBoxEngine/portal-frontend/README.md`
+- Infrastructure: `ovos-voice-agent/AgentVoiceBoxEngine/infra/README.md`
 
-## 9. Port Authority (Canonical)
-These ports are the authoritative local defaults used across docs and compose files:
-- Vault: `65003`
-- PostgreSQL: `65004`
-- Redis: `65005`
-- Keycloak: `65006`
-- Temporal: `65007`
-- Django API: `65020`
-- Portal Frontend: `65027`
-- Observability stack: `65011` (Prometheus)
-- Lago (isolated): `63690`
+## 6. Documentation Control
+All documentation must match code. If a requirement, route, framework, or service is not implemented in code, it must be labeled planned, optional, or not implemented.

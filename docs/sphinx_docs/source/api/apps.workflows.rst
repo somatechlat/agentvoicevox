@@ -1,48 +1,14 @@
-apps.workflows package
-======================
+apps.workflows
+==============
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.workflows.activities
-   apps.workflows.definitions
-   apps.workflows.management
-   apps.workflows.schedules
-
-Submodules
-----------
-
-apps.workflows.apps module
---------------------------
-
-.. automodule:: apps.workflows.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.workflows.queues module
-----------------------------
-
-.. automodule:: apps.workflows.queues
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.workflows.redis\_client module
------------------------------------
-
-.. automodule:: apps.workflows.redis_client
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.workflows
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Temporal workflow definitions, activities, schedules, Redis helpers, queues, and management commands.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

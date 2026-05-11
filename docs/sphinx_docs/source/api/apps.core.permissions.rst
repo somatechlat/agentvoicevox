@@ -1,45 +1,14 @@
-apps.core.permissions package
-=============================
+apps.core.permissions
+=====================
 
-Submodules
-----------
-
-apps.core.permissions.auth\_bearer module
------------------------------------------
-
-.. automodule:: apps.core.permissions.auth_bearer
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.permissions.decorators module
----------------------------------------
-
-.. automodule:: apps.core.permissions.decorators
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.permissions.models module
------------------------------------
-
-.. automodule:: apps.core.permissions.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.permissions.service module
-------------------------------------
-
-.. automodule:: apps.core.permissions.service
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.core.permissions
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Authentication bearer, granular permission models, decorators, and services.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

@@ -1,21 +1,14 @@
-apps.workflows.schedules package
-================================
+apps.workflows.schedules
+========================
 
-Submodules
-----------
-
-apps.workflows.schedules.periodic module
-----------------------------------------
-
-.. automodule:: apps.workflows.schedules.periodic
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.workflows.schedules
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Periodic workflow schedule definitions.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

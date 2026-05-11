@@ -1,61 +1,14 @@
-apps.themes package
-===================
+apps.themes
+===========
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.themes.migrations
-
-Submodules
-----------
-
-apps.themes.api module
-----------------------
-
-.. automodule:: apps.themes.api
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.themes.apps module
------------------------
-
-.. automodule:: apps.themes.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.themes.models module
--------------------------
-
-.. automodule:: apps.themes.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.themes.schemas module
---------------------------
-
-.. automodule:: apps.themes.schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.themes.services module
----------------------------
-
-.. automodule:: apps.themes.services
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.themes
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Theme models, schemas, services, and routes.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

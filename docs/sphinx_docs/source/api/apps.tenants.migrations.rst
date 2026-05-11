@@ -1,29 +1,14 @@
-apps.tenants.migrations package
-===============================
+apps.tenants.migrations
+=======================
 
-Submodules
-----------
-
-apps.tenants.migrations.0001\_initial module
---------------------------------------------
-
-.. automodule:: apps.tenants.migrations.0001_initial
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.tenants.migrations.0002\_settings\_stt\_llm\_fields module
----------------------------------------------------------------
-
-.. automodule:: apps.tenants.migrations.0002_settings_stt_llm_fields
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.tenants.migrations
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Django migrations for tenants.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

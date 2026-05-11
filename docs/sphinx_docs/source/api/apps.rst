@@ -1,32 +1,14 @@
-apps package
-============
+Django Apps Package
+===================
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.api_keys
-   apps.audit
-   apps.billing
-   apps.core
-   apps.llm
-   apps.notifications
-   apps.projects
-   apps.realtime
-   apps.sessions
-   apps.stt
-   apps.tenants
-   apps.themes
-   apps.users
-   apps.voice
-   apps.workflows
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+The active backend apps package contains Django applications for the implemented AgentVoiceBox platform.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

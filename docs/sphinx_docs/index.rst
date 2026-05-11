@@ -1,18 +1,16 @@
-.. AgentVoiceBox Backend documentation master file, created by
-   sphinx-quickstart on Mon Jan  5 06:51:13 2026.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+AgentVoiceBox Code Reference
+============================
 
-AgentVoiceBox Backend documentation
-===================================
+Document status
+---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+Purpose
+-------
+This Sphinx tree documents the Python package layout for the implemented Django backend. The active REST API is mounted at ``/api/v2`` and the active WebSocket routes are mounted under ``/ws/v2`` plus experimental ``/ws/v1/realtime``.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: API Reference
 
-   api/modules
+   source/api/modules

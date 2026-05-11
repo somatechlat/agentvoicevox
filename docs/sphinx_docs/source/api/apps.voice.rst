@@ -1,93 +1,14 @@
-apps.voice package
-==================
+apps.voice
+==========
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.voice.migrations
-
-Submodules
-----------
-
-apps.voice.api module
----------------------
-
-.. automodule:: apps.voice.api
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.voice.api\_voice\_cloning module
--------------------------------------
-
-.. automodule:: apps.voice.api_voice_cloning
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.voice.api\_wake\_words module
-----------------------------------
-
-.. automodule:: apps.voice.api_wake_words
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.voice.apps module
-----------------------
-
-.. automodule:: apps.voice.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.voice.models module
-------------------------
-
-.. automodule:: apps.voice.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.voice.schemas module
--------------------------
-
-.. automodule:: apps.voice.schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.voice.services module
---------------------------
-
-.. automodule:: apps.voice.services
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.voice.voice\_cloning\_schemas module
------------------------------------------
-
-.. automodule:: apps.voice.voice_cloning_schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.voice.wake\_words\_schemas module
---------------------------------------
-
-.. automodule:: apps.voice.wake_words_schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.voice
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Voice personas, models, custom voices, wake words, OVOS bridge, audio processor, schemas, and routes.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

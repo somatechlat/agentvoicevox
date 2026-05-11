@@ -1,77 +1,14 @@
-apps.users package
-==================
+apps.users
+==========
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.users.migrations
-
-Submodules
-----------
-
-apps.users.api module
----------------------
-
-.. automodule:: apps.users.api
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.users.api\_admin module
-----------------------------
-
-.. automodule:: apps.users.api_admin
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.users.api\_profile module
-------------------------------
-
-.. automodule:: apps.users.api_profile
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.users.apps module
-----------------------
-
-.. automodule:: apps.users.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.users.models module
-------------------------
-
-.. automodule:: apps.users.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.users.schemas module
--------------------------
-
-.. automodule:: apps.users.schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.users.services module
---------------------------
-
-.. automodule:: apps.users.services
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.users
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Custom user model, schemas, services, user APIs, profile APIs, and admin APIs.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

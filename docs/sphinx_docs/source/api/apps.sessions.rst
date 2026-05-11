@@ -1,61 +1,14 @@
-apps.sessions package
-=====================
+apps.sessions
+=============
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.sessions.migrations
-
-Submodules
-----------
-
-apps.sessions.api module
-------------------------
-
-.. automodule:: apps.sessions.api
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.sessions.apps module
--------------------------
-
-.. automodule:: apps.sessions.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.sessions.models module
----------------------------
-
-.. automodule:: apps.sessions.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.sessions.schemas module
-----------------------------
-
-.. automodule:: apps.sessions.schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.sessions.services module
------------------------------
-
-.. automodule:: apps.sessions.services
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.sessions
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Voice session models, schemas, services, and routes.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

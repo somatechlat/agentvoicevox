@@ -1,61 +1,14 @@
-apps.core.middleware package
-============================
+apps.core.middleware
+====================
 
-Submodules
-----------
-
-apps.core.middleware.audit module
----------------------------------
-
-.. automodule:: apps.core.middleware.audit
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.middleware.authentication module
-------------------------------------------
-
-.. automodule:: apps.core.middleware.authentication
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.middleware.exception\_handler module
-----------------------------------------------
-
-.. automodule:: apps.core.middleware.exception_handler
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.middleware.rate\_limit module
----------------------------------------
-
-.. automodule:: apps.core.middleware.rate_limit
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.middleware.request\_logging module
---------------------------------------------
-
-.. automodule:: apps.core.middleware.request_logging
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.core.middleware.tenant module
-----------------------------------
-
-.. automodule:: apps.core.middleware.tenant
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.core.middleware
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Request logging, tenant, authentication, rate limit, audit, and exception middleware.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

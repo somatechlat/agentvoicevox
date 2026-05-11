@@ -1,10 +1,10 @@
 /**
  * Authentication Service
- * 
+ *
  * USES EXISTING INFRASTRUCTURE:
  * - jwt-utils.ts for token parsing and validation
  * - api-client.ts for HTTP requests (when needed)
- * 
+ *
  * Handles Keycloak OAuth2/OIDC:
  * - Login (redirect to Keycloak)
  * - Token exchange and storage
@@ -239,6 +239,91 @@ class AuthService {
       return true;
     } catch (error) {
       console.error('Authentication callback error:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Login with standard email/password (ROPC or mock if AUTH_BYPASS is true)
+   */
+  async loginWithPassword(email: string, password: string): Promise<boolean> {
+    const isAuthBypass = getEnv('VITE_AUTH_BYPASS', 'false') === 'true';
+
+    if (isAuthBypass) {
+      console.log('AUTH_BYPASS is active, generating mock JWT token');
+      // Generate a mock JWT for development
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const payload = btoa(JSON.stringify({
+        sub: '12345678-1234-1234-1234-123456789012',
+        tenant_id: 'default',
+        email: email,
+        preferred_username: email.split('@')[0],
+        roles: ['admin'],
+        permissions: ['*'],
+        exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24),
+        iat: Math.floor(Date.now() / 1000),
+        iss: 'fake-issuer',
+        aud: 'agentvoicebox'
+      }));
+      const signature = 'fake-signature';
+      const fakeToken = `${header}.${payload}.${signature}`;
+
+      this.tokens = {
+        accessToken: fakeToken,
+        refreshToken: fakeToken,
+        expiresAt: Date.now() + (60 * 60 * 24 * 1000)
+      };
+
+      localStorage.setItem(STORAGE_KEYS.TOKENS, JSON.stringify(this.tokens));
+      apiClient.setAuthToken(this.tokens.accessToken);
+
+      const intendedUri = localStorage.getItem(STORAGE_KEYS.REDIRECT_URI) || '/admin/setup';
+      localStorage.removeItem(STORAGE_KEYS.REDIRECT_URI);
+      window.location.href = intendedUri;
+      return true;
+    }
+
+    try {
+      // Production Keycloak Direct Access Grants
+      const response = await fetch(
+        `${this.config.url}/realms/${this.config.realm}/protocol/openid-connect/token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            grant_type: 'password',
+            client_id: this.config.clientId,
+            username: email,
+            password: password
+          })
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Password login failed:', response.status);
+        return false;
+      }
+
+      const data = await response.json();
+      this.tokens = {
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        idToken: data.id_token,
+        expiresAt: Date.now() + (data.expires_in * 1000)
+      };
+
+      localStorage.setItem(STORAGE_KEYS.TOKENS, JSON.stringify(this.tokens));
+      apiClient.setAuthToken(this.tokens.accessToken);
+      this.scheduleTokenRefresh();
+
+      const intendedUri = localStorage.getItem(STORAGE_KEYS.REDIRECT_URI) || '/admin/setup';
+      localStorage.removeItem(STORAGE_KEYS.REDIRECT_URI);
+      window.location.href = intendedUri;
+      return true;
+    } catch (error) {
+      console.error('Password login error:', error);
       return false;
     }
   }

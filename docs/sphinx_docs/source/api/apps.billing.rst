@@ -1,61 +1,14 @@
-apps.billing package
-====================
+apps.billing
+============
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.billing.migrations
-
-Submodules
-----------
-
-apps.billing.api module
------------------------
-
-.. automodule:: apps.billing.api
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.billing.apps module
-------------------------
-
-.. automodule:: apps.billing.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.billing.models module
---------------------------
-
-.. automodule:: apps.billing.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.billing.schemas module
----------------------------
-
-.. automodule:: apps.billing.schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.billing.services module
-----------------------------
-
-.. automodule:: apps.billing.services
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.billing
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Usage, invoice, billing alert, Lago integration, and billing routes.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

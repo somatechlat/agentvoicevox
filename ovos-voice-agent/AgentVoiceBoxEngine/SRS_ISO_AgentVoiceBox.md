@@ -1,62 +1,117 @@
-# Software Requirements Specification (SRS)
-**Project:** AgentVoiceBox  
-**Standard:** ISO/IEC 29148:2018 Compliant  
-**Version:** 1.1.0 (Production Hardened)
+# Software Requirements Specification: AgentVoiceBox
+
+**Document identifier:** AVB-SRS-CODE-BASELINE
+**Version:** 2.0.0
+**Revision date:** 2026-05-11
+**Standard style:** ISO/IEC/IEEE 29148-style SRS
+**Authority:** Current repository code. This document is not a certification claim.
 
 ## 1. Introduction
 ### 1.1 Purpose
-This document provides the complete Software Requirements Specification (SRS) for AgentVoiceBox, a sovereign, containerized voice AI gateway utilizing the OpenVoiceOS (OVOS) intelligence bus. It is intended for developers, AI agent maintainers, and system administrators.
+This Software Requirements Specification defines the requirements represented by the current AgentVoiceBox implementation. It supersedes stale documentation that described unsupported frameworks, routes, or completeness claims.
 
 ### 1.2 Scope
-AgentVoiceBox replaces all cloud-bound voice logic (OpenAI Realtime/Whisper) with a 100% locally hosted OVOS cognitive stack. The platform exposes a Django Ninja REST API and a Lit 3 Web Component frontend for exhaustive multi-tenant and system-level administration. The cluster is guaranteed to operate under a strict 10 GB memory constraint.
+AgentVoiceBox provides a multi-tenant voice AI administration and runtime platform with:
+- Django Ninja REST API under `/api/v2`.
+- Django Channels WebSockets under `/ws/v2` and experimental `/ws/v1/realtime`.
+- Lit 3 portal frontend.
+- PostgreSQL and Redis data services.
+- OVOS bus integration.
+- Optional integrations for Keycloak, Vault, Temporal, Lago, Kafka, OPA, and observability.
 
-### 1.3 Definitions, Acronyms, and Abbreviations
-- **OVOS:** Open Voice OS.
-- **VAD:** Voice Activity Detection.
-- **STT/TTS:** Speech-to-Text / Text-to-Speech.
-- **SaaS:** Software as a Service.
-- **Lit:** Lit Web Components (Frontend Framework).
+### 1.3 Definitions
+- **AVB:** AgentVoiceBox.
+- **OVOS:** OpenVoiceOS.
+- **REST API:** Django Ninja API mounted at `/api/v2`.
+- **Realtime gateway:** Experimental WebSocket route `/ws/v1/realtime`.
+- **Tenant-scoped model:** Django ORM model that associates records with a tenant.
+
+### 1.4 References
+- `backend/apps/core/api.py`
+- `backend/config/urls.py`
+- `backend/config/asgi.py`
+- `backend/realtime/routing.py`
+- `backend/apps/*/models.py`
+- `portal-frontend/src/**/*.ts`
+- `docker-compose.yml`
 
 ## 2. Overall Description
 ### 2.1 Product Perspective
-AgentVoiceBox is a standalone container cluster functioning as a drop-in sovereign replacement for external voice APIs. It operates strictly within the `65000-65099` port range.
+AgentVoiceBox is a standalone application stack that can run locally through Docker Compose. It is not a root Next.js blog, not a Flask application, and not a FastAPI application.
 
 ### 2.2 Product Functions
-- **Real-Time Voice Interfacing:** Accepts OGG/WAV streams and routes them via the OVOS Message Bus to cognitive engines.
-- **Voice Cloning:** Allows upload and management of audio samples to generate new TTS models on-the-fly.
-- **Exhaustive Administration:** Provides a SaaS-grade Portal to configure every parameter of the `mycroft.conf` spec (Skills, VAD, Location, Core, Audio).
-- **Internationalization (i18n):** Native multi-language support (English/Spanish).
+The implemented product supports:
+- Tenant management and tenant settings.
+- User management and profile operations.
+- Project management.
+- API key management.
+- Voice session lifecycle management.
+- Billing usage, invoice, alert, and Lago webhook handling.
+- Voice personas, voice models, custom voices, wake words, and OVOS configuration patching.
+- Theme management.
+- Audit logs.
+- Notifications and preferences.
+- Admin dashboard and admin tenant/user APIs.
+- MCP SSE/message endpoints and voice tools.
+- Realtime session/conversation data models and WebSocket consumers.
 
-### 2.3 User Characteristics
-- **System Administrators:** Non-technical operators who require a clear, tooltip-guided UI to configure the OVOS engine.
-- **AI Agents:** Automated systems utilizing the `OVOSConfigBridge` API endpoints to patch settings dynamically.
+### 2.3 User Classes
+- Platform administrator: manages tenants, users, and platform dashboard data.
+- Tenant administrator: manages tenant resources, projects, voice settings, API keys, and usage.
+- Developer/API client: integrates with REST and WebSocket endpoints.
+- End user: interacts with configured voice sessions or portal views.
 
-### 2.4 Constraints
-- **Resource Limitation:** Total cluster RAM must not exceed 10.0 GB. Swap memory must equal standard memory (`memswap_limit = memory`) to prevent disk thrashing.
-- **Framework Constraint:** NO FastAPI, NO Alpine.js, NO SQLAlchemy for standard models. All APIs must be Django Ninja; all UIs must be Lit 3; all models must be Django ORM.
+### 2.4 Operating Environment
+- Python 3.12-compatible Django backend.
+- PostgreSQL database.
+- Redis cache/session/channel layer.
+- Browser environment for Lit 3 frontend.
+- Docker Compose for primary local deployment.
+
+### 2.5 Constraints
+- REST APIs shall use Django Ninja.
+- WebSocket APIs shall use Django Channels.
+- UI components shall use Lit 3.
+- Data models shall use Django ORM.
+- Claims of full external API compatibility shall not be made unless implemented and tested.
 
 ## 3. Specific Requirements
 ### 3.1 External Interface Requirements
-#### 3.1.1 User Interfaces
-- **Portal:** Built with Lit 3. Uses a glassmorphic aesthetic with comprehensive `<ui-tooltip>` integration.
+#### 3.1.1 REST API
+REQ-REST-001: The system shall mount the Django Ninja API at `/api/v2/`.
+REQ-REST-002: The system shall expose OpenAPI documentation at `/api/v2/docs`.
+REQ-REST-003: The system shall expose OpenAPI JSON at `/api/v2/openapi.json`.
+REQ-REST-004: The system shall register routers for tenants, onboarding, users, user profile, projects, API keys, sessions, billing, voice, voice cloning, wake words, themes, audit, notifications, admin tenants, admin users, admin dashboard, and MCP.
 
-#### 3.1.2 Software Interfaces
-- **Message Bus:** Interaction with `ovos-bus` via websockets on port 8181.
-- **Database:** PostgreSQL on port 65004 for agent state persistence.
+#### 3.1.2 WebSocket API
+REQ-WS-001: The system shall route event streaming at `/ws/v2/events`.
+REQ-WS-002: The system shall route voice sessions at `/ws/v2/sessions/{session_id}`.
+REQ-WS-003: The system shall route STT streaming at `/ws/v2/stt/transcription`.
+REQ-WS-004: The system shall route TTS streaming at `/ws/v2/tts/stream`.
+REQ-WS-005: The system shall expose an experimental OpenAI-like gateway at `/ws/v1/realtime`.
 
-### 3.2 System Features
-#### 3.2.1 OVOS Dynamic Configuration
-- **Description:** The system must intercept `/v1/voice/ovos/config` PATCH requests and synchronously route them to the OVOS bus (`configuration.patch`).
-- **Response Time:** Sub-800ms synchronous block.
+#### 3.1.3 User Interface
+REQ-UI-001: The portal shall be implemented with Lit 3 custom elements.
+REQ-UI-002: The portal shall use TypeScript services for API, authentication, administration, voice, formatting, permissions, serialization, JWT utilities, and i18n.
+REQ-UI-003: The portal shall provide views for login, auth callback, dashboard, setup, settings, voice management, voice cloning, and voice playground.
 
-#### 3.2.2 Live i18n
-- **Description:** The UI must support instant language toggling without a page reload, using reactive state controllers.
+### 3.2 Functional Requirements
+REQ-FUNC-001: The system shall persist tenant, user, project, API key, session, billing, voice, theme, audit, notification, and realtime records through Django ORM models.
+REQ-FUNC-002: The system shall apply tenant context through middleware and tenant-scoped models.
+REQ-FUNC-003: The system shall support API key creation, update, revocation, rotation, deletion, and validation.
+REQ-FUNC-004: The system shall support session creation, start, completion, termination, stats, and event retrieval.
+REQ-FUNC-005: The system shall send OVOS configuration patch events through the OVOS bus bridge.
+REQ-FUNC-006: The system shall support custom voice upload/list/get/delete/default/preview routes under `/api/v2/voice-cloning`.
+REQ-FUNC-007: The system shall support MCP SSE and message endpoints under `/api/v2/mcp`.
 
 ### 3.3 Nonfunctional Requirements
-#### 3.3.1 Performance
-- Max allowed cluster RAM: 10GB.
-- Max latency for config patch: 1000ms.
+REQ-NFR-001: The primary compose stack should remain within the documented 10 GB memory target unless the compose file is deliberately revised.
+REQ-NFR-002: Production deployments shall not rely on local `AUTH_BYPASS=true` behavior.
+REQ-NFR-003: Documentation shall label experimental or partial compatibility accurately.
+REQ-NFR-004: Security-sensitive local files shall not be treated as public release artifacts.
 
-#### 3.3.2 Security
-- Authentication bypass allowed ONLY in local testing environments (`AUTH_BYPASS=true`).
-- Production deployments must rely on Keycloak/Oauth2 via the Django gateway.
+## 4. Verification
+Implemented verification assets include pytest/property tests in `backend/tests` and Playwright E2E tests in `portal-frontend/e2e`. Passing tests were not asserted by this documentation update unless explicitly run in a separate verification task.
+
+## 5. Traceability
+This SRS maps to code modules, not to aspirational planning documents. Historical planning documents were removed; the code and this SRS take precedence.

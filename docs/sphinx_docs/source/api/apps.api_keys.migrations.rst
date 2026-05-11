@@ -1,29 +1,14 @@
-apps.api\_keys.migrations package
-=================================
+apps.api_keys.migrations
+========================
 
-Submodules
-----------
-
-apps.api\_keys.migrations.0001\_initial module
-----------------------------------------------
-
-.. automodule:: apps.api_keys.migrations.0001_initial
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.api\_keys.migrations.0002\_initial module
-----------------------------------------------
-
-.. automodule:: apps.api_keys.migrations.0002_initial
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.api_keys.migrations
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Django migrations for API key models.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

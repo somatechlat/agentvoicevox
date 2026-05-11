@@ -1,85 +1,14 @@
-apps.tenants package
-====================
+apps.tenants
+============
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.tenants.migrations
-
-Submodules
-----------
-
-apps.tenants.api module
------------------------
-
-.. automodule:: apps.tenants.api
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.tenants.api\_admin module
-------------------------------
-
-.. automodule:: apps.tenants.api_admin
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.tenants.api\_onboarding module
------------------------------------
-
-.. automodule:: apps.tenants.api_onboarding
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.tenants.apps module
-------------------------
-
-.. automodule:: apps.tenants.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.tenants.models module
---------------------------
-
-.. automodule:: apps.tenants.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.tenants.schemas module
----------------------------
-
-.. automodule:: apps.tenants.schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.tenants.services module
-----------------------------
-
-.. automodule:: apps.tenants.services
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.tenants.signals module
----------------------------
-
-.. automodule:: apps.tenants.signals
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.tenants
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Tenant and tenant settings models, services, APIs, onboarding, admin, and signals.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

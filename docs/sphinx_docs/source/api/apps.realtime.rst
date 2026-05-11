@@ -1,54 +1,14 @@
-apps.realtime package
-=====================
+apps.realtime
+=============
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-   apps.realtime.migrations
-   apps.realtime.services
-
-Submodules
-----------
-
-apps.realtime.admin module
---------------------------
-
-.. automodule:: apps.realtime.admin
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.realtime.apps module
--------------------------
-
-.. automodule:: apps.realtime.apps
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.realtime.models module
----------------------------
-
-.. automodule:: apps.realtime.models
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.realtime.schemas module
-----------------------------
-
-.. automodule:: apps.realtime.schemas
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.realtime
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Realtime session/conversation models, OVOS bridge, schemas, services, admin, and OpenAI-like gateway consumer.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

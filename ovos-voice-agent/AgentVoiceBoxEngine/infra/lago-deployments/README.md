@@ -1,74 +1,41 @@
-# Lago Billing - Production Multi-Tenant Cluster Deployment
+# AgentVoiceBox Infrastructure Specification
 
-**COMPLETELY ISOLATED** from AgentVoiceBox main infrastructure (65xxx range).
-Multi-tenant architecture supporting millions of transactions.
+**Document status:** Code-aligned baseline
+**Revision date:** 2026-05-11
 
-> [!IMPORTANT]
-> All configuration via Django environment variables. Secrets stored in Vault.
+## 1. Purpose
+This document summarizes infrastructure present in the repository and distinguishes the primary local stack from optional deployment references.
 
-## Port Allocation (63690-63699)
+## 2. Primary Local Stack
+The primary local stack is `ovos-voice-agent/AgentVoiceBoxEngine/docker-compose.yml`.
 
-| Service | Port | Purpose |
-|---------|------|---------|
-| Lago API | 63690 | REST API |
-| Lago Front | 63691 | Dashboard UI |
-| Lago PostgreSQL | 63692 | Database |
-| Lago Redis | 63693 | Cache/Queue |
-| Lago PDF | 63694 | Invoice PDF Generator |
+Implemented services:
+- `postgres`: PostgreSQL, host port `65004`, 1536M memory limit.
+- `redis`: Redis, host port `65005`, 256M memory limit.
+- `django-api`: Django application, host port `65020`, 2048M memory limit.
+- `portal-frontend`: Lit/Vite frontend, host port `65027`, 512M memory limit.
+- `ovos-bus`: OVOS message bus, host port `65081`, 256M memory limit.
+- `ovos-core`: OVOS core, internal network, 2048M memory limit.
+- `ovos-listener`: OVOS listener, internal network, 1536M memory limit.
+- `ovos-audio`: OVOS audio, internal network, 1536M memory limit.
 
-## Quick Start
+The compose file documents a 10 GB budget.
 
-```bash
-# Start Lago cluster
-docker compose -p lago up -d
+## 3. Optional Infrastructure Files
+The repository also contains optional or supporting infrastructure for:
+- Docker deployments under `infra/docker` and `infra/saas/docker`.
+- Kubernetes manifests under `infra/saas/k8s`.
+- Standalone shared services under `infra/standalone`.
+- Lago deployment files under `infra/lago-deployments`.
+- Vault policies and setup scripts.
+- Prometheus and Grafana configuration.
 
-# View logs
-docker compose -p lago logs -f
+These files are not automatically equivalent to the primary local runtime unless explicitly invoked.
 
-# Stop cluster
-docker compose -p lago down
-```
+## 4. Requirements
+- Infrastructure documentation shall state which compose or manifest file it describes.
+- Port and memory claims shall match the referenced file.
+- Optional services shall be labeled optional.
 
-## Access
-
-- **Dashboard**: http://localhost:63691
-- **API**: http://localhost:63690
-- **API Docs**: http://localhost:63690/api/v1/docs
-
-## Default Credentials
-
-| Service | User | Password |
-|---------|------|----------|
-| PostgreSQL | lago | lago_production_2024 |
-| Lago Admin | (sign up via dashboard) | - |
-
-## Services
-
-| Container | Image | Memory | Purpose |
-|-----------|-------|--------|---------|
-| `lago-api` | getlago/api:v1.39.0 | 1.5GB | Main API |
-| `lago-worker` | getlago/api:v1.39.0 | 1GB | Sidekiq jobs |
-| `lago-clock` | getlago/api:v1.39.0 | 256MB | Scheduled tasks |
-| `lago-front` | getlago/front:v1.39.0 | 512MB | Dashboard |
-| `lago-pdf` | getlago/lago-gotenberg:7 | 512MB | PDF generation |
-| `lago-db` | postgres:14-alpine | 2GB | Database |
-| `lago-redis` | redis:6-alpine | 512MB | Cache |
-
-**Total RAM**: ~6GB
-
-## Integration with AgentVoiceBox
-
-Configure in Django settings via environment variables:
-
-```bash
-# .env
-LAGO_API_URL=http://localhost:63690
-LAGO_API_KEY=${VAULT}  # Retrieved from Vault
-LAGO_WEBHOOK_SECRET=${VAULT}  # Retrieved from Vault
-```
-
-## Network
-
-Isolated network: `lago_network`
-
-Does NOT share network with AgentVoiceBox infrastructure (65xxx range).
+## 5. Lago Deployment Note
+Lago files in this directory are optional billing infrastructure references. They are not required for the primary local `docker-compose.yml` startup unless explicitly launched.

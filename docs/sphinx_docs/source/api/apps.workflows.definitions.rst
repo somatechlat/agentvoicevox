@@ -1,45 +1,14 @@
-apps.workflows.definitions package
-==================================
+apps.workflows.definitions
+==========================
 
-Submodules
-----------
-
-apps.workflows.definitions.billing\_sync module
------------------------------------------------
-
-.. automodule:: apps.workflows.definitions.billing_sync
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.workflows.definitions.cleanup module
------------------------------------------
-
-.. automodule:: apps.workflows.definitions.cleanup
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.workflows.definitions.onboarding module
---------------------------------------------
-
-.. automodule:: apps.workflows.definitions.onboarding
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.workflows.definitions.voice\_session module
-------------------------------------------------
-
-.. automodule:: apps.workflows.definitions.voice_session
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.workflows.definitions
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Workflow definitions for onboarding, billing sync, cleanup, and voice sessions.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

@@ -1,104 +1,38 @@
-# Infrastructure Deployment Overview
+# AgentVoiceBox Infrastructure Specification
 
-**ISO/IEC 29148:2018 Compliant - AgentVoiceBox v1.0.0**
+**Document status:** Code-aligned baseline
+**Revision date:** 2026-05-11
 
 ## 1. Purpose
-This document unifies the infrastructure deployment guidance for **Standalone** and **SaaS** environments.
-It replaces the previous split documentation to avoid duplication and ensure a single canonical reference.
+This document summarizes infrastructure present in the repository and distinguishes the primary local stack from optional deployment references.
 
-## 2. Deployment Modes
+## 2. Primary Local Stack
+The primary local stack is `ovos-voice-agent/AgentVoiceBoxEngine/docker-compose.yml`.
 
-### 2.1 Standalone (Local or Single-Instance)
-**Use case**: Local development or single-instance deployments.
+Implemented services:
+- `postgres`: PostgreSQL, host port `65004`, 1536M memory limit.
+- `redis`: Redis, host port `65005`, 256M memory limit.
+- `django-api`: Django application, host port `65020`, 2048M memory limit.
+- `portal-frontend`: Lit/Vite frontend, host port `65027`, 512M memory limit.
+- `ovos-bus`: OVOS message bus, host port `65081`, 256M memory limit.
+- `ovos-core`: OVOS core, internal network, 2048M memory limit.
+- `ovos-listener`: OVOS listener, internal network, 1536M memory limit.
+- `ovos-audio`: OVOS audio, internal network, 1536M memory limit.
 
-**Services and Ports**
-| Service | Port | Purpose |
-|---------|------|---------|
-| PostgreSQL 16 | 65004 | Primary database |
-| Redis 7 | 65005 | Cache and sessions |
-| Keycloak 24 | 65006 | Authentication |
-| Vault 1.15 | 65003 | Secrets management |
-| Temporal 1.23 | 65007 | Workflow engine |
+The compose file documents a 10 GB budget.
 
-**RAM Budget**: 8GB
+## 3. Optional Infrastructure Files
+The repository also contains optional or supporting infrastructure for:
+- Docker deployments under `infra/docker` and `infra/saas/docker`.
+- Kubernetes manifests under `infra/saas/k8s`.
+- Standalone shared services under `infra/standalone`.
+- Lago deployment files under `infra/lago-deployments`.
+- Vault policies and setup scripts.
+- Prometheus and Grafana configuration.
 
-**Usage**
-```bash
-cd infra/standalone
-docker compose up -d
-docker compose ps
-```
+These files are not automatically equivalent to the primary local runtime unless explicitly invoked.
 
----
-
-### 2.2 SaaS (Multi-Tenant Production)
-**Use case**: Production multi-tenant deployment with cloud-managed services.
-
-**Directory Structure**
-```
-saas/
-├── docker/                 # Docker Compose for SaaS
-│   └── docker-compose.yml
-├── k8s/                    # Kubernetes manifests
-│   ├── namespace.yaml
-│   ├── configmap.yaml
-│   ├── secrets.yaml
-│   ├── django-api.yaml
-│   ├── portal-frontend.yaml
-│   └── workers.yaml
-└── helm/                   # Helm charts (future)
-    └── agentvoicebox/
-```
-
-**Key Differences from Standalone**
-| Aspect | Standalone | SaaS |
-|--------|------------|------|
-| Tenancy | Single | Multi-tenant |
-| Database | Local Postgres | Cloud-managed (RDS/CloudSQL) |
-| Cache | Local Redis | Cloud-managed (ElastiCache/Memorystore) |
-| Auth | Local Keycloak | Keycloak cluster / Auth0 |
-| Secrets | Local Vault | Cloud KMS + Vault cluster |
-| Scaling | Fixed | Horizontal Pod Autoscaler |
-
-**Port Authority (65xxx Range)**
-| Service | Port | Notes |
-|---------|------|-------|
-| Django API | 65020 | Load balanced |
-| Portal Frontend | 65027 | CDN-backed |
-| Worker LLM | - | Internal only |
-| Worker STT | - | Internal only |
-| Worker TTS | - | Internal only |
-
-**Deployment**
-```bash
-kubectl apply -f k8s/
-```
-
-**External Configuration (Required)**
-```yaml
-database:
-  host: ${RDS_ENDPOINT}
-  port: 5432
-
-redis:
-  host: ${ELASTICACHE_ENDPOINT}
-  port: 6379
-
-keycloak:
-  url: ${KEYCLOAK_CLUSTER_URL}
-  realm: agentvoicebox
-```
-
----
-
-## 3. Lago Billing Cluster (Isolated)
-Lago runs in a separate isolated network and **does not** share the 65xxx range.
-
-**Reference**: `infra/lago-deployments/README.md`
-
----
-
-## 4. Related Docs
-- Docker deployment (shared services + app stack): `infra/docker/README.md`
-- Local development: `../docs/LOCAL_DEVELOPMENT.md`
-- Platform overview: `../README.md`
+## 4. Requirements
+- Infrastructure documentation shall state which compose or manifest file it describes.
+- Port and memory claims shall match the referenced file.
+- Optional services shall be labeled optional.

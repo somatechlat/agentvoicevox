@@ -1,29 +1,14 @@
-apps.voice.migrations package
-=============================
+apps.voice.migrations
+=====================
 
-Submodules
-----------
-
-apps.voice.migrations.0001\_initial module
-------------------------------------------
-
-.. automodule:: apps.voice.migrations.0001_initial
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.voice.migrations.0002\_persona\_solvers\_custom\_voice\_wake\_word module
-------------------------------------------------------------------------------
-
-.. automodule:: apps.voice.migrations.0002_persona_solvers_custom_voice_wake_word
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.voice.migrations
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Django migrations for voice models.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

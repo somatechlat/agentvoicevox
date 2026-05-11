@@ -1,69 +1,14 @@
-apps.realtime.services package
-==============================
+apps.realtime.services
+======================
 
-Submodules
-----------
-
-apps.realtime.services.audio\_codecs module
--------------------------------------------
-
-.. automodule:: apps.realtime.services.audio_codecs
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.realtime.services.conversation\_service module
----------------------------------------------------
-
-.. automodule:: apps.realtime.services.conversation_service
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.realtime.services.function\_calling module
------------------------------------------------
-
-.. automodule:: apps.realtime.services.function_calling
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.realtime.services.llm\_integration module
-----------------------------------------------
-
-.. automodule:: apps.realtime.services.llm_integration
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.realtime.services.rate\_limiter module
--------------------------------------------
-
-.. automodule:: apps.realtime.services.rate_limiter
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.realtime.services.session\_service module
-----------------------------------------------
-
-.. automodule:: apps.realtime.services.session_service
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-apps.realtime.services.token\_service module
---------------------------------------------
-
-.. automodule:: apps.realtime.services.token_service
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-Module contents
+Document status
 ---------------
+Code-aligned Sphinx source baseline, revised 2026-05-11.
 
-.. automodule:: apps.realtime.services
-   :members:
-   :show-inheritance:
-   :undoc-members:
+Purpose
+-------
+Realtime audio codec, session, token, rate limiting, conversation, function calling, and LLM integration helpers.
+
+Source of truth
+---------------
+The Python source under ``ovos-voice-agent/AgentVoiceBoxEngine/backend`` is authoritative. Regenerate detailed autodoc output only after verifying imports against the current Django settings.

@@ -1,106 +1,98 @@
-# AgentVoiceBox MCP Architecture Specification
+# AgentVoiceBox Documentation Baseline
 
-**Document ID**: AVB-SRS-MCP-001  
-**Version**: 1.1.0  
-**Date**: 2026-01-13  
-**Status**: APPROVED  
-**Compliance**: ISO/IEC 29148:2018, VIBE Coding Rules
+**Document status:** Code-aligned baseline
+**Revision date:** 2026-05-11
+**Source of truth:** Repository source code under `ovos-voice-agent/AgentVoiceBoxEngine`
+**Documentation style:** ISO/IEC/IEEE 29148-style structure for clarity; this repository does not claim external ISO certification.
 
----
+## 1. Purpose
+This document records the implemented AgentVoiceBox system as reflected by the code. Requirements, plans, and claims in this file are subordinate to the running implementation.
 
-## 1. Introduction
+## 2. Implemented Product Scope
+AgentVoiceBox is a Django-based voice AI platform with a Lit 3 administration frontend and OVOS message-bus integration.
 
-### 1.1 Purpose
-This document specifies the architecture and implementation details for the **Model Context Protocol (MCP)** integration within the AgentVoiceBox platform. It defines how AgentVoiceBox exposes its internal capabilities (Voice, Billing, Realtime) as standardized MCP Tools and Resources using a strict Native Django approach.
+Implemented runtime surfaces:
+- REST API: Django Ninja mounted at `/api/v2/`.
+- REST API documentation: `/api/v2/docs` and `/api/v2/openapi.json`.
+- Health checks: `/health/` and `/health/ready/`.
+- WebSockets: Django Channels routes under `/ws/v2/*` plus an experimental OpenAI-like gateway at `/ws/v1/realtime`.
+- Frontend: Lit 3 + Vite application in `portal-frontend/`.
+- Persistence/cache: PostgreSQL and Redis.
+- Voice integration: OVOS message bus through `ovos-bus-client`.
 
-### 1.2 Scope
-*   **In Scope**: 
-    *   **Native Django Implementation**: Uses `apps.mcp` with `FastMCP` pattern.
-    *   **Transports**:
-        *   **Stdio**: For local IDE integration (Cursor/Windsurf) via `python manage.py run_mcp_server`.
-        *   **SSE**: For remote agent connectivity via `/api/v2/mcp/sse`.
-    *   **Tool Wrappers**: Wrapping `apps.voice`, `apps.billing` service layers.
-    *   **Security**: Leveraging existing Keycloak JWT and API Key infrastructure.
-*   **Out of Scope**: 
-    *   Client-side implementation (AgentVoiceBox acts solely as the Server).
+## 3. Implemented Backend Modules
+The active Django apps are:
+- `apps.core`: API registration, middleware, exceptions, cache, permissions, health views.
+- `apps.tenants`: tenant records, tenant settings, onboarding, tenant-scoped access.
+- `apps.users`: custom user model, profile, user administration.
+- `apps.projects`: project CRUD and voice configuration.
+- `apps.api_keys`: API key lifecycle and validation.
+- `apps.sessions`: voice session lifecycle and session events.
+- `apps.billing`: usage events, invoices, billing alerts, Lago integration.
+- `apps.voice`: voice personas, voice models, custom voices, wake words, OVOS configuration bridge.
+- `apps.themes`: tenant theme management.
+- `apps.audit`: audit log records and export.
+- `apps.notifications`: notifications and preferences.
+- `apps.workflows`: Temporal workflow definitions, activities, schedules, and management commands.
+- `apps.realtime`: realtime sessions, conversations, responses, ephemeral tokens, OVOS bridge, and OpenAI-like schemas.
+- `apps.mcp`: MCP tools and SSE/message endpoints.
 
----
+## 4. Implemented API Baseline
+All REST paths below are mounted under `/api/v2` unless noted otherwise.
 
-## 2. Architecture
+Router prefixes:
+- `/tenants`
+- `/onboarding`
+- `/users`
+- `/user`
+- `/projects`
+- `/api-keys`
+- `/sessions`
+- `/billing`
+- `/voice`
+- `/voice-cloning`
+- `/wake-words`
+- `/themes`
+- `/audit`
+- `/notifications`
+- `/admin/tenants`
+- `/admin/users`
+- `/admin`
+- `/mcp`
 
-### 2.1 Component Diagram
+WebSocket routes:
+- `/ws/v2/events`
+- `/ws/v2/sessions/{session_id}`
+- `/ws/v2/stt/transcription`
+- `/ws/v2/tts/stream`
+- `/ws/v1/realtime`
 
-```mermaid
-graph TD
-    Client[MCP Client] -->|Stdio| CLI[Management Command]
-    Client -->|HTTP/SSE| API[Django Ninja API]
-    
-    subgraph "AgentVoiceBox Backend (Django)"
-        CLI --> Factory[Server Factory]
-        API --> Factory
-        Factory --> Reg[Tool Registry]
-        
-        Reg -->|Async Call| TS[TTS Service]
-        Reg -->|Sync->Async| DB[PostgreSQL]
-        Reg -->|Check| Perms[Permissions]
-    end
-    
-    DB -->|Voice Models| Reg
-    TS -->|Audio Bytes| Reg
-```
+## 5. Implemented Frontend Baseline
+The frontend is not Next.js or React. It is a Lit 3/Vite TypeScript application with custom elements for layout, login, dashboard, setup, settings, voice management, voice cloning, and voice playground views. API access is centralized through TypeScript services in `portal-frontend/src/services`.
 
-### 2.2 Technology Stack
-*   **Language**: Python 3.12+
-*   **Framework**: Django 5.x (Native App: `apps.mcp`)
-*   **Libraries**:
-    *   `mcp` (Official SDK)
-    *   `temporalio` (Workflow Orchestration)
-    *   `kokoro` (TTS Engine)
-    *   `asgiref` (Sync-to-Async bridging)
+## 6. Operational Baseline
+The primary compose file defines these local services:
+- PostgreSQL on host port `65004`.
+- Redis on host port `65005`.
+- Django API on host port `65020`.
+- Portal frontend on host port `65027`.
+- OVOS message bus on host port `65081`.
+- OVOS core, listener, and audio containers on the internal Docker network.
 
----
+The primary compose file documents a 10 GB memory budget. This documentation states that budget as an implementation target, not as a verified runtime measurement.
 
-## 3. Functional Requirements
+## 7. Constraints
+- New REST APIs must use Django Ninja.
+- New WebSocket handlers must use Django Channels.
+- New UI must use Lit 3 Web Components.
+- New database models must use Django ORM and migrations.
+- Documentation must not claim unsupported routes, frameworks, or production guarantees.
 
-### 3.1 Server Factory
-*   [REQ-MCP-001] The system SHALL implement a centralized `server_factory.py` to ensure identical toolsets across Stdio and SSE transports.
-*   [REQ-MCP-002] The server factory SHALL initialize `FastMCP` with the name "AgentVoiceBox".
+## 8. Known Gaps And Risks
+- `/ws/v1/realtime` is an experimental OpenAI-like gateway, not a complete OpenAI Realtime API replacement.
+- Some generated/cache/local files are present in the repository and should not be treated as source documentation.
+- Some infrastructure manifests describe optional deployments that are not the primary local compose stack.
+- Security-sensitive local files are present in the working tree; these should be reviewed separately before publication.
 
-### 3.2 Transports
-*   [REQ-MCP-003] **Stdio**: The system SHALL provide `python manage.py run_mcp_server --transport stdio` for local pipe-based communication.
-*   [REQ-MCP-004] **SSE**: The system SHALL expose `GET /api/v2/mcp/sse` (Event Stream) and `POST /api/v2/mcp/messages` (JSON-RPC) via Django Ninja.
-
-### 3.3 Core Tools
-The system SHALL expose the following initial tools:
-
-1.  **`list_voices`**
-    *   **Description**: Lists available TTS voices.
-    *   **Source**: `apps.voice.services.VoiceModelService.list_models`
-    *   **Wrappers**: Must use `sync_to_async` for database access.
-
-2.  **`generate_speech`**
-    *   **Description**: Synthesizes speech from text.
-    *   **Inputs**: `text` (str), `voice_id` (str, default="af_heart").
-    *   **Source**: `apps.workflows.activities.tts.TTSActivities`.
-    *   **Output**: Base64 encoded WAV audio.
-
-3.  **`get_server_status`**
-    *   **Output**: "AgentVoiceBox Platform is ONLINE".
-
----
-
-## 4. Security Requirements (VIBE Zero Trust)
-
-*   [SEC-MCP-001] **No Hardcoded Secrets**: All credentials must be retrieved from Vault or Environment Variables.
-*   [SEC-MCP-002] **Async Safety**: All Database interactions in MCP tools MUST be explicitly wrapped in `sync_to_async` to prevent the `SynchronousOnlyOperation` error in the async server loop.
-*   [SEC-MCP-003] **Strict Typing**: All Tool inputs and outputs MUST be strictly typed (Pydantic models or Python type hints) to ensure MCP protocol compliance.
-
----
-
-## 5. Verification
-*   **Script**: `backend/verify_mcp_real_infra.py`
-*   **Coverage**:
-    *   Infrastructure Connectivity (Postgres, Redis).
-    *   Database Schema (Migrations).
-    *   Data Persistence (Seeding).
-    *   Tool Logic Execution.
+## 9. MCP Baseline
+The implemented MCP surface is mounted under `/api/v2/mcp` with `/sse` and `/messages` endpoints. MCP tools are defined in `backend/apps/mcp/tools.py`.

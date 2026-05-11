@@ -1,26 +1,32 @@
-# Agent Directives & Vibe Coding Guidelines
+# Agent Directives Specification
 
-If you are an AI Agent operating within this codebase, you MUST adhere to the following rules at all times. This project enforces a strictly monitored "Vibe Coding" framework.
+**Document status:** Code-aligned baseline
+**Revision date:** 2026-05-11
+**Source of truth:** Current AgentVoiceBox source code.
 
-## 1. Zero-Mock Policy
-- **NO MOCKS:** Do not use `unittest.mock`, fake responses, or `TODO` placeholders in production logic.
-- **REAL DATA:** Always test against the actual `ovos-bus` and `PostgreSQL` instances.
+## 1. Purpose
+This document defines implementation rules for agents working in this codebase. It uses ISO-style structure for clarity and must remain aligned with the active Django/Lit implementation.
 
-## 2. API Framework Rule
-- **DJANGO NINJA ONLY:** All REST API endpoints must be implemented using `django-ninja` in the `backend/apps/voice/api.py` (or related) files.
-- **NO FASTAPI:** FastAPI and Starlette are explicitly forbidden.
+## 2. Architectural Rules
+- REST APIs shall use Django Ninja.
+- REST routers shall live in the relevant Django app and be registered through `backend/apps/core/api.py`.
+- WebSocket handlers shall use Django Channels and be routed through `backend/realtime/routing.py`.
+- UI code shall use Lit 3 Web Components under `portal-frontend/`.
+- Database models shall use Django ORM and Django migrations.
 
-## 3. Frontend UI Rule
-- **LIT 3 WEB COMPONENTS ONLY:** All UI elements in `portal-frontend/` must be Lit 3 custom elements.
-- **NO ALPINE.JS:** Do not use Alpine.js.
-- **NO TAILWIND (Unless requested):** We use Vanilla CSS for maximum flexibility.
-- **AESTHETICS:** Maintain modern SaaS-grade aesthetics (glassmorphism, clean typography, tooltips).
+## 3. Prohibited Active-Code Patterns
+- Do not add FastAPI, Flask, or Starlette application services.
+- Do not add React, Next.js, or Alpine.js portal UI code.
+- Do not add SQLAlchemy models for active SaaS platform data.
+- Do not document unimplemented routes or compatibility claims as implemented.
 
-## 4. Internationalization (i18n)
-- All UI strings must be routed through the `t()` function located in `portal-frontend/src/utils/i18n.ts`. Do not hardcode raw strings into Lit render blocks.
+## 4. Runtime Constraints
+- The primary local compose stack targets the 10 GB memory budget documented in `docker-compose.yml`.
+- Host-exposed ports in the primary local stack shall stay in the `65000-65099` range unless the compose file and documentation are deliberately revised together.
+- OVOS may use internal container ports such as `8181`; public documentation shall distinguish internal ports from host-exposed ports.
 
-## 5. Architectural Sovereignty
-- **10GB HARD LIMIT:** Do not exceed the allocated container memory limits defined in `docker-compose.yml`. The total cluster is restricted to ~10GB.
-- **PORT POLICY:** All services must operate strictly within the `65000-65099` port range.
-
-*Violation of these rules will result in immediate rejection of the patch.*
+## 5. Documentation Rules
+- Code is the source of truth.
+- SRS files must be updated in the same change as architecture-affecting code.
+- Experimental functionality must be labeled experimental.
+- Optional infrastructure must be labeled optional.
