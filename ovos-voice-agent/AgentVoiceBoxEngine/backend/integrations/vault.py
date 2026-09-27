@@ -777,3 +777,48 @@ vault_client = VaultClient()
 def get_vault_client() -> VaultClient:
     """Get the Vault client singleton."""
     return vault_client
+
+
+def get_app_secret(name: str, default: Any = None) -> Any:
+    """
+    Resolve an application secret from Vault KV.
+
+    Vault is the source of truth for non-DB secrets (API keys, webhook secrets,
+    third-party tokens). Database credentials remain Django/Postgres.
+
+    Lookup order (first hit wins):
+    1. secret/data/agentvoicebox/backend/<name>
+    2. secret/data/agentvoicebox/shared/<name>
+    """
+    short = (name or "").strip()
+    if not short:
+        return default
+    client = get_vault_client()
+    for path in (
+        f"agentvoicebox/backend/{short}",
+        f"agentvoicebox/shared/{short}",
+    ):
+        value = client.get_secret(path, key="value", default=None)
+        if value is None:
+            value = client.get_secret(path, key=short, default=None)
+        if value is None:
+            # secret may be a flat dict of keys under this path
+            blob = client.get_secret(path, default=None)
+            if isinstance(blob, dict) and short in blob:
+                return blob.get(short, default)
+        if value not in (None, ""):
+            return value
+    return default
+
+
+def get_system_secret(name: str, fallback: Any = None) -> Any:
+    """
+    Resolve a system-wide secret (client API keys, webhook secrets, tokens).
+
+    Vault first. `fallback` is only used when Vault has no value (local dev).
+    Django user passwords and Django/DB settings are NOT resolved here.
+    """
+    value = get_app_secret(name, default=None)
+    if value not in (None, ""):
+        return value
+    return fallback

@@ -67,9 +67,10 @@ class KeycloakAuthenticationMiddleware:
             user = self._sync_user(result)
             if user:
                 request.user = user
+            return self.get_response(request)
 
         # Try API key authentication
-        elif api_key := request.headers.get("X-API-Key"):
+        if api_key := request.headers.get("X-API-Key"):
             result = self._validate_api_key(api_key, request)
 
             if result.get("error"):
@@ -84,8 +85,11 @@ class KeycloakAuthenticationMiddleware:
             # Set API key context on request
             request.user_id = result.get("user_id")
             request.jwt_tenant_id = result.get("tenant_id")
+            request.tenant = result.get("tenant")
             request.api_key_id = result.get("api_key_id")
+            request.api_key = result.get("api_key")
             request.api_key_scopes = result.get("scopes", [])
+            request.api_key_plan = result.get("plan", {})
             request.auth_type = "api_key"
 
             # Set request.user if user_id is available
@@ -93,8 +97,16 @@ class KeycloakAuthenticationMiddleware:
                 user = self._get_user_by_id(result.get("user_id"))
                 if user:
                     request.user = user
+            return self.get_response(request)
 
-        return self.get_response(request)
+        # Fail closed: no credentials provided
+        return JsonResponse(
+            {
+                "error": "unauthorized",
+                "message": "Authentication required",
+            },
+            status=401,
+        )
 
     def _is_exempt_path(self, path: str) -> bool:
         """Check if path is exempt from authentication."""

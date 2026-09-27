@@ -15,6 +15,10 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
+class PayPalConfigurationError(RuntimeError):
+    """Raised when PayPal operations are requested without active configuration."""
+
+
 class PayPalEnvironment(Enum):
     """PayPal API environment."""
     SANDBOX = "sandbox"
@@ -57,7 +61,11 @@ class PayPalClient:
             logger.warning(f"PayPal configuration missing keys: {', '.join(missing)}")
 
         self.client_id = paypal_config.get("CLIENT_ID", "")
-        self.client_secret = paypal_config.get("CLIENT_SECRET", "")
+        from integrations.vault import get_system_secret
+
+        self.client_secret = get_system_secret(
+            "PAYPAL_CLIENT_SECRET", paypal_config.get("CLIENT_SECRET", "")
+        )
         self.environment = PayPalEnvironment(
             paypal_config.get("ENVIRONMENT", "sandbox")
         )
@@ -111,12 +119,7 @@ class PayPalClient:
             PayPalOrder with order_id and approval_url
         """
         if not self.enabled:
-            logger.warning("PayPal is disabled, returning mock order")
-            return PayPalOrder(
-                order_id="MOCK-ORDER-001",
-                status="CREATED",
-                approval_url="https://example.com/mock-approval",
-            )
+            raise PayPalConfigurationError("PayPal order creation is not enabled")
 
         token = await self._get_access_token()
 
@@ -172,7 +175,7 @@ class PayPalClient:
             PayPalOrder with updated status
         """
         if not self.enabled:
-            return PayPalOrder(order_id=order_id, status="COMPLETED")
+            raise PayPalConfigurationError("PayPal order capture is not enabled")
 
         token = await self._get_access_token()
 
@@ -212,11 +215,7 @@ class PayPalClient:
             PayPalSubscription with subscription_id
         """
         if not self.enabled:
-            return PayPalSubscription(
-                subscription_id="MOCK-SUB-001",
-                status="APPROVAL_PENDING",
-                plan_id=plan_id,
-            )
+            raise PayPalConfigurationError("PayPal subscription creation is not enabled")
 
         token = await self._get_access_token()
 
@@ -262,7 +261,7 @@ class PayPalClient:
             True if cancelled successfully
         """
         if not self.enabled:
-            return True
+            raise PayPalConfigurationError("PayPal subscription cancellation is not enabled")
 
         token = await self._get_access_token()
 
@@ -301,7 +300,7 @@ class PayPalClient:
             True if webhook signature is valid
         """
         if not self.enabled:
-            return True
+            raise PayPalConfigurationError("PayPal webhook verification is not enabled")
 
         token = await self._get_access_token()
 

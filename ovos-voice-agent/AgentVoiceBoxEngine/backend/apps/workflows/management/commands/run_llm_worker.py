@@ -150,7 +150,11 @@ class OpenAIProvider(LLMProvider):
         if not self._client:
             raise RuntimeError("OpenAI client not initialized")
 
-        api_key = settings.LLM_PROVIDERS["openai"]["api_key"]
+        from integrations.vault import get_system_secret
+
+        api_key = get_system_secret(
+            "OPENAI_API_KEY", settings.LLM_PROVIDERS["openai"]["api_key"]
+        )
         base_url = settings.LLM_PROVIDERS["openai"]["base_url"]
         if not api_key or not base_url:
             raise RuntimeError("OpenAI not configured")
@@ -214,7 +218,11 @@ class GroqProvider(LLMProvider):
         if not self._client:
             raise RuntimeError("Groq client not initialized")
 
-        api_key = settings.LLM_PROVIDERS["groq"]["api_key"]
+        from integrations.vault import get_system_secret
+
+        api_key = get_system_secret(
+            "GROQ_API_KEY", settings.LLM_PROVIDERS["groq"]["api_key"]
+        )
         base_url = settings.LLM_PROVIDERS["groq"]["base_url"]
         if not api_key or not base_url:
             raise RuntimeError("Groq not configured")

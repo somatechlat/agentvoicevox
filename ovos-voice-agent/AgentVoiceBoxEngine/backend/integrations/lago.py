@@ -236,8 +236,12 @@ class LagoClient:
     def __init__(self):
         """Initialize Lago client from Django settings."""
         self.api_url = settings.LAGO["API_URL"]
-        self.api_key = settings.LAGO["API_KEY"]
-        self.webhook_secret = settings.LAGO["WEBHOOK_SECRET"]
+        from integrations.vault import get_system_secret
+
+        self.api_key = get_system_secret("LAGO_API_KEY", settings.LAGO.get("API_KEY"))
+        self.webhook_secret = get_system_secret(
+            "LAGO_WEBHOOK_SECRET", settings.LAGO.get("WEBHOOK_SECRET")
+        )
         self.timeout = 30.0
         self.max_retries = 3
         self.retry_delay = 1.0

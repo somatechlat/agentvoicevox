@@ -117,8 +117,10 @@ class APIKeyService:
         if not key:
             raise AuthenticationError("Invalid API key", error_code="invalid_api_key")
 
-        # 4. Verify the hash to ensure the key is correct.
-        if key.key_hash != key_hash:
+        # 4. Verify the hash to ensure the key is correct (constant-time).
+        import hmac
+
+        if not hmac.compare_digest(str(key.key_hash), str(key_hash)):
             raise AuthenticationError("Invalid API key", error_code="invalid_api_key")
 
         # 5. Check if the key has been explicitly revoked.
@@ -143,8 +145,13 @@ class APIKeyService:
         # 8. Record successful API key usage.
         key.record_usage(ip_address)
 
+        from apps.core.plan_enforcement import plan_enforcement_service
+
+        plan = plan_enforcement_service.get_plan(key.tenant)
+
         return {
             "api_key_id": key.id,
+            "api_key": key,
             "key_id": key.id,  # Alias for backwards compatibility.
             "tenant_id": key.tenant_id,
             "tenant": key.tenant,
@@ -153,6 +160,7 @@ class APIKeyService:
             "scopes": key.scopes,
             "rate_limit_tier": key.rate_limit_tier,
             "rate_limit": key.get_rate_limit(),
+            "plan": plan.limits,
         }
 
     @staticmethod

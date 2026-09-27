@@ -5,6 +5,7 @@ Handles real-time voice communication for sessions.
 """
 
 import logging
+import time
 import uuid
 from typing import Any, Optional
 
@@ -190,18 +191,30 @@ class SessionConsumer(BaseConsumer):
             await self.send_error("missing_audio", "No audio data provided")
             return
 
-        # Forward to STT processing via Redis Stream (simplified for now to match current worker)
+        # Enqueue for STT worker (Redis stream) — run_stt_worker
         try:
-            await self.channel_layer.group_send(
-                f"stt_worker_{self.tenant_id}",
+            from apps.workflows.redis_client import RedisClient
+
+            redis = RedisClient()
+            await redis.connect()
+            await redis.client.xadd(
+                settings.STT_WORKER["STREAM_AUDIO"],
                 {
-                    "type": "process_audio",
                     "session_id": self.session_id,
+                    "tenant_id": self.tenant_id or "",
+                    "correlation_id": content.get("correlation_id") or uuid.uuid4().hex,
                     "audio": audio_data,
+                    "audio_format": str(
+                        content.get("audio_format")
+                        or self.session.config.get("input_audio_format", "pcm16")
+                    ),
+                    "language": str(content.get("language") or ""),
+                    "timestamp": str(time.time()),
                 },
             )
+            await redis.disconnect()
         except Exception as e:
-            logger.error(f"Failed to forward audio to STT worker: {e}")
+            logger.error(f"Failed to enqueue audio for STT worker: {e}")
             await self.send_error("server_error", "Could not process audio buffer")
 
     async def handle_input_audio_buffer_commit(self, content: dict[str, Any]):
@@ -382,6 +395,20 @@ class SessionConsumer(BaseConsumer):
         })
 
     async def audio_output(self, event: dict[str, Any]):
-        """Handle audio output from TTS worker."""
-        # Handled by response_chunk in OpenAI spec as response.audio.delta
-        pass
+        """Handle raw audio output events from TTS worker (non-chunked)."""
+        data = event.get("data") or {}
+        audio = data.get("audio")
+        if not audio:
+            return
+        await self.send_event(
+            "response.audio.delta",
+            {
+                "response_id": data.get("response_id"),
+                "item_id": data.get("item_id"),
+                "output_index": 0,
+                "content_index": 0,
+                "delta": audio,
+                "sample_rate": data.get("sample_rate"),
+                "format": data.get("format", "pcm16"),
+            },
+        )

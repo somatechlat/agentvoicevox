@@ -32,12 +32,14 @@ MANIFEST
 
 # Virtual environments
 .venv/
+.venv_tools/
 venv/
 env/
 ENV/
 venv.bak/
 */venv/
 **/.venv/
+**/.venv_tools/
 **/venv/
 .conda/
 
@@ -95,6 +97,10 @@ yarn-error.log*
 # Build outputs
 /build
 /dist
+**/e2e-screenshots/
+**/debug-screenshot.png
+**/setup-screen.png
+*.tmp
 
 # -----------------------------------------------------------------------------
 # IDE / Editor
@@ -273,3 +279,9 @@ playwright/.cache/
 *.lprof
 
 tmp/
+
+# Playwright auth state (never commit)
+portal-frontend/e2e/.auth/*
+!portal-frontend/e2e/.auth/.gitkeep
+ovos-voice-agent/AgentVoiceBoxEngine/portal-frontend/e2e/.auth/*
+!ovos-voice-agent/AgentVoiceBoxEngine/portal-frontend/e2e/.auth/.gitkeep

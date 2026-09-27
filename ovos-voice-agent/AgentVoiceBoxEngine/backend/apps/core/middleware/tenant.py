@@ -128,6 +128,13 @@ class TenantMiddleware:
             return self.get_response(request)
 
         # 3. Attempt to extract the tenant ID from various sources in order of precedence.
+        if getattr(request, "tenant", None) is not None:
+            set_current_tenant(request.tenant)
+            request.tenant_id = request.tenant.id
+            response = self.get_response(request)
+            clear_current_tenant()
+            return response
+
         tenant_id = self._extract_tenant_id(request)
 
         if tenant_id:
@@ -199,14 +206,27 @@ class TenantMiddleware:
                 # Malformed UUID in JWT, proceed to next source.
                 pass
 
-        # 2. Check for tenant ID in the 'X-Tenant-ID' HTTP header.
-        header_tenant_id = request.headers.get("X-Tenant-ID")
-        if header_tenant_id:
-            try:
-                return UUID(header_tenant_id)
-            except (ValueError, TypeError):
-                # Malformed UUID in header, proceed to next source.
-                pass
+        # 2. X-Tenant-ID only when the request is already authenticated
+        # (JWT or API key). Unauthenticated callers must not spoof tenancy.
+        auth_type = getattr(request, "auth_type", None)
+        if auth_type in {"jwt", "api_key"}:
+            header_tenant_id = request.headers.get("X-Tenant-ID")
+            if header_tenant_id:
+                try:
+                    header_uuid = UUID(header_tenant_id)
+                except (ValueError, TypeError):
+                    pass
+                else:
+                    # API keys may pin a tenant; do not let a header escalate.
+                    if auth_type == "api_key":
+                        bound = getattr(request, "jwt_tenant_id", None)
+                        if bound:
+                            try:
+                                if UUID(str(bound)) != header_uuid:
+                                    return UUID(str(bound))
+                            except (ValueError, TypeError):
+                                pass
+                    return header_uuid
 
         # 3. Attempt to extract tenant from subdomain (e.g., 'tenant-slug.example.com').
         host = request.get_host().split(":")[0]  # Remove port if present.

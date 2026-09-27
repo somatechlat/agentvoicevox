@@ -67,7 +67,11 @@ class KeycloakClient:
         self.base_url = settings.KEYCLOAK["URL"]
         self.realm = settings.KEYCLOAK["REALM"]
         self.client_id = settings.KEYCLOAK["CLIENT_ID"]
-        self.client_secret = settings.KEYCLOAK["CLIENT_SECRET"]
+        from integrations.vault import get_system_secret
+
+        self.client_secret = get_system_secret(
+            "KEYCLOAK_CLIENT_SECRET", settings.KEYCLOAK.get("CLIENT_SECRET")
+        )
         self.algorithms = settings.KEYCLOAK["ALGORITHMS"]
         self.audience = settings.KEYCLOAK["AUDIENCE"]
 
